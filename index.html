@@ -13637,11 +13637,26 @@ async function seleccionarEEFFParaAuditoria(key, rowEl) {
     Periodo: data.year||'', Empresa: data.nombreEmpresa||data.ruc||'',
   }));
 
-  // Vincular al expediente
+  // Vincular al expediente — guardar raw completo para restaurar sin nueva consulta
   if (_apExpediente) {
-    _apExpediente.eeffKey = key;
-    _apExpediente.eeffData = { empresa: data.nombreEmpresa||data.ruc, year: data.year, ruc: data.ruc||'', cuentas };
-    try { await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/eeff`, _apExpediente.eeffData); } catch(e){}
+    _apExpediente.eeffKey     = key;
+    _apExpediente.eeffYear    = data.year;
+    _apExpediente.eeffEmpresa = data.nombreEmpresa || data.ruc || '';
+    _apExpediente.eeffData    = {
+      year:          data.year,
+      ruc:           data.ruc || '',
+      nombreEmpresa: data.nombreEmpresa || data.ruc || '',
+      raw:           raw,
+    };
+    // Guardar en el nodo raíz del expediente (no en subnodo separado)
+    try {
+      await FirebaseDB.update(`audit_pro/${_apExpediente.codigo}`, {
+        eeffKey:     _apExpediente.eeffKey,
+        eeffYear:    _apExpediente.eeffYear,
+        eeffEmpresa: _apExpediente.eeffEmpresa,
+        eeffData:    _apExpediente.eeffData,
+      });
+    } catch(e) { console.warn('Error guardando EEFF en expediente:', e); }
   }
   window._apEEFFSeleccionado = data;
 
@@ -13684,14 +13699,38 @@ function confirmarUsoEEFF() {
   const status = document.getElementById('ap-datos-status');
   if (status) {
     status.innerHTML = `<div style="padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px">
-      ✅ <strong>EEFF activo:</strong> ${data.nombreEmpresa||data.ruc} — Año ${data.year} — ${cuentas} cuentas disponibles para análisis
+      ✅ <strong>EEFF activo:</strong> ${data.nombreEmpresa||data.ruc||'—'} — Año ${data.year||'—'} — ${cuentas} cuentas disponibles
     </div>`;
   }
 
-  if (_apExpediente && cuentas > 0) {
+  // ── Guardar vínculo en Firebase dentro del expediente ──────────────────
+  if (_apExpediente) {
+    _apExpediente.eeffKey   = data.key || data.year || 'eeff';
+    _apExpediente.eeffYear  = data.year;
+    _apExpediente.eeffEmpresa = data.nombreEmpresa || data.ruc || '';
+    _apExpediente.eeffData  = {
+      year:         data.year,
+      ruc:          data.ruc || '',
+      nombreEmpresa:data.nombreEmpresa || '',
+      raw:          data.raw || {},
+    };
+    // Persistir en Firebase
+    FirebaseDB.update(`audit_pro/${_apExpediente.codigo}`, {
+      eeffKey:    _apExpediente.eeffKey,
+      eeffYear:   _apExpediente.eeffYear,
+      eeffEmpresa:_apExpediente.eeffEmpresa,
+      eeffData:   _apExpediente.eeffData,
+    }).then(() => {
+      toast(`EEFF "${_apExpediente.eeffEmpresa || _apExpediente.eeffYear}" vinculado y guardado en el expediente ✓`, 'success');
+    }).catch(err => {
+      console.error('Error guardando EEFF en expediente:', err);
+      toast('EEFF vinculado en memoria (error al guardar en Firebase)', 'warning');
+    });
+    // Generar sumarias automáticamente
     try { generarSumariasDesdeEEFF(); } catch(e) { console.warn('Sumarias:', e); }
+  } else {
+    toast(`EEFF confirmado — ${cuentas} cuentas listas ✓`, 'success');
   }
-  toast(`EEFF confirmado — ${cuentas} cuentas listas ✓`, 'success');
 }
 
 
@@ -14506,7 +14545,17 @@ async function abrirExpediente(key) {
   if (sumarias) _apExpediente.sumarias = sumarias;
 
   // Cargar EEFF vinculado si existe
-  if (exp.eeffKey) {
+  if (exp.eeffData && exp.eeffData.raw) {
+    // Tenemos los datos guardados directamente — no necesitamos otra consulta Firebase
+    window._apEEFFSeleccionado = exp.eeffData;
+    _apTransacciones = Object.entries(exp.eeffData.raw || {}).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v) || 0 }));
+    const status = document.getElementById('ap-datos-status');
+    if (status) status.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem">
+      ✅ EEFF vinculado: <strong>${exp.eeffData.nombreEmpresa || exp.eeffData.ruc || ''}</strong> — ${exp.eeffData.year || ''}
+      — ${Object.keys(exp.eeffData.raw||{}).length} cuentas
+    </div>`;
+  } else if (exp.eeffKey) {
+    // Fallback: buscar por key en estados_financieros
     const eeffData = await FirebaseDB.get(`estados_financieros/${exp.eeffKey}`);
     if (eeffData) {
       window._apEEFFSeleccionado = eeffData;
