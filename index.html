@@ -801,6 +801,10 @@ table.ef-table .negative { color: var(--red); }
       <span class="nav-icon">🔍</span>
       <span>Seguimiento</span>
     </a>
+    <a href="#" class="nav-item" data-module="gea" style="border-top:1px solid var(--border-color);margin-top:8px;padding-top:8px">
+      <span class="nav-icon">🏛️</span>
+      <span>GEA</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -2048,18 +2052,48 @@ table.ef-table .negative { color: var(--red); }
         <div id="ap-datos-status" style="margin-top:10px;font-size:.78rem;color:var(--text-muted)"></div>
       </div>
 
+      <!-- HISTORIAL DE EXPEDIENTES -->
+      <div class="card" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin:0">📚 Historial de Expedientes de Auditoría</h3>
+          <button class="btn-secondary" onclick="cargarHistorialExpedientes()" style="font-size:.72rem">🔄 Actualizar</button>
+        </div>
+        <div id="ap-historial-expedientes">
+          <p style="color:var(--text-muted);font-size:.78rem">Cargando expedientes...</p>
+        </div>
+      </div>
+
       <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
       <div id="ap-panel-principal" style="display:none">
 
         <!-- TABS DE TRABAJO -->
-        <div class="bib-tabs">
-          <button class="bib-tab active" onclick="showApTab('fases')">📋 Fases del Trabajo</button>
+        <div class="bib-tabs" style="flex-wrap:wrap">
+          <button class="bib-tab active" onclick="showApTab('fases')">📋 Fases</button>
+          <button class="bib-tab" onclick="showApTab('eeff-audit')">📊 EEFF Vinculado</button>
           <button class="bib-tab" onclick="showApTab('cedulas')">📄 Cédulas Analíticas</button>
-          <button class="bib-tab" onclick="showApTab('sumarias')">📊 Cédulas Sumarias</button>
+          <button class="bib-tab" onclick="showApTab('sumarias')">📑 Cédulas Sumarias</button>
           <button class="bib-tab" onclick="showApTab('papeles')">🗂️ Papeles de Trabajo</button>
           <button class="bib-tab" onclick="showApTab('hallazgos')">⚠️ Hallazgos</button>
           <button class="bib-tab" onclick="showApTab('benford')">📐 Analítica</button>
           <button class="bib-tab" onclick="showApTab('informe')">📝 Informe Final</button>
+        </div>
+
+        <!-- ESTADOS FINANCIEROS EN AUDITORÍA -->
+        <div class="bib-content" id="ap-eeff-audit">
+          <div class="card">
+            <h3 style="margin-top:0">📊 Estados Financieros Vinculados al Expediente</h3>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px">Visualice y analice los estados financieros cargados para esta auditoría.</p>
+            <div class="doc-btn-row" style="margin-bottom:14px;flex-wrap:wrap">
+              <button class="btn-secondary" onclick="usarDatosEstadosFinancieros()">🔗 Cambiar EEFF</button>
+              <button class="btn-calc" onclick="renderEEFFenAuditoria('balance')">Balance General</button>
+              <button class="btn-calc" onclick="renderEEFFenAuditoria('resultados')">Resultados</button>
+              <button class="btn-calc" onclick="renderEEFFenAuditoria('indices')">Índices</button>
+              <button class="btn-calc" onclick="renderEEFFenAuditoria('h-v')">Análisis H/V</button>
+            </div>
+            <div id="ap-eeff-audit-contenido">
+              <p style="color:var(--text-muted);font-size:.82rem">Vincule un EEFF usando "Usar datos de Estados Financieros" en la sección de carga.</p>
+            </div>
+          </div>
         </div>
 
         <!-- FASES DEL TRABAJO -->
@@ -2070,11 +2104,14 @@ table.ef-table .negative { color: var(--red); }
         <!-- CÉDULAS ANALÍTICAS -->
         <div class="bib-content" id="ap-cedulas">
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-              <h3 style="margin:0">Fichas / Cédulas Analíticas</h3>
-              <button class="btn-calc" onclick="nuevaCedulaAnalitica()">+ Nueva Cédula</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">Cédulas Analíticas</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarCedulasDesdeEEFF()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+                <button class="btn-calc" onclick="nuevaCedulaAnalitica()">+ Nueva cédula manual</button>
+              </div>
             </div>
-            <p style="font-size:.78rem;color:var(--text-muted)">Las cédulas analíticas documentan el análisis de cada cuenta. Cada una incluye: encabezado de control, cuerpo del análisis con marcas de auditoría, ajustes propuestos y conclusión del auditor.</p>
+            <p style="font-size:.78rem;color:var(--text-muted)">Las cédulas analíticas documentan el análisis de cada cuenta. Genérelas automáticamente desde el EEFF vinculado o créelas manualmente. Incluyen: saldo según libros, ajustes propuestos, saldo auditado, marcas y conclusión del auditor.</p>
           </div>
           <div id="ap-cedulas-lista"></div>
         </div>
@@ -2732,6 +2769,30 @@ table.ef-table .negative { color: var(--red); }
     </section>
 
   </div><!-- end module-wrapper -->
+    <!-- ═══════════════════════════════════ GEA — GESTIÓN EMPRESARIAL Y AUDITORÍA ═══════════════════════════════════ -->
+    <section class="module" id="mod-gea">
+      <div class="module-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+          <h1>🏛️ GEA — Gestión Empresarial y Auditoría</h1>
+          <p style="color:var(--text-muted);font-size:.85rem;margin:4px 0">Control documental, trámites, empresas, dividendos, activos fijos, area bancaria y más.</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="geaAbrirEnVentana()" style="font-size:.78rem">↗ Abrir en ventana nueva</button>
+          <button class="btn-secondary" onclick="geaRecargar()" style="font-size:.78rem">🔄 Recargar</button>
+        </div>
+      </div>
+      <!-- Iframe que carga la app GEA completa con base de datos aislada -->
+      <div style="border:1px solid var(--border-color);border-radius:12px;overflow:hidden;background:#0f1720">
+        <iframe
+          id="gea-iframe"
+          src="gea.html"
+          style="width:100%;height:calc(100vh - 140px);min-height:700px;border:none;display:block"
+          allow="clipboard-read; clipboard-write"
+          title="GEA — Gestión Empresarial y Auditoría"
+        ></iframe>
+      </div>
+    </section>
+
 </main>
 
 <!-- TOAST NOTIFICATIONS -->
@@ -3435,7 +3496,7 @@ function filterBiblioteca(query) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); });
+document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); cargarHistorialExpedientes(); });
 
 
 // ═══════════════ pizarra.js ═══════════════
@@ -6594,6 +6655,15 @@ function enviarEEFFaAuditoria() {
   setTimeout(() => usarDatosEstadosFinancieros(), 400);
 }
 
+
+// ── GEA — Gestión Empresarial y Auditoría ────────────────────────────────────
+function geaAbrirEnVentana() {
+  window.open('gea.html', '_blank', 'width=1400,height=900');
+}
+function geaRecargar() {
+  const iframe = document.getElementById('gea-iframe');
+  if (iframe) { iframe.src = iframe.src; }
+}
 
 function initTributacion() {
   renderIR();
@@ -12736,6 +12806,9 @@ function iniciarExpedienteAuditoria() {
   document.getElementById('ap-panel-principal').style.display = 'block';
 
   renderFasesAuditoria();
+  renderCedulasAnaliticasCompleto(); // Inicializar vista de cédulas vacía
+  window._apCedulas = {}; // Reset cédulas para nuevo expediente
+  cargarHistorialExpedientes(); // Actualizar historial
   toast(`Expediente ${codigo} iniciado`, 'success');
 }
 
@@ -12748,7 +12821,20 @@ function showApTab(tab) {
   if (event?.target) event.target.classList.add('active');
   const el = document.getElementById('ap-' + tab);
   if (el) el.classList.add('active');
+  // Acciones al cambiar de tab
+  if (tab === 'cedulas') {
+    if (window._apCedulas) renderCedulasAnaliticasCompleto();
+    else if (_apExpediente) {
+      FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`).then(d => {
+        window._apCedulas = d || {};
+        renderCedulasAnaliticasCompleto();
+      });
+    } else renderCedulasAnaliticasCompleto();
+  }
+  if (tab === 'eeff-audit') renderEEFFenAuditoria('balance');
+  if (tab === 'sumarias') renderCedulasSumarias();
 }
+
 
 // ── Fases del trabajo ────────────────────────────────────────────
 function renderFasesAuditoria() {
@@ -13567,6 +13653,778 @@ const AP_CICLOS = {
   nomina:         { nombre:'Nómina y Beneficios Sociales', icono:'👔', ref:'G', desc:'Sueldos, IESS, décimos, vacaciones, fondos de reserva', cuentas:['GASTO PERSONAL','IESS POR PAGAR','DECIMO TERCERO','DECIMO CUARTO','VACACIONES'], procedimientos:[{id:'G-1',tipo:'confirmacion',desc:'Verificar afiliación al IESS de todo el personal — cruzar rol de pagos con planillas IESS',marca:'◉'},{id:'G-2',tipo:'recalculo',desc:'Recálculo de décimos, vacaciones y fondos de reserva conforme al Código del Trabajo',marca:'Σ'},{id:'G-3',tipo:'sustantivo',desc:'Revisar liquidaciones de haberes de empleados desvinculados',marca:'✓'},{id:'G-4',tipo:'analitico',desc:'Comparar gasto de nómina vs número de empleados — costo promedio por empleado',marca:'Σ'},{id:'G-5',tipo:'confirmacion',desc:'Verificar declaraciones Formulario 103 (retenciones IR) vs rol de pagos',marca:'◉'}]},
   impuestos:      { nombre:'Obligaciones Tributarias', icono:'🧾', ref:'H', desc:'IR, IVA, retenciones, conciliación tributaria', cuentas:['IVA EN VENTAS','IVA EN COMPRAS','RETENCION IR POR PAGAR','IMPUESTO A LA RENTA'], procedimientos:[{id:'H-1',tipo:'recalculo',desc:'Elaborar conciliación tributaria — de utilidad contable a utilidad gravable',marca:'Σ'},{id:'H-2',tipo:'sustantivo',desc:'Verificar gastos no deducibles — representación, multas, exceso de viáticos (LORTI)',marca:'✓'},{id:'H-3',tipo:'recalculo',desc:'Recalcular el Anticipo de IR pagado vs el determinado según LORTI',marca:'Σ'},{id:'H-4',tipo:'confirmacion',desc:'Conciliar IVA declarado (104) vs IVA libros contables',marca:'◉'},{id:'H-5',tipo:'confirmacion',desc:'Verificar retenciones recibidas y emitidas vs contabilidad y declaraciones 103',marca:'◉'}]},
 };
+
+// ── Historial de expedientes ─────────────────────────────────────────────────
+async function cargarHistorialExpedientes() {
+  const el = document.getElementById('ap-historial-expedientes');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando...</p>';
+
+  const data = await FirebaseDB.get('audit_pro') || {};
+  const items = Object.entries(data)
+    .filter(([,v]) => v && v.codigo)
+    .sort((a,b) => (b[1].fecha||'').localeCompare(a[1].fecha||''));
+
+  if (!items.length) {
+    el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">No hay expedientes guardados aún. Inicie una auditoría para crear el primero.</p>';
+    return;
+  }
+
+  const estadoBadge = e => {
+    const col = e==='completada'?'var(--emerald)':e==='en-proceso'?'#f59e0b':'var(--text-muted)';
+    const txt = e==='completada'?'✅ Completada':e==='en-proceso'?'🔄 En proceso':'⬜ Pendiente';
+    return `<span style="font-size:.68rem;padding:2px 8px;border-radius:10px;background:${col}22;color:${col};font-weight:600">${txt}</span>`;
+  };
+
+  el.innerHTML = `<table class="ef-table">
+    <thead><tr>
+      <th class="left">Código</th><th class="left">Empresa</th><th>Tipo</th>
+      <th>Período</th><th>Auditor</th><th>Fecha</th><th>Estado</th><th>Acciones</th>
+    </tr></thead>
+    <tbody>${items.map(([key, exp]) => `<tr>
+      <td style="font-family:var(--font-mono);font-size:.75rem;color:var(--gold)"><strong>${exp.codigo||key}</strong></td>
+      <td class="account">${exp.empresa||'—'}</td>
+      <td style="text-align:center;font-size:.75rem">${exp.tipo||'—'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${exp.periodo||'—'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${exp.auditor||'—'}</td>
+      <td style="font-size:.72rem;color:var(--text-muted)">${exp.fecha?new Date(exp.fecha).toLocaleDateString('es-EC'):'—'}</td>
+      <td style="text-align:center">${estadoBadge(exp.estado)}</td>
+      <td style="white-space:nowrap">
+        <button onclick="abrirExpediente('${key}')"
+          style="background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
+          📂 Abrir
+        </button>
+        <button onclick="editarExpediente('${key}')"
+          style="background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
+          ✏️ Editar
+        </button>
+        <button onclick="borrarExpediente('${key}','${exp.codigo||key}','${(exp.empresa||'').replace(/'/g,'')}')"
+          style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem">
+          🗑 Borrar
+        </button>
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function abrirExpediente(key) {
+  const exp = await FirebaseDB.get(`audit_pro/${key}`);
+  if (!exp) { toast('Expediente no encontrado', 'error'); return; }
+  _apExpediente = exp;
+  _apTransacciones = [];
+
+  // Pre-llenar formulario
+  if (document.getElementById('ap-empresa')) document.getElementById('ap-empresa').value = exp.empresa||'';
+  if (document.getElementById('ap-ruc')) document.getElementById('ap-ruc').value = exp.ruc||'';
+  if (document.getElementById('ap-periodo')) document.getElementById('ap-periodo').value = exp.periodo||'';
+  if (document.getElementById('ap-auditor')) document.getElementById('ap-auditor').value = exp.auditor||'';
+  if (document.getElementById('ap-expediente')) document.getElementById('ap-expediente').value = exp.codigo||'';
+
+  // Activar badge y panel
+  document.getElementById('ap-expediente-badge').style.display = 'block';
+  document.getElementById('ap-expediente-codigo').textContent = exp.codigo||key;
+  document.getElementById('ap-tipo-label').textContent = exp.tipo||'';
+  document.getElementById('ap-panel-principal').style.display = 'block';
+
+  renderFasesAuditoria();
+  renderCedulasLista();
+  renderCedulasSumarias();
+
+  // Cargar EEFF vinculado si existe
+  if (exp.eeffKey && exp.eeffData) {
+    const eeffData = await FirebaseDB.get(`estados_financieros/${exp.eeffKey}`);
+    if (eeffData) {
+      window._apEEFFSeleccionado = eeffData;
+      _apTransacciones = Object.entries(eeffData.raw||{}).map(([n,v])=>({Cuenta:n,Monto:parseFloat(v)||0}));
+      const status = document.getElementById('ap-datos-status');
+      if (status) status.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem">✅ EEFF activo: <strong>${eeffData.nombreEmpresa||eeffData.ruc}</strong> — ${eeffData.year}</div>`;
+    }
+  }
+
+  toast(`Expediente ${exp.codigo||key} abierto ✓`, 'success');
+  document.getElementById('ap-panel-principal').scrollIntoView({behavior:'smooth'});
+}
+
+function editarExpediente(key) {
+  const modal = document.createElement('div');
+  modal.id = 'ap-edit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `<div style="background:var(--bg-card);border-radius:12px;padding:28px;width:min(550px,95vw);border:1px solid var(--border)">
+    <h3 style="margin-top:0;color:var(--gold)">✏️ Editar Expediente</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="form-group"><label>Empresa</label><input id="ape-empresa" class="ap-edit-input" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)"></div>
+      <div class="form-group"><label>RUC</label><input id="ape-ruc" class="ap-edit-input" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-family:var(--font-mono)"></div>
+      <div class="form-group"><label>Período</label><input id="ape-periodo" class="ap-edit-input" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)"></div>
+      <div class="form-group"><label>Auditor</label><input id="ape-auditor" class="ap-edit-input" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)"></div>
+      <div class="form-group"><label>Estado</label>
+        <select id="ape-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+          <option value="pendiente">⬜ Pendiente</option>
+          <option value="en-proceso">🔄 En proceso</option>
+          <option value="completada">✅ Completada</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tipo</label>
+        <select id="ape-tipo" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+          <option value="financiera">Financiera</option>
+          <option value="tributaria">Tributaria</option>
+          <option value="forense">Forense</option>
+          <option value="gestion">Gestión</option>
+        </select>
+      </div>
+    </div>
+    <div class="doc-btn-row">
+      <button onclick="document.getElementById('ap-edit-modal').remove()" class="btn-secondary">Cancelar</button>
+      <button onclick="guardarEdicionExpediente('${key}')" class="btn-calc" style="background:linear-gradient(135deg,var(--emerald) 0%,#0a9468 100%)">✅ Guardar cambios</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+
+  // Pre-cargar datos del expediente
+  FirebaseDB.get(`audit_pro/${key}`).then(exp => {
+    if (!exp) return;
+    document.getElementById('ape-empresa').value = exp.empresa||'';
+    document.getElementById('ape-ruc').value = exp.ruc||'';
+    document.getElementById('ape-periodo').value = exp.periodo||'';
+    document.getElementById('ape-auditor').value = exp.auditor||'';
+    document.getElementById('ape-estado').value = exp.estado||'pendiente';
+    document.getElementById('ape-tipo').value = exp.tipo||'financiera';
+  });
+}
+
+async function guardarEdicionExpediente(key) {
+  const empresa  = document.getElementById('ape-empresa')?.value||'';
+  const ruc      = document.getElementById('ape-ruc')?.value||'';
+  const periodo  = document.getElementById('ape-periodo')?.value||'';
+  const auditor  = document.getElementById('ape-auditor')?.value||'';
+  const estado   = document.getElementById('ape-estado')?.value||'pendiente';
+  const tipo     = document.getElementById('ape-tipo')?.value||'financiera';
+
+  await FirebaseDB.update(`audit_pro/${key}`, { empresa, ruc, periodo, auditor, estado, tipo });
+  document.getElementById('ap-edit-modal')?.remove();
+  cargarHistorialExpedientes();
+  toast('Expediente actualizado ✓', 'success');
+}
+
+async function borrarExpediente(key, codigo, empresa) {
+  if (!confirm(`¿Eliminar el expediente "${codigo}" (${empresa})?\n\nSe borrarán todas las cédulas, hallazgos y papeles de trabajo asociados. Esta acción no se puede deshacer.`)) return;
+  await FirebaseDB.remove(`audit_pro/${key}`);
+  // Si el expediente activo es el que se borró, limpiar el panel
+  if (_apExpediente?.codigo === codigo) {
+    _apExpediente = null;
+    document.getElementById('ap-panel-principal').style.display = 'none';
+    document.getElementById('ap-expediente-badge').style.display = 'none';
+  }
+  cargarHistorialExpedientes();
+  toast(`Expediente ${codigo} eliminado`, 'success');
+}
+
+// ── EEFF vinculado en Auditoría ───────────────────────────────────────────────
+function renderEEFFenAuditoria(tab) {
+  const el = document.getElementById('ap-eeff-audit-contenido');
+  if (!el) return;
+  const data = window._apEEFFSeleccionado;
+  if (!data || !data.raw) {
+    el.innerHTML = '<p style="color:var(--text-muted)">⚠️ No hay EEFF vinculado. Use "Usar datos de Estados Financieros" para vincular uno.</p>';
+    return;
+  }
+
+  // Crear un período temporal para reutilizar las funciones de renderizado
+  const periodoTemp = [{
+    nombre: data.year || data.nombre || '—',
+    raw: data.raw,
+    rawNorm: normalizarRaw(data.raw),
+    rawDetallado: data.rawDetallado || null,
+    ruc: data.ruc || '',
+    nombreEmpresa: data.nombreEmpresa || data.ruc || '',
+  }];
+  const periodosSave = window.periodos ? [...window.periodos] : [];
+  // Inyectar temporalmente para usar las funciones de render
+  if (typeof periodos !== 'undefined') {
+    periodos.length = 0;
+    periodoTemp.forEach(p => periodos.push(p));
+  }
+
+  el.innerHTML = '<div id="ap-eeff-render-tmp"></div>';
+  const tmpId = 'ap-eeff-render-tmp';
+
+  // Renderizar en el contenedor temporal
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const g = k => parseFloat((periodoTemp[0].rawNorm||periodoTemp[0].raw)[k])||0;
+
+  if (tab === 'balance') {
+    // Renderizar balance simplificado
+    const ta = g('TOTAL ACTIVO'), tp = g('TOTAL PASIVO'), pat = g('TOTAL PATRIMONIO');
+    const ac = g('TOTAL ACTIVO CORRIENTE'), anc = g('TOTAL ACTIVO NO CORRIENTE');
+    const pc = g('TOTAL PASIVO CORRIENTE'), pnc = g('TOTAL PASIVO NO CORRIENTE');
+    el.innerHTML = `<div class="card">
+      <h4 style="color:var(--gold);margin-top:0">Balance General — ${data.year||''} | ${data.nombreEmpresa||''}</h4>
+      <table class="ef-table"><tbody>
+        <tr><td class="section-header" colspan="2">ACTIVO</td></tr>
+        <tr><td class="account">Activo Corriente</td><td class="num">$${fmtN(ac)}</td></tr>
+        <tr><td class="account">Activo No Corriente</td><td class="num">$${fmtN(anc)}</td></tr>
+        <tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td><td class="num"><strong>$${fmtN(ta)}</strong></td></tr>
+        <tr><td class="section-header" colspan="2">PASIVO</td></tr>
+        <tr><td class="account">Pasivo Corriente</td><td class="num">$${fmtN(pc)}</td></tr>
+        <tr><td class="account">Pasivo No Corriente</td><td class="num">$${fmtN(pnc)}</td></tr>
+        <tr class="subtotal"><td>Total Pasivo</td><td class="num">$${fmtN(tp)}</td></tr>
+        <tr><td class="account">Patrimonio Total</td><td class="num">$${fmtN(pat)}</td></tr>
+        <tr class="total-row"><td><strong>TOTAL PASIVO + PATRIMONIO</strong></td><td class="num"><strong>$${fmtN(tp+pat)}</strong></td></tr>
+        <tr><td colspan="2" style="text-align:center;font-size:.72rem;padding:6px;color:${Math.abs(ta-(tp+pat))<1?'var(--emerald)':'#ef4444'}">
+          ${Math.abs(ta-(tp+pat))<1?'✅ Balance cuadra':'⚠️ Diferencia: $'+fmtN(Math.abs(ta-(tp+pat)))}
+        </td></tr>
+      </tbody></table>
+    </div>`;
+  } else if (tab === 'resultados') {
+    const vtas = g('VENTAS NETAS'), cv = g('COSTO DE VENTAS'), util = g('UTILIDAD EJERCICIO');
+    el.innerHTML = `<div class="card">
+      <h4 style="color:var(--gold);margin-top:0">Estado de Resultados — ${data.year||''}</h4>
+      <table class="ef-table"><tbody>
+        <tr><td class="account">Ventas Netas</td><td class="num">$${fmtN(vtas)}</td></tr>
+        <tr><td class="account">(-) Costo de Ventas</td><td class="num">(${fmtN(cv)})</td></tr>
+        <tr class="subtotal"><td>Utilidad Bruta</td><td class="num">$${fmtN(vtas-cv)}</td></tr>
+        <tr><td class="account">(-) Gastos Operacionales</td><td class="num">(${fmtN(g('GASTO PERSONAL')+g('GASTO ADMINISTRATIVO')+g('GASTO VENTAS'))})</td></tr>
+        <tr><td class="account">(-) Depreciación</td><td class="num">(${fmtN(g('GASTO DEPRECIACION'))})</td></tr>
+        <tr><td class="account">(-) Gastos Financieros</td><td class="num">(${fmtN(g('GASTO FINANCIERO'))})</td></tr>
+        <tr><td class="account">(+) Otros Ingresos</td><td class="num">$${fmtN(g('OTROS INGRESOS'))}</td></tr>
+        <tr class="total-row"><td><strong>UTILIDAD DEL EJERCICIO</strong></td><td class="num"><strong class="${util>=0?'positive':'negative'}">$${fmtN(util)}</strong></td></tr>
+        <tr><td class="account" style="font-size:.75rem">Margen neto</td><td class="num" style="font-size:.75rem">${vtas?(util/vtas*100).toFixed(1)+'%':'—'}</td></tr>
+      </tbody></table>
+    </div>`;
+  } else if (tab === 'indices') {
+    renderIndicesEF();
+    const idxEl = document.getElementById('ef-indices');
+    el.innerHTML = idxEl ? idxEl.innerHTML : '<p>Sin datos de índices.</p>';
+  } else if (tab === 'h-v') {
+    renderAnalisisHV();
+    const hvEl = document.getElementById('ef-h-v');
+    el.innerHTML = hvEl ? hvEl.innerHTML : '<p>Sin datos H/V.</p>';
+  }
+
+  // Restaurar periodos originales
+  if (typeof periodos !== 'undefined') {
+    periodos.length = 0;
+    periodosSave.forEach(p => periodos.push(p));
+  }
+}
+
+// ── Cédulas analíticas auto-generadas desde EEFF ─────────────────────────────
+function generarCedulasDesdeEEFF() {
+  if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  if (!data || !data.raw) { toast('Vincule un EEFF primero usando "Usar datos de Estados Financieros"', 'warning'); return; }
+
+  const raw = normalizarRaw(data.raw);
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC', {minimumFractionDigits:2});
+
+  // ── Construir lista de todas las cuentas disponibles con sus saldos ──────
+  // Secciones del balance y ER para organizar el selector
+  const SECCIONES = [
+    { nombre:'ACTIVO CORRIENTE', cuentas:[
+      'EFECTIVO','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES',
+      'INVENTARIOS','INVENTARIOS_SMIN','IVA EN COMPRAS','ANTICIPO IR',
+      'OTROS ACTIVOS CORRIENTES','TOTAL ACTIVO CORRIENTE'] },
+    { nombre:'ACTIVO NO CORRIENTE', cuentas:[
+      'PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA',
+      'ACTIVOS INTANGIBLES','AMORTIZACION INTANGIBLES',
+      'INVERSIONES LP','OTROS ACTIVOS NO CORRIENTES',
+      'TOTAL ACTIVO NO CORRIENTE','TOTAL ACTIVO'] },
+    { nombre:'PASIVO CORRIENTE', cuentas:[
+      'CUENTAS POR PAGAR','OBLIGACIONES BANCARIAS CP',
+      'IMPUESTO RENTA POR PAGAR','PARTICIPACION TRABAJADORES',
+      'ANTICIPOS CLIENTES','IESS POR PAGAR','OTROS PASIVOS CORRIENTES',
+      'TOTAL PASIVO CORRIENTE'] },
+    { nombre:'PASIVO NO CORRIENTE', cuentas:[
+      'OBLIGACIONES BANCARIAS LP','PROVISION JUBILACION PATRONAL',
+      'OTROS PASIVOS NO CORRIENTES','TOTAL PASIVO'] },
+    { nombre:'PATRIMONIO', cuentas:[
+      'CAPITAL SOCIAL','RESERVA LEGAL','RESERVAS FACULTATIVAS',
+      'UTILIDADES RETENIDAS','UTILIDAD EJERCICIO','TOTAL PATRIMONIO'] },
+    { nombre:'INGRESOS', cuentas:[
+      'VENTAS NETAS','OTROS INGRESOS','TOTAL INGRESOS'] },
+    { nombre:'COSTOS Y GASTOS', cuentas:[
+      'COSTO DE VENTAS','GASTO PERSONAL','GASTO ADMINISTRATIVO',
+      'GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO',
+      'OTROS GASTOS','TOTAL GASTOS'] },
+    { nombre:'RESULTADO', cuentas:[
+      'UTILIDAD BRUTA','UTILIDAD GRAVABLE',
+      'IMPUESTO RENTA GASTO','PARTICIPACION TRABAJADORES GASTO',
+      'UTILIDAD EJERCICIO'] },
+  ];
+
+  // También agregar cualquier cuenta que esté en raw pero no en los grupos
+  const cuentasEnGrupos = new Set(SECCIONES.flatMap(s => s.cuentas));
+  const cuentasExtra = Object.keys(raw)
+    .filter(k => !cuentasEnGrupos.has(k) && Math.abs(parseFloat(raw[k])||0) > 0)
+    .sort();
+  if (cuentasExtra.length) {
+    SECCIONES.push({ nombre:'OTRAS CUENTAS DEL F101', cuentas: cuentasExtra });
+  }
+
+  // ── Modal de selección ───────────────────────────────────────────────────
+  const modal = document.createElement('div');
+  modal.id = 'ced-selector-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
+
+  // Construir filas de cuentas seleccionables
+  const filasCuentas = SECCIONES.map(sec => {
+    const cuentasConSaldo = sec.cuentas.filter(k => Math.abs(parseFloat(raw[k])||0) > 0);
+    if (!cuentasConSaldo.length) return '';
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--gold);letter-spacing:.06em;
+          padding:4px 10px;background:rgba(212,175,55,.08);border-radius:4px;margin-bottom:6px;
+          display:flex;align-items:center;justify-content:space-between">
+          <span>📂 ${sec.nombre}</span>
+          <button onclick="seleccionarSeccionCedulas('${sec.nombre}', true)"
+            style="font-size:.65rem;padding:1px 8px;background:rgba(212,175,55,.15);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer">
+            Selec. todo
+          </button>
+        </div>
+        ${cuentasConSaldo.map(k => `
+          <label style="display:flex;align-items:center;gap:10px;padding:5px 10px;cursor:pointer;
+            border-radius:5px;transition:background .15s" class="ced-fila-cuenta"
+            onmouseover="this.style.background='rgba(255,255,255,.04)'"
+            onmouseout="this.style.background='transparent'">
+            <input type="checkbox" class="ced-check" data-cuenta="${k}"
+              data-saldo="${parseFloat(raw[k])||0}" data-seccion="${sec.nombre}"
+              style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer">
+            <span style="flex:1;font-size:.8rem;color:var(--text-primary)">${k}</span>
+            <span style="font-family:var(--font-mono);font-size:.78rem;
+              color:${(parseFloat(raw[k])||0)<0?'#ef4444':'var(--text-secondary)'}">
+              $${fmtN(raw[k])}
+            </span>
+          </label>`).join('')}
+      </div>`;
+  }).join('');
+
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:14px;padding:24px;
+      width:min(760px,100%);margin:0 auto;border:1px solid var(--border)">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h3 style="margin:0;color:var(--gold)">🔗 Selector de Cédulas Analíticas</h3>
+        <button onclick="document.getElementById('ced-selector-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 16px">
+        EEFF: <strong style="color:var(--text-primary)">${data.nombreEmpresa||''}</strong>
+        — Año <strong>${data.year||''}</strong> |
+        Seleccione las cuentas para las que desea generar cédulas analíticas.
+        Puede crear una cédula por cuenta individual o agrupar varias en una sola cédula.
+      </p>
+
+      <!-- Controles superiores -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;
+        padding:10px 12px;background:var(--bg-card2);border-radius:8px;align-items:center">
+        <button onclick="document.querySelectorAll('.ced-check').forEach(c=>c.checked=true)"
+          style="font-size:.72rem;padding:4px 10px;background:rgba(16,185,129,.1);
+          color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">
+          ✅ Todas
+        </button>
+        <button onclick="document.querySelectorAll('.ced-check').forEach(c=>c.checked=false)"
+          style="font-size:.72rem;padding:4px 10px;background:rgba(239,68,68,.08);
+          color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">
+          ✕ Ninguna
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <label style="font-size:.75rem;color:var(--text-secondary)">Modo:</label>
+          <select id="ced-modo-agrupacion"
+            style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;
+            padding:4px 8px;color:var(--text-primary);font-size:.75rem">
+            <option value="individual">Una cédula por cuenta</option>
+            <option value="por-seccion">Una cédula por sección</option>
+            <option value="una-sola">Todo en una sola cédula</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Referencia y título personalizables -->
+      <div style="display:grid;grid-template-columns:100px 1fr;gap:10px;margin-bottom:14px">
+        <div class="form-group">
+          <label style="font-size:.72rem">Ref. inicial</label>
+          <input id="ced-ref-inicial" type="text" value="A"
+            style="width:100%;background:var(--bg-card2);border:1px solid var(--border);
+            border-radius:6px;padding:5px 8px;color:var(--text-primary);font-family:var(--font-mono);text-align:center">
+        </div>
+        <div class="form-group">
+          <label style="font-size:.72rem">Procedimiento por defecto</label>
+          <input id="ced-proc-default" type="text"
+            value="Verificación de saldos, análisis de variaciones, pruebas sustantivas."
+            style="width:100%;background:var(--bg-card2);border:1px solid var(--border);
+            border-radius:6px;padding:5px 8px;color:var(--text-primary);font-size:.78rem">
+        </div>
+      </div>
+
+      <!-- Lista de cuentas por sección -->
+      <div style="max-height:45vh;overflow-y:auto;border:1px solid var(--border);
+        border-radius:8px;padding:12px;margin-bottom:16px;background:var(--bg-primary)">
+        ${filasCuentas}
+      </div>
+
+      <!-- Contador de seleccionadas -->
+      <div id="ced-contador" style="font-size:.75rem;color:var(--text-muted);margin-bottom:14px">
+        0 cuentas seleccionadas
+      </div>
+
+      <div class="doc-btn-row">
+        <button onclick="document.getElementById('ced-selector-modal').remove()"
+          class="btn-secondary">Cancelar</button>
+        <button onclick="crearCedulasDesdeSeleccion()"
+          class="btn-calc"
+          style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
+          📄 Crear cédula(s) seleccionadas
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+
+  // Contador en tiempo real
+  modal.addEventListener('change', () => {
+    const n = modal.querySelectorAll('.ced-check:checked').length;
+    const el = document.getElementById('ced-contador');
+    if (el) el.textContent = `${n} cuenta${n!==1?'s':''} seleccionada${n!==1?'s':''}`;
+  });
+}
+
+function seleccionarSeccionCedulas(seccion, checked) {
+  document.querySelectorAll(`.ced-check[data-seccion="${seccion}"]`)
+    .forEach(c => c.checked = checked);
+  const n = document.querySelectorAll('.ced-check:checked').length;
+  const el = document.getElementById('ced-contador');
+  if (el) el.textContent = `${n} cuenta${n!==1?'s':''} seleccionada${n!==1?'s':''}`;
+}
+
+async function crearCedulasDesdeSeleccion() {
+  if (!_apExpediente) return;
+  const checks = [...document.querySelectorAll('.ced-check:checked')];
+  if (!checks.length) { toast('Seleccione al menos una cuenta', 'warning'); return; }
+
+  const data = window._apEEFFSeleccionado;
+  const raw = normalizarRaw(data.raw);
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const modo = document.getElementById('ced-modo-agrupacion')?.value || 'individual';
+  const procDefault = document.getElementById('ced-proc-default')?.value ||
+    'Verificación de saldos, análisis de variaciones, pruebas sustantivas.';
+
+  // Generar ref secuencial tipo A, B, C... AA, AB...
+  const refInicial = document.getElementById('ced-ref-inicial')?.value?.trim() || 'A';
+  const nextRef = (r) => {
+    if (!r) return 'A';
+    const chars = r.split('');
+    let i = chars.length - 1;
+    while (i >= 0) {
+      if (chars[i] < 'Z') { chars[i] = String.fromCharCode(chars[i].charCodeAt(0)+1); break; }
+      chars[i] = 'A'; i--;
+    }
+    if (i < 0) chars.unshift('A');
+    return chars.join('');
+  };
+
+  // Leer cédulas existentes para no pisar refs usadas
+  const existentes = window._apCedulas || {};
+  const refsUsadas = new Set(Object.values(existentes).map(c => c.ref));
+  let refActual = refInicial;
+  while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+
+  const nuevasCedulas = {};
+
+  const crearCedula = (ref, titulo, filas) => {
+    const id = `ANA-${ref}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const totalLibros = filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
+    return {
+      id, ref, titulo,
+      expediente: _apExpediente.codigo,
+      empresa: _apExpediente.empresa,
+      periodo: _apExpediente.periodo || data.year,
+      auditor: _apExpediente.auditor || '',
+      fecha: new Date().toISOString(),
+      filas,
+      totalLibros,
+      totalAjustes: 0,
+      totalAuditado: totalLibros,
+      procedimiento: procDefault,
+      marcasLeyenda: '✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja',
+      conclusion: '',
+      estado: 'borrador',
+      autoGenerada: true,
+      eeffYear: data.year,
+    };
+  };
+
+  if (modo === 'individual') {
+    // Una cédula por cuenta
+    checks.forEach(chk => {
+      const cuenta = chk.dataset.cuenta;
+      const saldo = parseFloat(raw[cuenta])||0;
+      const ced = crearCedula(refActual, cuenta, [{
+        cuenta, saldoLibros: saldo, ajuste: 0, saldoAuditado: saldo, marcas: '✓', notas: ''
+      }]);
+      nuevasCedulas[ced.id] = ced;
+      refActual = nextRef(refActual);
+      while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+    });
+  } else if (modo === 'por-seccion') {
+    // Agrupar por sección del F101
+    const porSeccion = {};
+    checks.forEach(chk => {
+      const sec = chk.dataset.seccion || 'OTRAS';
+      if (!porSeccion[sec]) porSeccion[sec] = [];
+      const cuenta = chk.dataset.cuenta;
+      const saldo = parseFloat(raw[cuenta])||0;
+      porSeccion[sec].push({ cuenta, saldoLibros: saldo, ajuste: 0, saldoAuditado: saldo, marcas: '✓', notas: '' });
+    });
+    Object.entries(porSeccion).forEach(([sec, filas]) => {
+      const ced = crearCedula(refActual, sec, filas);
+      nuevasCedulas[ced.id] = ced;
+      refActual = nextRef(refActual);
+      while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+    });
+  } else {
+    // Todo en una sola cédula
+    const filas = checks.map(chk => {
+      const cuenta = chk.dataset.cuenta;
+      const saldo = parseFloat(raw[cuenta])||0;
+      return { cuenta, saldoLibros: saldo, ajuste: 0, saldoAuditado: saldo, marcas: '✓', notas: '' };
+    });
+    const titulo = `Cédula analítica — ${checks.length} cuentas seleccionadas`;
+    const ced = crearCedula(refActual, titulo, filas);
+    nuevasCedulas[ced.id] = ced;
+  }
+
+  // Merge con las cédulas existentes y guardar en Firebase
+  const todasLasCedulas = { ...existentes, ...nuevasCedulas };
+  window._apCedulas = todasLasCedulas;
+  await FirebaseDB.set(
+    `audit_pro/${_apExpediente.codigo}/cedulas_analiticas`,
+    todasLasCedulas
+  );
+
+  document.getElementById('ced-selector-modal')?.remove();
+  renderCedulasAnaliticasCompleto();
+
+  const n = Object.keys(nuevasCedulas).length;
+  toast(`${n} cédula${n!==1?'s':''} creada${n!==1?'s':''} ✓`, 'success');
+}
+
+
+
+function renderCedulasAnaliticasCompleto() {
+  const el = document.getElementById('ap-cedulas-lista');
+  if (!el) return;
+  const cedulas = window._apCedulas || {};
+  const lista = Object.values(cedulas).sort((a,b)=>a.ref?.localeCompare(b.ref));
+
+  if (!lista.length) {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:20px">
+      <p style="color:var(--text-muted)">No hay cédulas analíticas. Use los botones para generarlas desde el EEFF o cree una nueva.</p>
+      <button class="btn-calc" onclick="generarCedulasDesdeEEFF()" style="margin-top:10px">🔗 Generar desde EEFF</button>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = lista.map(ced => `
+    <div class="card" style="margin-bottom:14px" id="ced-card-${ced.id}">
+      <!-- Encabezado de control -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <span style="font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono)">REF. ${ced.ref}</span>
+          <h4 style="margin:2px 0;color:var(--gold)">${ced.titulo}</h4>
+          <div style="font-size:.72rem;color:var(--text-muted)">
+            ${ced.empresa||''} | Período: ${ced.periodo||''} | Auditor: ${ced.auditor||''} | ${new Date(ced.fecha).toLocaleDateString('es-EC')}
+            ${ced.autoGenerada?'<span style="color:#f59e0b;margin-left:6px">● Auto-generada desde EEFF</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="font-size:.68rem;padding:2px 8px;border-radius:8px;background:${ced.estado==='aprobada'?'rgba(16,185,129,.15)':'rgba(245,158,11,.12)'};color:${ced.estado==='aprobada'?'var(--emerald)':'#f59e0b'}">${ced.estado||'borrador'}</span>
+          <button onclick="editarCedulaAnalitica('${ced.id}')" style="font-size:.7rem;padding:3px 8px;background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);border-radius:5px;cursor:pointer">✏️ Editar</button>
+          <button onclick="imprimirCedula('${ced.id}')" style="font-size:.7rem;padding:3px 8px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🖨 Imprimir</button>
+          <button onclick="borrarCedula('${ced.id}')" style="font-size:.7rem;padding:3px 8px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">🗑</button>
+        </div>
+      </div>
+
+      <!-- Tabla de partidas -->
+      <div style="overflow-x:auto">
+        <table class="ef-table">
+          <thead><tr>
+            <th class="left">Cuenta / Concepto</th>
+            <th>Saldo s/Libros</th>
+            <th>Ajuste Propuesto</th>
+            <th>Saldo Auditado</th>
+            <th>Marcas</th>
+            <th>Notas del Auditor</th>
+          </tr></thead>
+          <tbody>
+            ${(ced.filas||[]).map((f,fi) => `<tr>
+              <td class="account">${f.cuenta}</td>
+              <td class="num">$${(parseFloat(f.saldoLibros)||0).toLocaleString('es-EC',{minimumFractionDigits:2})}</td>
+              <td class="num ${(parseFloat(f.ajuste)||0)!==0?'negative':''}">${(parseFloat(f.ajuste)||0)!==0?'($'+(Math.abs(parseFloat(f.ajuste))).toLocaleString('es-EC',{minimumFractionDigits:2})+')':'—'}</td>
+              <td class="num"><strong>$${(parseFloat(f.saldoAuditado)||0).toLocaleString('es-EC',{minimumFractionDigits:2})}</strong></td>
+              <td style="text-align:center;font-size:.85rem">${f.marcas||'✓'}</td>
+              <td style="font-size:.75rem;color:var(--text-muted)">${f.notas||''}</td>
+            </tr>`).join('')}
+            <tr class="total-row">
+              <td><strong>TOTAL</strong></td>
+              <td class="num"><strong>$${(parseFloat(ced.totalLibros)||0).toLocaleString('es-EC',{minimumFractionDigits:2})}</strong></td>
+              <td class="num"><strong>${(parseFloat(ced.totalAjustes)||0)!==0?'($'+(Math.abs(parseFloat(ced.totalAjustes))).toLocaleString('es-EC',{minimumFractionDigits:2})+')':'—'}</strong></td>
+              <td class="num"><strong>$${(parseFloat(ced.totalAuditado)||0).toLocaleString('es-EC',{minimumFractionDigits:2})}</strong></td>
+              <td></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Procedimientos y conclusión -->
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.78rem">
+        <div style="padding:10px;background:rgba(99,102,241,.05);border-radius:6px;border:1px solid rgba(99,102,241,.15)">
+          <strong style="color:#6366f1">Procedimientos aplicados:</strong>
+          <p style="margin:4px 0;color:var(--text-secondary)">${ced.procedimiento||'—'}</p>
+        </div>
+        <div style="padding:10px;background:rgba(212,175,55,.05);border-radius:6px;border:1px solid rgba(212,175,55,.2)">
+          <strong style="color:var(--gold)">Conclusión del auditor:</strong>
+          <p style="margin:4px 0;color:var(--text-secondary)">${ced.conclusion||'<em>Pendiente de conclusión</em>'}</p>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:.72rem;color:var(--text-muted)">
+        <strong>Marcas:</strong> ${ced.marcasLeyenda||'✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja'}
+      </div>
+    </div>`).join('');
+}
+
+async function editarCedulaAnalitica(cedulaId) {
+  const cedulas = window._apCedulas || {};
+  const ced = cedulas[cedulaId];
+  if (!ced) { toast('Cédula no encontrada', 'error'); return; }
+
+  const fmtV = v => (parseFloat(v)||0).toFixed(2);
+
+  const modal = document.createElement('div');
+  modal.id = 'ced-edit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
+  modal.innerHTML = `<div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(800px,100%);margin:0 auto;border:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;color:var(--gold)">✏️ Editar Cédula Analítica — Ref. ${ced.ref}</h3>
+      <button onclick="document.getElementById('ced-edit-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="form-group"><label>Título de la cédula</label>
+        <input id="ced-titulo" value="${ced.titulo||''}" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+      </div>
+      <div class="form-group"><label>Estado</label>
+        <select id="ced-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+          <option value="borrador" ${ced.estado==='borrador'?'selected':''}>Borrador</option>
+          <option value="en-revision" ${ced.estado==='en-revision'?'selected':''}>En revisión</option>
+          <option value="aprobada" ${ced.estado==='aprobada'?'selected':''}>Aprobada</option>
+        </select>
+      </div>
+    </div>
+
+    <h4 style="color:var(--text-primary);margin-bottom:8px">Partidas de la cédula</h4>
+    <div style="overflow-x:auto;margin-bottom:14px">
+      <table class="ef-table">
+        <thead><tr><th class="left">Cuenta</th><th>Saldo Libros</th><th>Ajuste</th><th>Saldo Auditado</th><th>Marcas</th><th>Notas</th></tr></thead>
+        <tbody id="ced-filas-edit">
+          ${(ced.filas||[]).map((f,fi)=>`<tr>
+            <td><input value="${f.cuenta||''}" onchange="actualizarFilaCed(${fi},'cuenta',this.value)" style="width:160px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+            <td><input type="number" value="${fmtV(f.saldoLibros)}" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)" style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+            <td><input type="number" value="${fmtV(f.ajuste)}" onchange="actualizarFilaCed(${fi},'ajuste',this.value)" style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+            <td><input type="number" value="${fmtV(f.saldoAuditado)}" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)" style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+            <td><input value="${f.marcas||'✓'}" onchange="actualizarFilaCed(${fi},'marcas',this.value)" style="width:60px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:center"></td>
+            <td><input value="${f.notas||''}" onchange="actualizarFilaCed(${fi},'notas',this.value)" style="width:160px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <button onclick="agregarFilaCedula('${cedulaId}')" style="margin-top:6px;font-size:.72rem;padding:4px 10px;background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">+ Agregar fila</button>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Procedimientos aplicados</label>
+      <textarea id="ced-procedimiento" rows="3" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.procedimiento||''}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Conclusión del auditor</label>
+      <textarea id="ced-conclusion" rows="3" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.conclusion||''}</textarea>
+    </div>
+
+    <div class="doc-btn-row">
+      <button onclick="document.getElementById('ced-edit-modal').remove()" class="btn-secondary">Cancelar</button>
+      <button onclick="guardarCedulaEditada('${cedulaId}')" class="btn-calc" style="background:linear-gradient(135deg,var(--emerald) 0%,#0a9468 100%)">✅ Guardar Cédula</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  window._cedulaEditando = { id: cedulaId, filas: JSON.parse(JSON.stringify(ced.filas||[])) };
+}
+
+function actualizarFilaCed(fi, campo, valor) {
+  if (!window._cedulaEditando) return;
+  if (!window._cedulaEditando.filas[fi]) window._cedulaEditando.filas[fi] = {};
+  window._cedulaEditando.filas[fi][campo] = campo.includes('aldo')||campo==='ajuste' ? parseFloat(valor)||0 : valor;
+  // Auto-calcular saldo auditado
+  if (campo === 'saldoLibros' || campo === 'ajuste') {
+    const f = window._cedulaEditando.filas[fi];
+    f.saldoAuditado = (f.saldoLibros||0) + (f.ajuste||0);
+  }
+}
+
+function agregarFilaCedula(cedulaId) {
+  if (!window._cedulaEditando) return;
+  window._cedulaEditando.filas.push({ cuenta:'Nueva cuenta', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' });
+  const tbody = document.getElementById('ced-filas-edit');
+  if (!tbody) return;
+  const fi = window._cedulaEditando.filas.length - 1;
+  const f = window._cedulaEditando.filas[fi];
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input value="${f.cuenta}" onchange="actualizarFilaCed(${fi},'cuenta',this.value)" style="width:160px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)" style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'ajuste',this.value)" style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)" style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input value="✓" onchange="actualizarFilaCed(${fi},'marcas',this.value)" style="width:60px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:center"></td>
+    <td><input value="" onchange="actualizarFilaCed(${fi},'notas',this.value)" style="width:160px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>`;
+  tbody.appendChild(tr);
+}
+
+async function guardarCedulaEditada(cedulaId) {
+  const cedulas = window._apCedulas || {};
+  const ced = cedulas[cedulaId];
+  if (!ced || !window._cedulaEditando) return;
+
+  const filas = window._cedulaEditando.filas;
+  const totalLibros = filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
+  const totalAjustes = filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
+  const totalAuditado = filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0);
+
+  const updated = {
+    ...ced,
+    titulo: document.getElementById('ced-titulo')?.value || ced.titulo,
+    estado: document.getElementById('ced-estado')?.value || ced.estado,
+    procedimiento: document.getElementById('ced-procedimiento')?.value || ced.procedimiento,
+    conclusion: document.getElementById('ced-conclusion')?.value || '',
+    filas, totalLibros, totalAjustes, totalAuditado,
+    fechaModificacion: new Date().toISOString(),
+  };
+
+  cedulas[cedulaId] = updated;
+  window._apCedulas = cedulas;
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`, updated);
+  document.getElementById('ced-edit-modal')?.remove();
+  window._cedulaEditando = null;
+  renderCedulasAnaliticasCompleto();
+  toast('Cédula guardada ✓', 'success');
+}
+
+async function borrarCedula(cedulaId) {
+  if (!confirm('¿Eliminar esta cédula analítica?')) return;
+  const cedulas = window._apCedulas || {};
+  delete cedulas[cedulaId];
+  window._apCedulas = cedulas;
+  await FirebaseDB.remove(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`);
+  renderCedulasAnaliticasCompleto();
+  toast('Cédula eliminada', 'success');
+}
+
+
 
 function generarSumariasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
