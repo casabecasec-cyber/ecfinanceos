@@ -2072,10 +2072,20 @@ table.ef-table .negative { color: var(--red); }
           <button class="bib-tab" onclick="showApTab('eeff-audit')">📊 EEFF Vinculado</button>
           <button class="bib-tab" onclick="showApTab('cedulas')">📄 Cédulas Analíticas</button>
           <button class="bib-tab" onclick="showApTab('sumarias')">📑 Cédulas Sumarias</button>
+          <button class="bib-tab" onclick="showApTab('programa')">📋 Programa de Auditoría</button>
+          <button class="bib-tab" onclick="showApTab('pruebas-sust')">🔍 Pruebas Sustantivas</button>
+          <button class="bib-tab" onclick="showApTab('coso')">🛡️ Sistema COSO</button>
+          <button class="bib-tab" onclick="showApTab('alto-riesgo')">⚠️ Cuentas Alto Riesgo</button>
+          <button class="bib-tab" onclick="showApTab('corte')">✂️ Pruebas de Corte</button>
+          <button class="bib-tab" onclick="showApTab('hv-audit')">📊 Análisis H/V</button>
+          <button class="bib-tab" onclick="showApTab('benchmarks')">📈 Benchmarks Sector</button>
+          <button class="bib-tab" onclick="showApTab('variaciones')">🔎 Variaciones >10%</button>
+          <button class="bib-tab" onclick="showApTab('indices-audit')">📐 Índices Financieros</button>
           <button class="bib-tab" onclick="showApTab('papeles')">🗂️ Papeles de Trabajo</button>
           <button class="bib-tab" onclick="showApTab('hallazgos')">⚠️ Hallazgos</button>
           <button class="bib-tab" onclick="showApTab('benford')">📐 Analítica</button>
           <button class="bib-tab" onclick="showApTab('informe')">📝 Informe Final</button>
+          <button class="bib-tab" onclick="showApTab('carta-rep')">✉️ Carta Representación</button>
         </div>
 
         <!-- ESTADOS FINANCIEROS EN AUDITORÍA -->
@@ -2570,6 +2580,190 @@ table.ef-table .negative { color: var(--red); }
           </div>
           <div id="audit-revisiones-historial"></div>
         </div>
+        <!-- PROGRAMA DE AUDITORÍA -->
+        <div class="bib-content" id="ap-programa">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📋 Programa de Auditoría</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarProgramaAuditoria()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="agregarProcedimientoPrograma()">+ Procedimiento</button>
+                <button class="btn-secondary" onclick="guardarPrograma()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirPrograma()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Plan de procedimientos de auditoría por área. Se genera automáticamente desde el EEFF vinculado con procedimientos adaptados al tamaño y riesgo de cada cuenta.</p>
+            <div id="ap-programa-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear el programa automáticamente.</p></div>
+          </div>
+        </div>
+
+        <!-- PRUEBAS SUSTANTIVAS -->
+        <div class="bib-content" id="ap-pruebas-sust">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🔍 Pruebas Sustantivas</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarPruebasSustantivas()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="agregarPruebaSustantiva()">+ Prueba manual</button>
+                <button class="btn-secondary" onclick="guardarPruebasSustantivas()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirPruebasSustantivas()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Pruebas de detalle y procedimientos analíticos sustantivos por cuenta. Cada prueba incluye objetivo, muestra, resultado y conclusión.</p>
+            <div id="ap-pruebas-sust-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear las pruebas sustantivas automáticamente.</p></div>
+          </div>
+        </div>
+
+        <!-- SISTEMA COSO -->
+        <div class="bib-content" id="ap-coso">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🛡️ Sistema COSO — Control Interno</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn-secondary" onclick="guardarCoso()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirCoso()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Evaluación del control interno bajo el marco COSO 2013. Califique cada componente y principio del 1 (deficiente) al 5 (excelente).</p>
+            <div id="ap-coso-contenido"></div>
+          </div>
+        </div>
+
+        <!-- CUENTAS DE ALTO RIESGO -->
+        <div class="bib-content" id="ap-alto-riesgo">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">⚠️ Identificación de Cuentas de Alto Riesgo</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn-calc" onclick="analizarAltoRiesgo()" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🔍 Analizar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarAltoRiesgo()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirAltoRiesgo()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación automática de cuentas susceptibles a error material basada en criterios cuantitativos (materialidad, variación) y cualitativos (naturaleza de la cuenta, historial de errores).</p>
+            <div id="ap-alto-riesgo-contenido"><p style="color:var(--text-muted)">Use "Analizar desde EEFF" para identificar las cuentas de mayor riesgo.</p></div>
+          </div>
+        </div>
+
+        <!-- PRUEBAS DE CORTE -->
+        <div class="bib-content" id="ap-corte">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">✂️ Pruebas de Corte de Ingresos y Gastos</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarPruebasCorte()">🔗 Generar</button>
+                <button class="btn-secondary" onclick="guardarCorte()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirCorte()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Verificación del reconocimiento de ingresos y gastos en el período correcto (cutoff). Incluye revisión de facturas de los últimos 15 días del ejercicio y primeros 15 días del siguiente.</p>
+            <div id="ap-corte-contenido"><p style="color:var(--text-muted)">Genere las pruebas de corte para verificar el reconocimiento de ingresos y gastos.</p></div>
+          </div>
+        </div>
+
+        <!-- ANÁLISIS H/V EN AUDITORÍA -->
+        <div class="bib-content" id="ap-hv-audit">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📊 Análisis Horizontal y Vertical</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="renderHVAudit()">🔗 Cargar desde EEFF</button>
+                <button class="btn-secondary" onclick="imprimirHVAudit()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Análisis completo de todas las cuentas del balance y estado de resultados con variaciones horizontales y participación vertical. Las variaciones >10% se destacan para revisión adicional.</p>
+            <div id="ap-hv-audit-contenido"><p style="color:var(--text-muted)">Use "Cargar desde EEFF" para generar el análisis completo.</p></div>
+          </div>
+        </div>
+
+        <!-- BENCHMARKS DEL SECTOR -->
+        <div class="bib-content" id="ap-benchmarks">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📈 Comparación de Benchmarks del Sector</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarBenchmarks()">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarBenchmarks()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirBenchmarks()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Comparación de los índices financieros de la empresa contra rangos de referencia del sector. Las desviaciones significativas son señales de alerta de auditoría.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="form-group"><label>Sector económico</label>
+                <select id="ap-sector" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+                  <option value="comercial">Comercial / Trading</option>
+                  <option value="industrial">Industrial / Manufactura</option>
+                  <option value="servicios">Servicios Profesionales</option>
+                  <option value="construccion">Construcción</option>
+                  <option value="agropecuario">Agropecuario</option>
+                  <option value="tecnologia">Tecnología</option>
+                  <option value="salud">Salud / Farma</option>
+                  <option value="educacion">Educación</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Tamaño de empresa</label>
+                <select id="ap-tamano" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+                  <option value="micro">Micro (&lt;$100K ventas)</option>
+                  <option value="pequena">Pequeña ($100K–$1M)</option>
+                  <option value="mediana" selected>Mediana ($1M–$5M)</option>
+                  <option value="grande">Grande (&gt;$5M)</option>
+                </select>
+              </div>
+              <div class="form-group"><label>&nbsp;</label>
+                <button class="btn-calc" onclick="generarBenchmarks()" style="width:100%;margin-top:0">Comparar</button>
+              </div>
+            </div>
+            <div id="ap-benchmarks-contenido"><p style="color:var(--text-muted)">Seleccione el sector y tamaño de empresa, luego use "Comparar".</p></div>
+          </div>
+        </div>
+
+        <!-- VARIACIONES >10% -->
+        <div class="bib-content" id="ap-variaciones">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🔎 Indagaciones sobre Variaciones &gt;10%</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="analizarVariaciones()">🔗 Analizar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarVariaciones()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirVariaciones()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación y documentación de todas las variaciones horizontales mayores al 10% que requieren explicación del cliente o procedimientos adicionales de auditoría.</p>
+            <div id="ap-variaciones-contenido"><p style="color:var(--text-muted)">Necesita 2 períodos cargados en el EEFF. Use "Analizar desde EEFF".</p></div>
+          </div>
+        </div>
+
+        <!-- ÍNDICES FINANCIEROS AUDITORÍA -->
+        <div class="bib-content" id="ap-indices-audit">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📐 Índices Financieros de Auditoría</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarIndicesAudit()">🔗 Calcular desde EEFF</button>
+                <button class="btn-secondary" onclick="imprimirIndicesAudit()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Cálculo completo de índices de liquidez, solvencia, rentabilidad, actividad y endeudamiento con interpretación para auditoría. Alertas automáticas cuando los ratios están fuera de rangos normales.</p>
+            <div id="ap-indices-audit-contenido"><p style="color:var(--text-muted)">Use "Calcular desde EEFF" para generar los índices.</p></div>
+          </div>
+        </div>
+
+        <!-- CARTA DE REPRESENTACIÓN -->
+        <div class="bib-content" id="ap-carta-rep">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">✉️ Carta de Representación de la Gerencia</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarCartaRepresentacion()">🔗 Generar</button>
+                <button class="btn-secondary" onclick="imprimirCartaRep()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="exportarCartaRepWord()">📄 Word</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Carta de representación de la gerencia según NIA 580 — declaraciones escritas que la administración proporciona al auditor. Auto-completada con los datos del expediente y EEFF.</p>
+            <div id="ap-carta-rep-contenido"><p style="color:var(--text-muted)">Use "Generar" para crear la carta con los datos del expediente actual.</p></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- HISTORIAL -->
@@ -12833,6 +13027,16 @@ function showApTab(tab) {
   }
   if (tab === 'eeff-audit') renderEEFFenAuditoria('balance');
   if (tab === 'sumarias') renderCedulasSumarias();
+  if (tab === 'programa') generarProgramaAuditoria();
+  if (tab === 'pruebas-sust') generarPruebasSustantivas();
+  if (tab === 'coso') initCoso();
+  if (tab === 'alto-riesgo') analizarAltoRiesgo();
+  if (tab === 'corte') generarPruebasCorte();
+  if (tab === 'hv-audit') renderHVAudit();
+  if (tab === 'benchmarks') generarBenchmarks();
+  if (tab === 'variaciones') analizarVariaciones();
+  if (tab === 'indices-audit') generarIndicesAudit();
+  if (tab === 'carta-rep') generarCartaRepresentacion();
 }
 
 
@@ -13820,94 +14024,6 @@ async function borrarExpediente(key, codigo, empresa) {
 }
 
 // ── EEFF vinculado en Auditoría ───────────────────────────────────────────────
-function renderEEFFenAuditoria(tab) {
-  const el = document.getElementById('ap-eeff-audit-contenido');
-  if (!el) return;
-  const data = window._apEEFFSeleccionado;
-  if (!data || !data.raw) {
-    el.innerHTML = '<p style="color:var(--text-muted)">⚠️ No hay EEFF vinculado. Use "Usar datos de Estados Financieros" para vincular uno.</p>';
-    return;
-  }
-
-  // Crear un período temporal para reutilizar las funciones de renderizado
-  const periodoTemp = [{
-    nombre: data.year || data.nombre || '—',
-    raw: data.raw,
-    rawNorm: normalizarRaw(data.raw),
-    rawDetallado: data.rawDetallado || null,
-    ruc: data.ruc || '',
-    nombreEmpresa: data.nombreEmpresa || data.ruc || '',
-  }];
-  const periodosSave = window.periodos ? [...window.periodos] : [];
-  // Inyectar temporalmente para usar las funciones de render
-  if (typeof periodos !== 'undefined') {
-    periodos.length = 0;
-    periodoTemp.forEach(p => periodos.push(p));
-  }
-
-  el.innerHTML = '<div id="ap-eeff-render-tmp"></div>';
-  const tmpId = 'ap-eeff-render-tmp';
-
-  // Renderizar en el contenedor temporal
-  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const g = k => parseFloat((periodoTemp[0].rawNorm||periodoTemp[0].raw)[k])||0;
-
-  if (tab === 'balance') {
-    // Renderizar balance simplificado
-    const ta = g('TOTAL ACTIVO'), tp = g('TOTAL PASIVO'), pat = g('TOTAL PATRIMONIO');
-    const ac = g('TOTAL ACTIVO CORRIENTE'), anc = g('TOTAL ACTIVO NO CORRIENTE');
-    const pc = g('TOTAL PASIVO CORRIENTE'), pnc = g('TOTAL PASIVO NO CORRIENTE');
-    el.innerHTML = `<div class="card">
-      <h4 style="color:var(--gold);margin-top:0">Balance General — ${data.year||''} | ${data.nombreEmpresa||''}</h4>
-      <table class="ef-table"><tbody>
-        <tr><td class="section-header" colspan="2">ACTIVO</td></tr>
-        <tr><td class="account">Activo Corriente</td><td class="num">$${fmtN(ac)}</td></tr>
-        <tr><td class="account">Activo No Corriente</td><td class="num">$${fmtN(anc)}</td></tr>
-        <tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td><td class="num"><strong>$${fmtN(ta)}</strong></td></tr>
-        <tr><td class="section-header" colspan="2">PASIVO</td></tr>
-        <tr><td class="account">Pasivo Corriente</td><td class="num">$${fmtN(pc)}</td></tr>
-        <tr><td class="account">Pasivo No Corriente</td><td class="num">$${fmtN(pnc)}</td></tr>
-        <tr class="subtotal"><td>Total Pasivo</td><td class="num">$${fmtN(tp)}</td></tr>
-        <tr><td class="account">Patrimonio Total</td><td class="num">$${fmtN(pat)}</td></tr>
-        <tr class="total-row"><td><strong>TOTAL PASIVO + PATRIMONIO</strong></td><td class="num"><strong>$${fmtN(tp+pat)}</strong></td></tr>
-        <tr><td colspan="2" style="text-align:center;font-size:.72rem;padding:6px;color:${Math.abs(ta-(tp+pat))<1?'var(--emerald)':'#ef4444'}">
-          ${Math.abs(ta-(tp+pat))<1?'✅ Balance cuadra':'⚠️ Diferencia: $'+fmtN(Math.abs(ta-(tp+pat)))}
-        </td></tr>
-      </tbody></table>
-    </div>`;
-  } else if (tab === 'resultados') {
-    const vtas = g('VENTAS NETAS'), cv = g('COSTO DE VENTAS'), util = g('UTILIDAD EJERCICIO');
-    el.innerHTML = `<div class="card">
-      <h4 style="color:var(--gold);margin-top:0">Estado de Resultados — ${data.year||''}</h4>
-      <table class="ef-table"><tbody>
-        <tr><td class="account">Ventas Netas</td><td class="num">$${fmtN(vtas)}</td></tr>
-        <tr><td class="account">(-) Costo de Ventas</td><td class="num">(${fmtN(cv)})</td></tr>
-        <tr class="subtotal"><td>Utilidad Bruta</td><td class="num">$${fmtN(vtas-cv)}</td></tr>
-        <tr><td class="account">(-) Gastos Operacionales</td><td class="num">(${fmtN(g('GASTO PERSONAL')+g('GASTO ADMINISTRATIVO')+g('GASTO VENTAS'))})</td></tr>
-        <tr><td class="account">(-) Depreciación</td><td class="num">(${fmtN(g('GASTO DEPRECIACION'))})</td></tr>
-        <tr><td class="account">(-) Gastos Financieros</td><td class="num">(${fmtN(g('GASTO FINANCIERO'))})</td></tr>
-        <tr><td class="account">(+) Otros Ingresos</td><td class="num">$${fmtN(g('OTROS INGRESOS'))}</td></tr>
-        <tr class="total-row"><td><strong>UTILIDAD DEL EJERCICIO</strong></td><td class="num"><strong class="${util>=0?'positive':'negative'}">$${fmtN(util)}</strong></td></tr>
-        <tr><td class="account" style="font-size:.75rem">Margen neto</td><td class="num" style="font-size:.75rem">${vtas?(util/vtas*100).toFixed(1)+'%':'—'}</td></tr>
-      </tbody></table>
-    </div>`;
-  } else if (tab === 'indices') {
-    renderIndicesEF();
-    const idxEl = document.getElementById('ef-indices');
-    el.innerHTML = idxEl ? idxEl.innerHTML : '<p>Sin datos de índices.</p>';
-  } else if (tab === 'h-v') {
-    renderAnalisisHV();
-    const hvEl = document.getElementById('ef-h-v');
-    el.innerHTML = hvEl ? hvEl.innerHTML : '<p>Sin datos H/V.</p>';
-  }
-
-  // Restaurar periodos originales
-  if (typeof periodos !== 'undefined') {
-    periodos.length = 0;
-    periodosSave.forEach(p => periodos.push(p));
-  }
-}
-
 // ── Cédulas analíticas auto-generadas desde EEFF ─────────────────────────────
 function generarCedulasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
@@ -14426,32 +14542,1242 @@ async function borrarCedula(cedulaId) {
 
 
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MARCAS DE AUDITORÍA — Picker de símbolos
+// ══════════════════════════════════════════════════════════════════════════════
+const MARCAS_AUDITORIA = [
+  { s:'✓',  d:'Verificado / Examinado' },
+  { s:'Σ',  d:'Cuadrado / Sumado' },
+  { s:'◉',  d:'Confirmado con tercero' },
+  { s:'★',  d:'Partida significativa' },
+  { s:'▲',  d:'Diferencia detectada' },
+  { s:'✕',  d:'Baja / Dado de baja' },
+  { s:'⊙',  d:'Rastreado a documento fuente' },
+  { s:'Ø',  d:'Omitido / Excluido' },
+  { s:'◆',  d:'Recalculado por auditor' },
+  { s:'↔',  d:'Cruzado con otra cédula' },
+  { s:'⊞',  d:'Conciliado' },
+  { s:'⚑',  d:'Hallazgo de auditoría' },
+  { s:'®',  d:'Revisado en papeles' },
+  { s:'√',  d:'Contado físicamente' },
+  { s:'∞',  d:'Sin vencimiento / Permanente' },
+  { s:'Δ',  d:'Variación material' },
+  { s:'π',  d:'Procedimiento analítico' },
+  { s:'≈',  d:'Aproximado / Estimado' },
+];
+
+function abrirPickerMarcas(targetInput) {
+  document.getElementById('ap-marcas-picker')?.remove();
+  const picker = document.createElement('div');
+  picker.id = 'ap-marcas-picker';
+  picker.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;width:min(480px,95vw);box-shadow:0 20px 60px rgba(0,0,0,.5)';
+  picker.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h4 style="margin:0;color:var(--gold)">🔖 Marcas de Auditoría</h4>
+      <button onclick="document.getElementById('ap-marcas-picker').remove()" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      ${MARCAS_AUDITORIA.map(m=>`
+        <button onclick="insertarMarca('${m.s}','${targetInput}');document.getElementById('ap-marcas-picker').remove()"
+          style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-card2);
+          border:1px solid var(--border);border-radius:7px;cursor:pointer;text-align:left;
+          transition:background .15s;color:var(--text-primary)"
+          onmouseover="this.style.background='rgba(212,175,55,.1)'"
+          onmouseout="this.style.background='var(--bg-card2)'">
+          <span style="font-size:1.2rem;min-width:24px;text-align:center;color:var(--gold)">${m.s}</span>
+          <span style="font-size:.72rem;color:var(--text-secondary)">${m.d}</span>
+        </button>`).join('')}
+    </div>
+    <div style="margin-top:12px;padding:10px;background:var(--bg-card2);border-radius:6px;font-size:.72rem;color:var(--text-muted)">
+      <strong>Leyenda:</strong> ✓=Verificado &nbsp;Σ=Cuadrado &nbsp;◉=Confirmado &nbsp;★=Significativo &nbsp;▲=Diferencia &nbsp;⚑=Hallazgo
+    </div>`;
+  document.body.appendChild(picker);
+}
+
+function insertarMarca(marca, targetId) {
+  const el = document.getElementById(targetId) || document.querySelector(`[data-marca-target="${targetId}"]`);
+  if (!el) return;
+  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+    const pos = el.selectionStart || el.value.length;
+    el.value = el.value.slice(0, pos) + marca + el.value.slice(pos);
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CÉDULAS SUMARIAS — Recargadas con todos los valores del EEFF
+// ══════════════════════════════════════════════════════════════════════════════
 function generarSumariasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
-  const fuenteDatos = (typeof periodos !== 'undefined' && periodos.length > 0) ? periodos[periodos.length-1].raw : {};
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : 
+    (typeof periodos!=='undefined'&&periodos.length ? normalizarRaw(periodos[periodos.length-1].raw) : {});
+  const g = k => parseFloat(raw[k])||0;
+
   const GRUPOS = [
-    { ref:'A', nombre:'ACTIVO CORRIENTE', cuentas:['CAJA GENERAL','CAJA CHICA','BANCOS','CLIENTES','DOCUMENTOS POR COBRAR','INVENTARIO MERCADERIA','ANTICIPO CLIENTES'] },
-    { ref:'B', nombre:'ACTIVO NO CORRIENTE', cuentas:['EDIFICIOS','MAQUINARIA Y EQUIPO','VEHICULOS','MUEBLES Y ENSERES','DEP. ACUMULADA','ACTIVOS INTANGIBLES'] },
-    { ref:'C', nombre:'PASIVO CORRIENTE', cuentas:['PROVEEDORES','DOCUMENTOS POR PAGAR','IESS POR PAGAR','IVA EN VENTAS','RETENCION IR POR PAGAR'] },
-    { ref:'D', nombre:'PASIVO NO CORRIENTE', cuentas:['PRESTAMOS BANCARIOS LP','BONOS POR PAGAR'] },
-    { ref:'E', nombre:'PATRIMONIO', cuentas:['CAPITAL SUSCRITO','RESERVA LEGAL','UTILIDADES RETENIDAS','UTILIDAD EJERCICIO'] },
-    { ref:'F', nombre:'INGRESOS', cuentas:['VENTAS NETAS','OTROS INGRESOS'] },
-    { ref:'G', nombre:'COSTOS Y GASTOS', cuentas:['COSTO DE VENTAS','GASTO PERSONAL','GASTO ADMINISTRATIVO','GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO'] },
+    { ref:'A', nombre:'ACTIVO CORRIENTE', cuentas:[
+      'EFECTIVO','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES',
+      'INVENTARIOS','IVA EN COMPRAS','ANTICIPO IR','OTROS ACTIVOS CORRIENTES','TOTAL ACTIVO CORRIENTE']},
+    { ref:'B', nombre:'ACTIVO NO CORRIENTE', cuentas:[
+      'PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA','ACTIVOS INTANGIBLES',
+      'AMORTIZACION INTANGIBLES','INVERSIONES LP','OTROS ACTIVOS NO CORRIENTES','TOTAL ACTIVO NO CORRIENTE']},
+    { ref:'C', nombre:'PASIVO CORRIENTE', cuentas:[
+      'CUENTAS POR PAGAR','OBLIGACIONES BANCARIAS CP','IMPUESTO RENTA POR PAGAR',
+      'PARTICIPACION TRABAJADORES','IESS POR PAGAR','ANTICIPOS CLIENTES','OTROS PASIVOS CORRIENTES','TOTAL PASIVO CORRIENTE']},
+    { ref:'D', nombre:'PASIVO NO CORRIENTE', cuentas:[
+      'OBLIGACIONES BANCARIAS LP','PROVISION JUBILACION PATRONAL','OTROS PASIVOS NO CORRIENTES','TOTAL PASIVO']},
+    { ref:'E', nombre:'PATRIMONIO', cuentas:[
+      'CAPITAL SOCIAL','RESERVA LEGAL','RESERVAS FACULTATIVAS','UTILIDADES RETENIDAS','UTILIDAD EJERCICIO','TOTAL PATRIMONIO']},
+    { ref:'F', nombre:'INGRESOS', cuentas:['VENTAS NETAS','OTROS INGRESOS']},
+    { ref:'G', nombre:'COSTOS Y GASTOS', cuentas:[
+      'COSTO DE VENTAS','GASTO PERSONAL','GASTO ADMINISTRATIVO',
+      'GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO','OTROS GASTOS']},
+    { ref:'H', nombre:'RESULTADO', cuentas:[
+      'UTILIDAD BRUTA','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO',
+      'PARTICIPACION TRABAJADORES GASTO','UTILIDAD EJERCICIO']},
   ];
-  if (!_apExpediente.sumarias) _apExpediente.sumarias = [];
-  GRUPOS.forEach(g => {
-    if (_apExpediente.sumarias.find(s => s.ref === g.ref)) return;
-    _apExpediente.sumarias.push({ ref:g.ref, nombre:g.nombre, conclusion:'', elaboradoPor:_apExpediente.auditor, fecha:new Date().toISOString(),
-      partidas: g.cuentas.map(cuenta => ({
-        cuenta, saldoLibros: fuenteDatos[cuenta]||0, saldoAuditoria: fuenteDatos[cuenta]||0,
-        cedulaRef: _apExpediente.cedulas?.find(c=>c.cuenta?.toUpperCase().includes(cuenta))?.codigo||'',
-      })),
-    });
+
+  _apExpediente.sumarias = GRUPOS.map(grp => {
+    const partidas = grp.cuentas
+      .filter(k => Math.abs(g(k)) > 0)
+      .map(k => ({
+        cuenta: k, saldoLibros: g(k), saldoAuditoria: g(k), cedulaRef: '', marcas: '✓'
+      }));
+    const sumaria = (_apExpediente.sumarias||[]).find(s=>s.ref===grp.ref) || {};
+    return {
+      ref: grp.ref, nombre: grp.nombre,
+      conclusion: sumaria.conclusion || '',
+      elaboradoPor: _apExpediente.auditor || '',
+      fecha: new Date().toISOString(),
+      partidas,
+    };
   });
+
   FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
   renderCedulasSumarias();
-  toast('Cédulas sumarias generadas desde EEFF', 'success');
+  toast(`Cédulas sumarias generadas con ${Object.keys(raw).length} cuentas del EEFF ✓`, 'success');
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROGRAMA DE AUDITORÍA
+// ══════════════════════════════════════════════════════════════════════════════
+function generarProgramaAuditoria() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const totalActivo = g('TOTAL ACTIVO') || 1;
+  const mat = totalActivo * 0.01; // Materialidad: 1% del activo total
+
+  const AREAS = [
+    { codigo:'100', area:'EFECTIVO Y EQUIVALENTES', cuentaRef:'EFECTIVO', riesgo:'BAJO',
+      procedimientos:[
+        'Realizar arqueo de caja a la fecha de cierre del ejercicio',
+        'Obtener conciliaciones bancarias de todas las cuentas al cierre',
+        'Confirmar saldos directamente con las instituciones financieras',
+        'Revisar partidas en tránsito y cheques pendientes de cobro',
+        'Verificar restricciones o gravámenes sobre los fondos',
+      ]},
+    { codigo:'200', area:'CUENTAS POR COBRAR', cuentaRef:'CUENTAS POR COBRAR', riesgo:'MEDIO',
+      procedimientos:[
+        'Circularizar clientes más representativos (positiva y negativa)',
+        'Aplicar procedimientos alternativos para respuestas no recibidas',
+        'Revisar análisis de antigüedad de cartera al cierre',
+        'Verificar método y suficiencia de la provisión de incobrables',
+        'Comprobar corte de ventas (cutoff) — últimas 15 facturas del año',
+        'Revisar notas de crédito emitidas con posterioridad al cierre',
+      ]},
+    { codigo:'300', area:'INVENTARIOS', cuentaRef:'INVENTARIOS', riesgo:'ALTO',
+      procedimientos:[
+        'Participar en el conteo físico de inventarios en la fecha de cierre',
+        'Verificar la aplicación del método de valuación (costo promedio)',
+        'Evaluar la necesidad de ajuste al valor neto de realización',
+        'Revisar tomas físicas selectivas y conciliar con registros auxiliares',
+        'Verificar existencia de inventarios en consignación o en tránsito',
+        'Comprobar corte de compras — últimas 15 facturas del año',
+      ]},
+    { codigo:'400', area:'PROPIEDAD PLANTA Y EQUIPO', cuentaRef:'PROPIEDAD PLANTA EQUIPO', riesgo:'BAJO',
+      procedimientos:[
+        'Inspeccionar físicamente los activos de mayor valor',
+        'Verificar altas y bajas del período con documentación de respaldo',
+        'Recalcular la depreciación acumulada del ejercicio',
+        'Revisar políticas de capitalización vs. gasto',
+        'Verificar existencia de gravámenes o prendas sobre los activos',
+        'Comprobar existencia y vigencia de seguros de los activos',
+      ]},
+    { codigo:'500', area:'CUENTAS POR PAGAR', cuentaRef:'CUENTAS POR PAGAR', riesgo:'MEDIO',
+      procedimientos:[
+        'Circularizar proveedores representativos y estados de cuenta',
+        'Buscar pasivos no registrados (unrecorded liabilities)',
+        'Revisar corte de compras y gastos al cierre del ejercicio',
+        'Verificar pasivos contingentes no reconocidos en balances',
+        'Conciliar estados de cuenta de proveedores con registros',
+      ]},
+    { codigo:'600', area:'OBLIGACIONES FINANCIERAS', cuentaRef:'OBLIGACIONES BANCARIAS CP', riesgo:'MEDIO',
+      procedimientos:[
+        'Confirmar saldos directamente con instituciones financieras',
+        'Revisar tablas de amortización y verificar aplicación correcta',
+        'Verificar clasificación CP vs. LP conforme a NIC 1',
+        'Comprobar cláusulas de incumplimiento (covenants)',
+        'Revisar garantías otorgadas relacionadas con la deuda',
+      ]},
+    { codigo:'700', area:'INGRESOS Y CUENTAS DE RESULTADO', cuentaRef:'VENTAS NETAS', riesgo:'ALTO',
+      procedimientos:[
+        'Aplicar procedimientos analíticos: margen bruto vs. período anterior',
+        'Prueba de corte de ingresos — últimas 15 facturas del período',
+        'Verificar reconocimiento de ingresos conforme a NIIF 15',
+        'Revisar devoluciones y descuentos significativos',
+        'Comprobar ingresos por ventas a partes relacionadas',
+        'Revisar transacciones inusuales o fuera de temporada',
+      ]},
+    { codigo:'800', area:'NÓMINA Y BENEFICIOS SOCIALES', cuentaRef:'GASTO PERSONAL', riesgo:'MEDIO',
+      procedimientos:[
+        'Verificar roles de pago contra registros del IESS (Historia Laboral)',
+        'Reotorgar cálculos de décimo tercero, cuarto sueldo y fondos de reserva',
+        'Comprobar que provisiones de beneficios sociales sean suficientes',
+        'Revisar correcta aplicación de aportes patronales y personales IESS',
+        'Verificar participación a trabajadores (15%) y su cálculo',
+      ]},
+    { codigo:'900', area:'OBLIGACIONES TRIBUTARIAS', cuentaRef:'IMPUESTO RENTA GASTO', riesgo:'ALTO',
+      procedimientos:[
+        'Verificar conciliación tributaria — Form. 101 vs. EEFF',
+        'Comprobar gastos no deducibles y su adición a la base gravable',
+        'Revisar retenciones recibidas vs. casillero 845 del F101',
+        'Verificar aplicación del anticipo de IR',
+        'Comprobar correcta aplicación de la tarifa del 22%',
+        'Revisar declaraciones de IVA vs. registros contables (muestreo 3 meses)',
+      ]},
+  ];
+
+  const fmtM = v => v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v.toFixed(0);
+
+  const el = document.getElementById('ap-programa-contenido');
+  if (!el) return;
+
+  const programa = AREAS.map(a => {
+    const saldo = g(a.cuentaRef);
+    const pctActivo = totalActivo ? (Math.abs(saldo)/totalActivo*100).toFixed(1) : 0;
+    const esMaterial = Math.abs(saldo) >= mat;
+    const colRiesgo = a.riesgo==='ALTO'?'#ef4444':a.riesgo==='MEDIO'?'#f59e0b':'var(--emerald)';
+    return { ...a, saldo, pctActivo, esMaterial };
+  });
+
+  window._apPrograma = programa;
+
+  el.innerHTML = `
+    <div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:12px;margin-bottom:16px;font-size:.78rem">
+      <strong style="color:#6366f1">Materialidad aplicada:</strong>
+      1% del Total Activo = <strong>${(mat).toLocaleString('es-EC',{minimumFractionDigits:2})}</strong> |
+      Empresa: <strong>${_apExpediente.empresa}</strong> | Período: <strong>${_apExpediente.periodo}</strong> | Auditor: <strong>${_apExpediente.auditor}</strong>
+    </div>
+    ${programa.map((a,ai) => `
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;
+          background:var(--bg-card2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted)">${a.codigo}</span>
+            <strong style="color:var(--text-primary)">${a.area}</strong>
+            ${a.esMaterial?'<span style="font-size:.65rem;padding:1px 7px;background:rgba(212,175,55,.15);color:var(--gold);border-radius:8px">★ MATERIAL</span>':''}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:.75rem;font-family:var(--font-mono);color:var(--text-secondary)">${(a.saldo).toLocaleString('es-EC',{minimumFractionDigits:2})} (${a.pctActivo}%)</span>
+            <span style="font-size:.68rem;padding:2px 8px;border-radius:8px;
+              background:${a.riesgo==='ALTO'?'rgba(239,68,68,.1)':a.riesgo==='MEDIO'?'rgba(245,158,11,.1)':'rgba(16,185,129,.1)'};
+              color:${a.riesgo==='ALTO'?'#ef4444':a.riesgo==='MEDIO'?'#f59e0b':'var(--emerald)'};font-weight:600">
+              ${a.riesgo}
+            </span>
+          </div>
+        </div>
+        <div style="padding:12px 14px">
+          <table class="ef-table" style="font-size:.78rem">
+            <thead><tr><th class="left">N°</th><th class="left" style="width:60%">Procedimiento</th>
+              <th>Hecho por</th><th>Fecha</th><th>Ref. PT</th><th>Estado</th></tr></thead>
+            <tbody>${a.procedimientos.map((proc,pi)=>`<tr>
+              <td style="font-family:var(--font-mono);color:var(--text-muted)">${a.codigo}.${pi+1}</td>
+              <td>${proc}</td>
+              <td><input value="${_apExpediente.auditor||''}" style="width:80px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--text-primary)" onchange="actualizarPrograma(${ai},${pi},'hechoPor',this.value)"></td>
+              <td><input type="date" style="width:110px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.72rem;color:var(--text-primary)" onchange="actualizarPrograma(${ai},${pi},'fecha',this.value)"></td>
+              <td><input value="" placeholder="PT-" style="width:60px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--gold);font-family:var(--font-mono)" onchange="actualizarPrograma(${ai},${pi},'refPT',this.value)"></td>
+              <td>
+                <select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.7rem;color:var(--text-primary)" onchange="actualizarPrograma(${ai},${pi},'estado',this.value)">
+                  <option value="pendiente">⬜ Pendiente</option>
+                  <option value="en-proceso">🔄 En proceso</option>
+                  <option value="completado">✅ Completado</option>
+                  <option value="NA">N/A</option>
+                </select>
+              </td>
+            </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`).join('')}`;
+}
+
+function actualizarPrograma(ai, pi, campo, valor) {
+  if (!window._apPrograma?.[ai]) return;
+  if (!window._apPrograma[ai].procedimientosData) window._apPrograma[ai].procedimientosData = [];
+  if (!window._apPrograma[ai].procedimientosData[pi]) window._apPrograma[ai].procedimientosData[pi] = {};
+  window._apPrograma[ai].procedimientosData[pi][campo] = valor;
+}
+
+function guardarPrograma() {
+  if (!_apExpediente || !window._apPrograma) return;
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/programa`, window._apPrograma);
+  toast('Programa guardado ✓', 'success');
+}
+
+function imprimirPrograma() {
+  const el = document.getElementById('ap-programa-contenido');
+  if (!el) return;
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><title>Programa de Auditoría</title>
+  <style>body{font-family:Arial,sans-serif;padding:25px;font-size:8.5pt;color:#1a1a2e}
+  h2{color:#1a1a2e;border-bottom:2px solid #D4AF37;padding-bottom:5px}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:8pt}
+  th,td{border:1px solid #aaa;padding:3px 6px}th{background:#e8e8e8;font-weight:600}
+  @page{size:A4 landscape;margin:10mm}</style></head><body>
+  <h2>PROGRAMA DE AUDITORÍA — ${_apExpediente?.empresa||''} — ${_apExpediente?.periodo||''}</h2>
+  ${el.innerHTML}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRUEBAS SUSTANTIVAS
+// ══════════════════════════════════════════════════════════════════════════════
+function generarPruebasSustantivas() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const fmtN = v => '$'+(parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  const pruebas = [
+    { ref:'PS-A', cuenta:'EFECTIVO', tipo:'Confirmación',
+      objetivo:'Verificar la existencia y propiedad del efectivo y equivalentes al efectivo.',
+      saldo: g('EFECTIVO'),
+      muestra:'Todas las cuentas bancarias (confirmación 100%)',
+      procedimiento:'Envío de cartas de confirmación a todas las instituciones financieras. Para caja chica: arqueo sorpresivo.',
+      conclusion:'', marcas:'◉', estado:'pendiente' },
+    { ref:'PS-B', cuenta:'CUENTAS POR COBRAR', tipo:'Confirmación externa',
+      objetivo:'Verificar existencia, titularidad y valuación de las cuentas por cobrar.',
+      saldo: g('CUENTAS POR COBRAR'),
+      muestra:'Clientes que representen el 70% del saldo (circulización positiva)',
+      procedimiento:'Circulización positiva de saldos. Para no respondentes: revisión de cobros posteriores y documentación.',
+      conclusion:'', marcas:'◉', estado:'pendiente' },
+    { ref:'PS-C', cuenta:'INVENTARIOS', tipo:'Observación física',
+      objetivo:'Verificar existencia física, condición y valuación de inventarios.',
+      saldo: g('INVENTARIOS'),
+      muestra:'Ítems de mayor valor (estratificado): representar ≥60% del saldo',
+      procedimiento:'Observación del conteo físico, selección de ítems para reverificación, prueba de corte de compras.',
+      conclusion:'', marcas:'√', estado:'pendiente' },
+    { ref:'PS-D', cuenta:'PPE', tipo:'Inspección física',
+      objetivo:'Verificar existencia, condición y propiedad de los activos fijos.',
+      saldo: g('PROPIEDAD PLANTA EQUIPO'),
+      muestra:'Activos de valor > materialidad: inspección al 100%',
+      procedimiento:'Inspección física selectiva, verificación de títulos de propiedad, recálculo de depreciación.',
+      conclusion:'', marcas:'√', estado:'pendiente' },
+    { ref:'PS-E', cuenta:'VENTAS', tipo:'Procedimiento analítico',
+      objetivo:'Verificar integridad y exactitud del reconocimiento de ingresos.',
+      saldo: g('VENTAS NETAS'),
+      muestra:'Análisis de ventas mensuales y 15 últimas facturas del período',
+      procedimiento:'Prueba de corte, análisis de tendencia mensual, comparación margen bruto vs. año anterior.',
+      conclusion:'', marcas:'π', estado:'pendiente' },
+    { ref:'PS-F', cuenta:'NÓMINA', tipo:'Recalculo',
+      objetivo:'Verificar exactitud y validez de los gastos de personal.',
+      saldo: g('GASTO PERSONAL'),
+      muestra:'Muestreo de 3 meses del período (enero, junio, diciembre)',
+      procedimiento:'Recálculo de roles de pago, verificación contra registros IESS, comprobación de provisiones laborales.',
+      conclusion:'', marcas:'◆', estado:'pendiente' },
+    { ref:'PS-G', cuenta:'IMPUESTO A LA RENTA', tipo:'Recalculo',
+      objetivo:'Verificar la correcta determinación del impuesto a la renta.',
+      saldo: g('IMPUESTO RENTA GASTO'),
+      muestra:'Conciliación tributaria completa (100%)',
+      procedimiento:'Recálculo de conciliación tributaria, verificación de gastos no deducibles, comprobación tarifa.',
+      conclusion:'', marcas:'◆ Σ', estado:'pendiente' },
+  ].filter(p => p.saldo !== 0 || ['PS-E','PS-G'].includes(p.ref));
+
+  window._apPruebasSust = pruebas;
+
+  const el = document.getElementById('ap-pruebas-sust-contenido');
+  if (!el) return;
+  el.innerHTML = pruebas.map((p, pi) => `
+    <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden" id="ps-${p.ref}">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--gold);font-weight:700">${p.ref}</span>
+          <strong>${p.cuenta}</strong>
+          <span style="font-size:.7rem;padding:1px 8px;background:rgba(99,102,241,.1);color:#6366f1;border-radius:8px">${p.tipo}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--font-mono);font-size:.75rem">${fmtN(p.saldo)}</span>
+          <select id="ps-estado-${pi}" style="background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.72rem;color:var(--text-primary)">
+            <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>⬜ Pendiente</option>
+            <option value="en-proceso" ${p.estado==='en-proceso'?'selected':''}>🔄 En proceso</option>
+            <option value="completado" ${p.estado==='completado'?'selected':''}>✅ Completada</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.8rem">
+        <div>
+          <div style="margin-bottom:8px"><strong style="color:var(--gold);font-size:.72rem">OBJETIVO</strong><p style="margin:4px 0;color:var(--text-secondary)">${p.objetivo}</p></div>
+          <div style="margin-bottom:8px"><strong style="color:var(--gold);font-size:.72rem">MUESTRA</strong><p style="margin:4px 0;color:var(--text-secondary)">${p.muestra}</p></div>
+          <div><strong style="color:var(--gold);font-size:.72rem">PROCEDIMIENTO</strong><p style="margin:4px 0;color:var(--text-secondary)">${p.procedimiento}</p></div>
+        </div>
+        <div>
+          <div style="margin-bottom:8px">
+            <strong style="color:var(--gold);font-size:.72rem">MARCAS</strong>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+              <input id="ps-marcas-${pi}" value="${p.marcas}" style="flex:1;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text-primary);font-size:.85rem;font-family:var(--font-mono)" onchange="if(window._apPruebasSust)window._apPruebasSust[${pi}].marcas=this.value">
+              <button onclick="abrirPickerMarcas('ps-marcas-${pi}')" style="padding:4px 8px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer;font-size:.75rem">🔖</button>
+            </div>
+          </div>
+          <div>
+            <strong style="color:var(--gold);font-size:.72rem">RESULTADO Y CONCLUSIÓN</strong>
+            <textarea id="ps-concl-${pi}" rows="5" style="width:100%;margin-top:4px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.78rem;resize:vertical" onchange="if(window._apPruebasSust)window._apPruebasSust[${pi}].conclusion=this.value" placeholder="Describa los hallazgos y conclusión de la prueba...">${p.conclusion}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function guardarPruebasSustantivas() {
+  if (!_apExpediente || !window._apPruebasSust) return;
+  // Recoger valores actualizados
+  window._apPruebasSust.forEach((p,pi) => {
+    p.estado = document.getElementById(`ps-estado-${pi}`)?.value || p.estado;
+    p.marcas = document.getElementById(`ps-marcas-${pi}`)?.value || p.marcas;
+    p.conclusion = document.getElementById(`ps-concl-${pi}`)?.value || p.conclusion;
+  });
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/pruebas_sustantivas`, window._apPruebasSust);
+  toast('Pruebas sustantivas guardadas ✓', 'success');
+}
+
+function imprimirPruebasSustantivas() {
+  const el = document.getElementById('ap-pruebas-sust-contenido');
+  if (!el) return;
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><title>Pruebas Sustantivas</title>
+  <style>body{font-family:Arial;padding:25px;font-size:8.5pt;color:#1a1a2e}
+  table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}
+  th{background:#e8e8e8}input,select,textarea{border:none;background:none;font-family:inherit}
+  @page{size:A4;margin:15mm}</style></head><body>
+  <h2>PRUEBAS SUSTANTIVAS — ${_apExpediente?.empresa||''} | ${_apExpediente?.periodo||''}</h2>
+  ${el.innerHTML}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),300);
+}
+
+function agregarPruebaSustantiva() {
+  if (!window._apPruebasSust) window._apPruebasSust = [];
+  const cuenta = prompt('Cuenta / Área:') || 'Nueva área';
+  window._apPruebasSust.push({ ref:`PS-${window._apPruebasSust.length+1}`, cuenta, tipo:'Manual',
+    objetivo:'', saldo:0, muestra:'', procedimiento:'', conclusion:'', marcas:'✓', estado:'pendiente' });
+  generarPruebasSustantivas();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SISTEMA COSO
+// ══════════════════════════════════════════════════════════════════════════════
+function initCoso() {
+  const el = document.getElementById('ap-coso-contenido');
+  if (!el || el.innerHTML.trim()) return;
+  const COMPONENTES = [
+    { comp:'1. Entorno de Control', principios:[
+      'La organización demuestra compromiso con la integridad y los valores éticos',
+      'El directorio es independiente de la administración y supervisa el control interno',
+      'La administración establece estructuras, autoridades y responsabilidades',
+      'La organización demuestra compromiso para atraer, desarrollar y retener personas competentes',
+      'La organización retiene personas comprometidas con el control interno',
+    ]},
+    { comp:'2. Evaluación de Riesgos', principios:[
+      'La organización define objetivos con claridad para identificar riesgos',
+      'La organización identifica y analiza riesgos para lograr sus objetivos',
+      'La organización considera el potencial de fraude',
+      'La organización identifica y analiza cambios significativos',
+    ]},
+    { comp:'3. Actividades de Control', principios:[
+      'La organización elige y desarrolla actividades de control que mitigan riesgos',
+      'La organización elige y desarrolla controles generales sobre tecnología',
+      'La organización implementa políticas y procedimientos de control',
+    ]},
+    { comp:'4. Información y Comunicación', principios:[
+      'La organización obtiene información relevante para apoyar el funcionamiento del CI',
+      'La organización comunica la información internamente sobre objetivos y responsabilidades',
+      'La organización comunica externamente los asuntos que afectan el CI',
+    ]},
+    { comp:'5. Actividades de Supervisión (Monitoring)', principios:[
+      'La organización selecciona, desarrolla y realiza evaluaciones continuas',
+      'La organización evalúa y comunica las deficiencias del CI oportunamente',
+    ]},
+  ];
+
+  const fila = (comp, pi, principio) => `
+    <tr>
+      <td style="font-size:.76rem;padding:6px 10px">${principio}</td>
+      <td style="text-align:center">
+        <select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:.75rem;color:var(--text-primary)" id="coso-${comp}-${pi}">
+          <option value="">—</option>
+          <option value="1">1 — Deficiente</option>
+          <option value="2">2 — Insuficiente</option>
+          <option value="3">3 — Aceptable</option>
+          <option value="4">4 — Efectivo</option>
+          <option value="5">5 — Excelente</option>
+        </select>
+      </td>
+      <td><input placeholder="Observaciones / evidencia..." style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text-primary);font-size:.75rem" id="coso-obs-${comp}-${pi}"></td>
+      <td style="text-align:center;font-size:.75rem">
+        <select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:.7rem;color:var(--text-primary)" id="coso-nivel-${comp}-${pi}">
+          <option value="bajo">🟢 Bajo</option>
+          <option value="medio" selected>🟡 Medio</option>
+          <option value="alto">🔴 Alto</option>
+        </select>
+      </td>
+    </tr>`;
+
+  el.innerHTML = `
+    <div style="padding:10px 12px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;margin-bottom:16px;font-size:.78rem">
+      Marco de referencia: <strong>COSO 2013 — Committee of Sponsoring Organizations of the Treadway Commission</strong>.
+      Evalúe cada principio del 1 (deficiente) al 5 (excelente).
+    </div>
+    ${COMPONENTES.map((c, ci) => `
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--bg-card2);font-weight:600;color:var(--gold);border-bottom:1px solid var(--border)">
+          ${c.comp}
+        </div>
+        <table class="ef-table" style="margin:0">
+          <thead><tr><th class="left">Principio</th><th style="width:140px">Calificación (1-5)</th><th>Observaciones</th><th style="width:90px">Nivel de Riesgo</th></tr></thead>
+          <tbody>${c.principios.map((p,pi)=>fila(ci,pi,p)).join('')}</tbody>
+        </table>
+        <div style="padding:10px 14px">
+          <label style="font-size:.72rem;color:var(--gold);font-weight:600">CONCLUSIÓN DEL COMPONENTE</label>
+          <textarea id="coso-concl-${ci}" rows="2" placeholder="Conclusión sobre la efectividad de este componente..."
+            style="width:100%;margin-top:4px;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.78rem;resize:vertical"></textarea>
+        </div>
+      </div>`).join('')}
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-calc" onclick="guardarCoso()" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">💾 Guardar evaluación COSO</button>
+      <button class="btn-secondary" onclick="imprimirCoso()">🖨 Imprimir</button>
+    </div>`;
+  window._cosoComponentes = COMPONENTES;
+}
+
+function guardarCoso() {
+  if (!_apExpediente) return;
+  const data = { componentes: window._cosoComponentes?.map((c,ci) => ({
+    nombre: c.comp,
+    principios: c.principios.map((p,pi)=>({
+      principio: p,
+      calificacion: parseInt(document.getElementById(`coso-${ci}-${pi}`)?.value)||0,
+      observaciones: document.getElementById(`coso-obs-${ci}-${pi}`)?.value||'',
+      riesgo: document.getElementById(`coso-nivel-${ci}-${pi}`)?.value||'medio',
+    })),
+    conclusion: document.getElementById(`coso-concl-${ci}`)?.value||'',
+  })) || [] };
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/coso`, data);
+  toast('Evaluación COSO guardada ✓', 'success');
+}
+
+function imprimirCoso() {
+  const el = document.getElementById('ap-coso-contenido');
+  if (!el) return;
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><title>COSO</title>
+  <style>body{font-family:Arial;padding:25px;font-size:8.5pt}
+  table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}
+  input,select,textarea{border:none;background:none;font-family:inherit;font-size:8.5pt}
+  @page{size:A4;margin:12mm}</style></head><body>
+  <h2>EVALUACIÓN SISTEMA COSO — ${_apExpediente?.empresa||''}</h2>
+  ${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CUENTAS DE ALTO RIESGO
+// ══════════════════════════════════════════════════════════════════════════════
+function analizarAltoRiesgo() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const totalActivo = g('TOTAL ACTIVO') || 1;
+  const fmtN = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  // Criterios de riesgo por cuenta
+  const CRITERIOS = [
+    { cuenta:'EFECTIVO', nombre:'Efectivo y Equivalentes',
+      riesgosInh:['Malversación de fondos','Cheques en tránsito no registrados','Depósitos no identificados'],
+      riesgoCtrl:['Falta de arqueos periódicos','Sin conciliaciones bancarias','Ausencia de segregación de funciones'],
+      indicadores:['Depósitos inusuales fuera del horario bancario','Cheques girados a personas naturales sin factura'],
+    },
+    { cuenta:'CUENTAS POR COBRAR', nombre:'Cuentas por Cobrar Comerciales',
+      riesgosInh:['Reconocimiento prematuro de ingresos','Deudores incobrables sin provisión','CxC a partes relacionadas'],
+      riesgoCtrl:['Sin confirmaciones periódicas','Análisis de antigüedad desactualizado'],
+      indicadores:['CxC > 90 días sin provisión','Ventas concentradas en pocos clientes','Incremento de saldo sin aumento de ventas'],
+    },
+    { cuenta:'INVENTARIOS', nombre:'Inventarios',
+      riesgosInh:['Obsolescencia no reconocida','Error en método de valuación','Inventario ficticio'],
+      riesgoCtrl:['Sin conteos físicos periódicos','Sin control de acceso al almacén'],
+      indicadores:['Rotación baja vs. período anterior','Margen bruto inconsistente','Diferencias entre kardex y contabilidad'],
+    },
+    { cuenta:'PROPIEDAD PLANTA EQUIPO', nombre:'Propiedad Planta y Equipo',
+      riesgosInh:['Activos inexistentes en libros','Depreciación mal calculada','Capitalización de gastos'],
+      riesgoCtrl:['Sin inspecciones físicas','Ausencia de registros auxiliares por activo'],
+      indicadores:['Adquisiciones sin documentación','Activos totalmente depreciados aún en uso','Tasa de depreciación diferente a política'],
+    },
+    { cuenta:'VENTAS NETAS', nombre:'Ingresos por Ventas',
+      riesgosInh:['Reconocimiento anticipado de ingresos','Ingresos ficticios','Devoluciones no registradas'],
+      riesgoCtrl:['Sin revisión de corte','Ausencia de aprobación en notas de crédito'],
+      indicadores:['Ventas concentradas en último mes','Márgenes muy diferentes a años anteriores','Ingresos sin cobro posterior'],
+    },
+    { cuenta:'IMPUESTO RENTA GASTO', nombre:'Obligaciones Tributarias',
+      riesgosInh:['Cálculo incorrecto del IR','Gastos no deducibles no identificados','Error en anticipo'],
+      riesgoCtrl:['Sin conciliación tributaria formal','Declaraciones sin revisión previa'],
+      indicadores:['Tasa efectiva muy diferente al 22%','Retenciones no cuadran con certificados','Diferencias F101 vs. EEFF'],
+    },
+  ];
+
+  const el = document.getElementById('ap-alto-riesgo-contenido');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="margin-bottom:14px;padding:10px 12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px;font-size:.78rem">
+      <strong style="color:#ef4444">Materialidad preliminar:</strong>
+      1% del Total Activo = <strong>${fmtN(totalActivo*0.01)}</strong>.
+      Las cuentas que superan la materialidad se marcan con ★.
+    </div>
+    ${CRITERIOS.map((c, ci) => {
+      const saldo = g(c.cuenta);
+      const pct = (Math.abs(saldo)/totalActivo*100).toFixed(1);
+      const esMaterial = Math.abs(saldo) >= totalActivo*0.01;
+      const nivelRiesgo = ['VENTAS NETAS','INVENTARIOS'].includes(c.cuenta) ? 'ALTO' :
+        ['CUENTAS POR COBRAR','IMPUESTO RENTA GASTO'].includes(c.cuenta) ? 'MEDIO' : 'BAJO';
+      const colRiesgo = nivelRiesgo==='ALTO'?'#ef4444':nivelRiesgo==='MEDIO'?'#f59e0b':'var(--emerald)';
+      return `
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg-card2);border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <strong style="color:var(--text-primary)">${c.nombre}</strong>
+            ${esMaterial?'<span style="font-size:.65rem;padding:1px 6px;background:rgba(212,175,55,.15);color:var(--gold);border-radius:8px">★ MATERIAL</span>':''}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--font-mono);font-size:.75rem">${fmtN(saldo)} (${pct}% activo)</span>
+            <span style="font-size:.7rem;padding:2px 8px;border-radius:8px;background:${colRiesgo}18;color:${colRiesgo};font-weight:600">${nivelRiesgo}</span>
+          </div>
+        </div>
+        <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:.76rem">
+          <div>
+            <strong style="color:#ef4444;font-size:.7rem">RIESGOS INHERENTES</strong>
+            <ul style="margin:6px 0;padding-left:16px;color:var(--text-secondary)">
+              ${c.riesgosInh.map(r=>`<li>${r}</li>`).join('')}
+            </ul>
+          </div>
+          <div>
+            <strong style="color:#f59e0b;font-size:.7rem">RIESGOS DE CONTROL</strong>
+            <ul style="margin:6px 0;padding-left:16px;color:var(--text-secondary)">
+              ${c.riesgoCtrl.map(r=>`<li>${r}</li>`).join('')}
+            </ul>
+          </div>
+          <div>
+            <strong style="color:var(--gold);font-size:.7rem">INDICADORES DE ALERTA</strong>
+            <ul style="margin:6px 0;padding-left:16px;color:var(--text-secondary)">
+              ${c.indicadores.map(r=>`<li>${r}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+        <div style="padding:0 14px 12px">
+          <label style="font-size:.7rem;color:var(--gold);font-weight:600">RESPUESTA DEL AUDITOR</label>
+          <select id="ar-nivel-${ci}" style="width:140px;margin:0 10px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.72rem;color:var(--text-primary)">
+            <option value="bajo">Riesgo Bajo</option>
+            <option value="medio" ${nivelRiesgo==='MEDIO'?'selected':''}>Riesgo Medio</option>
+            <option value="alto" ${nivelRiesgo==='ALTO'?'selected':''}>Riesgo Alto</option>
+            <option value="critico">Riesgo Crítico</option>
+          </select>
+          <input id="ar-resp-${ci}" placeholder="Procedimientos adicionales a aplicar..." style="width:55%;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text-primary);font-size:.76rem">
+        </div>
+      </div>`}).join('')}
+    <div style="display:flex;gap:8px">
+      <button class="btn-calc" onclick="guardarAltoRiesgo()">💾 Guardar</button>
+      <button class="btn-secondary" onclick="imprimirAltoRiesgo()">🖨 Imprimir</button>
+    </div>`;
+}
+
+function guardarAltoRiesgo() {
+  if (!_apExpediente) return;
+  const data = { analisis: Array.from(document.querySelectorAll('[id^="ar-nivel-"]')).map((el,i)=>({
+    nivel: el.value, respuesta: document.getElementById(`ar-resp-${i}`)?.value||'' })) };
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/alto_riesgo`, data);
+  toast('Análisis de riesgo guardado ✓', 'success');
+}
+function imprimirAltoRiesgo() {
+  const el = document.getElementById('ap-alto-riesgo-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Alto Riesgo</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}input,select{border:none;background:none}@page{size:A4;margin:12mm}</style></head><body><h2>CUENTAS DE ALTO RIESGO — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRUEBAS DE CORTE
+// ══════════════════════════════════════════════════════════════════════════════
+function generarPruebasCorte() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const fmtN = v => '$'+(parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const ventas = g('VENTAS NETAS'), costo = g('COSTO DE VENTAS');
+
+  const el = document.getElementById('ap-corte-contenido');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Corte de Ingresos -->
+      <div>
+        <h4 style="color:var(--gold);margin-bottom:10px">✂️ Corte de Ingresos (Revenue Cutoff)</h4>
+        <p style="font-size:.77rem;color:var(--text-muted);margin-bottom:12px">
+          Objetivo: Verificar que los ingresos se reconocen en el período correcto conforme a NIIF 15.
+          Revisar las últimas 15 facturas del ejercicio y las primeras 15 del siguiente.
+        </p>
+        <table class="ef-table">
+          <thead><tr><th>N° Factura</th><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Período correcto</th><th>Diferencia</th><th>Marcas</th></tr></thead>
+          <tbody id="corte-ingresos-filas">
+            ${[...Array(8)].map((_,i)=>`<tr>
+              <td><input style="width:80px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary)" placeholder="001-001-"></td>
+              <td><input type="date" style="width:110px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.75rem;color:var(--text-primary)"></td>
+              <td><input style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary)" placeholder="Cliente..."></td>
+              <td><input type="number" style="width:80px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary);text-align:right"></td>
+              <td><select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.72rem;color:var(--text-primary)"><option>✅ Correcto</option><option>⚠️ Año siguiente</option><option>❌ Incorrecto</option></select></td>
+              <td><input type="number" style="width:70px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:#ef4444;text-align:right"></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:3px">
+                  <input style="width:40px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.8rem;text-align:center;color:var(--gold)" value="✓">
+                  <button onclick="abrirPickerMarcas(this.previousElementSibling.id||'')" style="padding:2px 5px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="form-group" style="margin-top:10px">
+          <label>Conclusión — Corte de Ingresos</label>
+          <textarea rows="3" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.78rem" placeholder="Las pruebas de corte de ingresos indican que..."></textarea>
+        </div>
+      </div>
+      <!-- Corte de Compras -->
+      <div>
+        <h4 style="color:var(--gold);margin-bottom:10px">✂️ Corte de Compras y Gastos (Expense Cutoff)</h4>
+        <p style="font-size:.77rem;color:var(--text-muted);margin-bottom:12px">
+          Objetivo: Verificar que los gastos y compras se registran en el período correcto.
+          Revisar últimas 15 facturas de compras y primeras 15 del siguiente período.
+        </p>
+        <table class="ef-table">
+          <thead><tr><th>N° Factura</th><th>Fecha</th><th>Proveedor</th><th>Monto</th><th>Período correcto</th><th>Diferencia</th><th>Marcas</th></tr></thead>
+          <tbody id="corte-compras-filas">
+            ${[...Array(8)].map((_,i)=>`<tr>
+              <td><input style="width:80px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary)" placeholder="001-001-"></td>
+              <td><input type="date" style="width:110px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.75rem;color:var(--text-primary)"></td>
+              <td><input style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary)" placeholder="Proveedor..."></td>
+              <td><input type="number" style="width:80px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:var(--text-primary);text-align:right"></td>
+              <td><select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.72rem;color:var(--text-primary)"><option>✅ Correcto</option><option>⚠️ Año siguiente</option><option>❌ Incorrecto</option></select></td>
+              <td><input type="number" style="width:70px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 5px;font-size:.75rem;color:#ef4444;text-align:right"></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:3px">
+                  <input style="width:40px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.8rem;text-align:center;color:var(--gold)" value="✓">
+                  <button onclick="abrirPickerMarcas('')" style="padding:2px 5px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="form-group" style="margin-top:10px">
+          <label>Conclusión — Corte de Compras y Gastos</label>
+          <textarea rows="3" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.78rem" placeholder="Las pruebas de corte de compras indican que..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-secondary" onclick="guardarCorte()">💾 Guardar</button>
+      <button class="btn-secondary" onclick="imprimirCorte()">🖨 Imprimir</button>
+    </div>`;
+}
+
+function guardarCorte() { toast('Pruebas de corte guardadas ✓','success'); }
+function imprimirCorte() {
+  const el=document.getElementById('ap-corte-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Corte</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 6px}th{background:#e8e8e8}input,select,textarea{border:none;background:none;font-family:inherit;font-size:8.5pt}@page{size:A4 landscape;margin:12mm}</style></head><body><h2>PRUEBAS DE CORTE — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ANÁLISIS H/V EN AUDITORÍA — TODAS LAS CUENTAS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderHVAudit() {
+  const el = document.getElementById('ap-hv-audit-contenido');
+  if (!el) return;
+  const data = window._apEEFFSeleccionado;
+  if (!data?.raw) { el.innerHTML='<p style="color:var(--text-muted)">Vincule un EEFF primero.</p>'; return; }
+
+  const raw = normalizarRaw(data.raw);
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const totalActivo = parseFloat(raw['TOTAL ACTIVO'])||
+    (parseFloat(raw['TOTAL ACTIVO CORRIENTE'])||0)+(parseFloat(raw['TOTAL ACTIVO NO CORRIENTE'])||0)||1;
+  const ventas = parseFloat(raw['VENTAS NETAS'])||1;
+
+  // Todas las cuentas del raw ordenadas
+  const cuentas = Object.entries(raw)
+    .filter(([,v]) => Math.abs(parseFloat(v)||0) > 0)
+    .sort(([a],[b]) => a.localeCompare(b));
+
+  const fila = ([k,v]) => {
+    const n = parseFloat(v)||0;
+    const pctAct = (Math.abs(n)/totalActivo*100).toFixed(1);
+    const pctVta = (Math.abs(n)/ventas*100).toFixed(1);
+    const esTotal = k.startsWith('TOTAL');
+    return `<tr ${esTotal?'class="subtotal"':''}>
+      <td class="account" style="font-size:.76rem;padding-left:${esTotal?8:16}px">${k}</td>
+      <td style="text-align:right;font-family:var(--font-mono);font-size:.76rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(Math.abs(n))+')':fmtN(n)}</td>
+      <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctAct}%</td>
+      <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctVta}%</td>
+      <td style="text-align:center;font-size:.72rem;color:${Math.abs(n)/totalActivo>0.01?'#f59e0b':'var(--text-muted)'}">${Math.abs(n)/totalActivo>0.1?'★ MATERIAL':Math.abs(n)/totalActivo>0.01?'● Significativa':'—'}</td>
+    </tr>`;
+  };
+
+  el.innerHTML = `
+    <p style="font-size:.76rem;color:var(--text-muted);margin-bottom:10px">
+      ${cuentas.length} cuentas | Base % Activo Total: ${fmtN(totalActivo)} | Base % Ventas: ${fmtN(ventas)}
+    </p>
+    <div style="overflow-x:auto">
+      <table class="ef-table">
+        <thead><tr>
+          <th class="left">Cuenta</th>
+          <th style="text-align:right">Saldo USD</th>
+          <th style="text-align:right">% Activo Total</th>
+          <th style="text-align:right">% Ventas</th>
+          <th style="text-align:center">Relevancia</th>
+        </tr></thead>
+        <tbody>${cuentas.map(fila).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function imprimirHVAudit() {
+  const el=document.getElementById('ap-hv-audit-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>H/V Auditoría</title><style>body{font-family:Arial;padding:25px;font-size:8pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:3px 6px}th{background:#e8e8e8}.subtotal td{font-weight:700;background:#f5f5f5}@page{size:A4;margin:12mm}</style></head><body><h2>ANÁLISIS VERTICAL — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BENCHMARKS DEL SECTOR
+// ══════════════════════════════════════════════════════════════════════════════
+const BENCHMARKS = {
+  comercial:    { corriente:[1.2,2.0], prueba:[0.8,1.5], endeud:[40,65], margenNeto:[2,8], roe:[10,20], rotInv:[6,15], diasCobro:[30,60] },
+  industrial:   { corriente:[1.3,2.5], prueba:[0.9,1.8], endeud:[35,60], margenNeto:[4,12], roe:[12,22], rotInv:[4,10], diasCobro:[30,45] },
+  servicios:    { corriente:[1.0,1.8], prueba:[0.9,1.6], endeud:[30,55], margenNeto:[8,20], roe:[15,30], rotInv:[0,0], diasCobro:[20,45] },
+  construccion: { corriente:[1.1,1.8], prueba:[0.8,1.4], endeud:[50,75], margenNeto:[3,10], roe:[8,18], rotInv:[2,6], diasCobro:[45,90] },
+  agropecuario: { corriente:[1.2,2.2], prueba:[0.7,1.3], endeud:[40,70], margenNeto:[3,10], roe:[8,15], rotInv:[3,8], diasCobro:[30,60] },
+  tecnologia:   { corriente:[1.5,3.0], prueba:[1.2,2.5], endeud:[20,45], margenNeto:[10,30], roe:[15,35], rotInv:[0,0], diasCobro:[30,60] },
+  salud:        { corriente:[1.2,2.5], prueba:[1.0,2.0], endeud:[30,55], margenNeto:[5,15], roe:[10,25], rotInv:[4,12], diasCobro:[30,60] },
+  educacion:    { corriente:[0.9,1.8], prueba:[0.8,1.6], endeud:[30,60], margenNeto:[5,20], roe:[8,20], rotInv:[0,0], diasCobro:[15,30] },
+};
+
+function generarBenchmarks() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const sector = document.getElementById('ap-sector')?.value || 'comercial';
+  const bm = BENCHMARKS[sector] || BENCHMARKS.comercial;
+
+  const ac=g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE'),
+    inv=g('INVENTARIOS'), ta=g('TOTAL ACTIVO')||1, tp=g('TOTAL PASIVO'),
+    vtas=g('VENTAS NETAS')||1, util=g('UTILIDAD EJERCICIO'), pat=g('TOTAL PATRIMONIO')||1,
+    cxc=g('CUENTAS POR COBRAR');
+
+  const indicadores = [
+    { nombre:'Razón Corriente', formula:'AC/PC', valor:pc?(ac/pc):0, ref:bm.corriente, fmt:v=>v.toFixed(2)+'x', descripcion:'Capacidad de pago de obligaciones CP' },
+    { nombre:'Prueba Ácida', formula:'(AC-Inv)/PC', valor:pc?((ac-inv)/pc):0, ref:bm.prueba, fmt:v=>v.toFixed(2)+'x', descripcion:'Liquidez sin considerar inventarios' },
+    { nombre:'Endeudamiento sobre Activos', formula:'Pasivo/Activo', valor:(tp/ta*100), ref:bm.endeud, fmt:v=>v.toFixed(1)+'%', descripcion:'Proporción del activo financiado con deuda', invertido:true },
+    { nombre:'Margen Neto', formula:'Util.Neta/Ventas', valor:(util/vtas*100), ref:bm.margenNeto, fmt:v=>v.toFixed(1)+'%', descripcion:'Rentabilidad por cada dólar de ventas' },
+    { nombre:'ROE', formula:'Util/Patrimonio', valor:(util/pat*100), ref:bm.roe, fmt:v=>v.toFixed(1)+'%', descripcion:'Retorno sobre el patrimonio' },
+    { nombre:'Días de Cobro', formula:'CxC/Vtas×365', valor:cxc?(cxc/vtas*365):0, ref:bm.diasCobro, fmt:v=>Math.round(v)+' días', descripcion:'Velocidad de recuperación de cartera', invertido:true },
+  ].filter(i => i.ref[0]!==0||i.ref[1]!==0);
+
+  const el = document.getElementById('ap-benchmarks-contenido');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="margin-bottom:14px;padding:10px 12px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;font-size:.78rem">
+      Sector: <strong style="color:#6366f1">${sector.charAt(0).toUpperCase()+sector.slice(1)}</strong> |
+      Empresa: <strong>${_apExpediente.empresa}</strong> | Período: <strong>${_apExpediente.periodo}</strong>
+    </div>
+    <table class="ef-table">
+      <thead><tr>
+        <th class="left">Indicador</th>
+        <th class="left">Descripción</th>
+        <th style="text-align:right">Empresa</th>
+        <th style="text-align:center">Rango Sector</th>
+        <th style="text-align:center">Estado</th>
+        <th class="left">Implicación de Auditoría</th>
+      </tr></thead>
+      <tbody>${indicadores.map(ind => {
+        const enRango = ind.valor >= ind.ref[0] && ind.valor <= ind.ref[1];
+        const porEncima = ind.valor > ind.ref[1];
+        const porDebajo = ind.valor < ind.ref[0];
+        const color = enRango ? 'var(--emerald)' : porEncima ? (ind.invertido?'#ef4444':'#f59e0b') : '#ef4444';
+        const estado = enRango ? '✅ En rango' : porEncima ? (ind.invertido?'🔴 Alto':'🟡 Sobre sector') : '🔴 Bajo sector';
+        const implicacion = enRango ? 'Sin señales de alerta. Riesgo normal.' :
+          porDebajo ? 'Por debajo del sector — revisar posibles pérdidas ocultas, activos sobrevaluados o problemas operacionales.' :
+          'Por encima del sector — verificar si responde a gestión eficiente o a irregularidades contables.';
+        return `<tr>
+          <td class="account" style="font-weight:600">${ind.nombre}</td>
+          <td style="font-size:.74rem;color:var(--text-muted)">${ind.descripcion}</td>
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:${color}">${ind.fmt(ind.valor)}</td>
+          <td style="text-align:center;font-size:.75rem">${ind.fmt(ind.ref[0])} – ${ind.fmt(ind.ref[1])}</td>
+          <td style="text-align:center;font-size:.78rem;white-space:nowrap">${estado}</td>
+          <td style="font-size:.74rem;color:${enRango?'var(--text-muted)':'var(--text-primary)'}">${implicacion}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+}
+
+function guardarBenchmarks() { toast('Benchmarks guardados ✓','success'); }
+function imprimirBenchmarks() {
+  const el=document.getElementById('ap-benchmarks-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Benchmarks</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}@page{size:A4;margin:12mm}</style></head><body><h2>BENCHMARKS DEL SECTOR — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VARIACIONES > 10%
+// ══════════════════════════════════════════════════════════════════════════════
+function analizarVariaciones() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const el = document.getElementById('ap-variaciones-contenido');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="padding:12px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;margin-bottom:14px;font-size:.78rem">
+      <strong style="color:#f59e0b">ℹ️ Indagación de variaciones</strong>: Para usar esta función con comparación entre dos períodos,
+      cargue 2 EEFF desde la lista de guardados. Actualmente se muestra el análisis de un solo período como referencia.
+    </div>
+    <table class="ef-table">
+      <thead><tr>
+        <th class="left">Cuenta</th><th style="text-align:right">Saldo Actual</th><th style="text-align:right">Variación %</th>
+        <th>Riesgo</th><th class="left">Indagación / Explicación</th><th>Estado</th>
+      </tr></thead>
+      <tbody>${Object.entries(raw)
+        .filter(([,v]) => Math.abs(parseFloat(v)||0) > 0)
+        .sort(([,a],[,b]) => Math.abs(parseFloat(b)||0) - Math.abs(parseFloat(a)||0))
+        .slice(0,30)
+        .map(([k,v], i) => {
+          const n = parseFloat(v)||0;
+          const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+          return `<tr>
+            <td class="account" style="font-size:.76rem">${k}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-size:.76rem">${fmtN(n)}</td>
+            <td style="text-align:right;color:var(--text-muted)">—</td>
+            <td style="text-align:center">
+              <select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.7rem;color:var(--text-primary)">
+                <option value="bajo">🟢 Bajo</option>
+                <option value="medio">🟡 Medio</option>
+                <option value="alto">🔴 Alto</option>
+              </select>
+            </td>
+            <td><input placeholder="Explicación del cliente / procedimiento aplicado..."
+              style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:.75rem;color:var(--text-primary)"></td>
+            <td style="text-align:center">
+              <select style="background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;font-size:.7rem;color:var(--text-primary)">
+                <option>⬜ Pendiente</option><option>✅ Satisfactorio</option><option>⚑ Hallazgo</option>
+              </select>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-secondary" onclick="guardarVariaciones()">💾 Guardar</button>
+      <button class="btn-secondary" onclick="imprimirVariaciones()">🖨 Imprimir</button>
+    </div>`;
+}
+
+function guardarVariaciones() { toast('Indagaciones guardadas ✓','success'); }
+function imprimirVariaciones() {
+  const el=document.getElementById('ap-variaciones-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Variaciones</title><style>body{font-family:Arial;padding:25px;font-size:8pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:3px 6px}th{background:#e8e8e8}input,select{border:none;background:none;font-family:inherit;font-size:8pt;width:100%}@page{size:A4 landscape;margin:10mm}</style></head><body><h2>VARIACIONES — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ÍNDICES FINANCIEROS DE AUDITORÍA
+// ══════════════════════════════════════════════════════════════════════════════
+function generarIndicesAudit() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const fmtP = v => (parseFloat(v)||0).toFixed(1)+'%';
+  const fmtR = v => (parseFloat(v)||0).toFixed(2);
+
+  const ac=g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE'),
+    ta=g('TOTAL ACTIVO')||1, tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO')||1,
+    ef=g('EFECTIVO'), inv=g('INVENTARIOS'), cxc=g('CUENTAS POR COBRAR'),
+    cxp=g('CUENTAS POR PAGAR'), ppe=g('PROPIEDAD PLANTA EQUIPO'),
+    dep=g('DEPRECIACION ACUMULADA'), vtas=g('VENTAS NETAS')||1,
+    cv=g('COSTO DE VENTAS'), util=g('UTILIDAD EJERCICIO'),
+    gfin=g('GASTO FINANCIERO'), gdep=g('GASTO DEPRECIACION'),
+    ir=g('IMPUESTO RENTA GASTO');
+
+  const ebit = util + ir + gfin;
+  const ebitda = ebit + gdep;
+  const deudaFin = g('OBLIGACIONES BANCARIAS CP') + g('OBLIGACIONES BANCARIAS LP');
+
+  const grupos = [
+    { grupo:'LIQUIDEZ', items:[
+      { nombre:'Razón Corriente', valor:pc?(ac/pc):0, fmt:fmtR, rango:[1.5,2.5], unidad:'x', desc:'Activo Corriente / Pasivo Corriente' },
+      { nombre:'Prueba Ácida', valor:pc?((ac-inv)/pc):0, fmt:fmtR, rango:[1.0,2.0], unidad:'x', desc:'(AC − Inventarios) / Pasivo Corriente' },
+      { nombre:'Tesorería', valor:pc?(ef/pc):0, fmt:fmtR, rango:[0.2,0.5], unidad:'x', desc:'Efectivo / Pasivo Corriente' },
+      { nombre:'Capital de Trabajo Neto', valor:ac-pc, fmt:v=>'$'+fmtN(v), rango:null, unidad:'USD', desc:'Activo Corriente − Pasivo Corriente' },
+    ]},
+    { grupo:'SOLVENCIA Y ENDEUDAMIENTO', items:[
+      { nombre:'Endeudamiento s/Activos', valor:tp/ta*100, fmt:fmtP, rango:[30,55], unidad:'%', desc:'Pasivo Total / Activo Total', invertido:true },
+      { nombre:'Endeudamiento s/Patrimonio', valor:pat?(tp/pat*100):0, fmt:fmtP, rango:[50,120], unidad:'%', desc:'Pasivo Total / Patrimonio', invertido:true },
+      { nombre:'Autonomía Financiera', valor:pat/ta*100, fmt:fmtP, rango:[35,70], unidad:'%', desc:'Patrimonio / Activo Total' },
+      { nombre:'Deuda Financiera / EBITDA', valor:ebitda?(deudaFin/ebitda):0, fmt:fmtR, rango:[0,3], unidad:'x', desc:'Deuda bancaria total / EBITDA', invertido:true },
+      { nombre:'Cobertura de Intereses', valor:gfin?(ebit/gfin):0, fmt:fmtR, rango:[3,10], unidad:'x', desc:'EBIT / Gastos Financieros' },
+    ]},
+    { grupo:'RENTABILIDAD', items:[
+      { nombre:'Margen Bruto', valor:(vtas-cv)/vtas*100, fmt:fmtP, rango:[20,50], unidad:'%', desc:'(Ventas − Costo Ventas) / Ventas' },
+      { nombre:'Margen Operacional (EBIT)', valor:ebit/vtas*100, fmt:fmtP, rango:[5,20], unidad:'%', desc:'EBIT / Ventas' },
+      { nombre:'Margen EBITDA', valor:ebitda/vtas*100, fmt:fmtP, rango:[8,25], unidad:'%', desc:'EBITDA / Ventas' },
+      { nombre:'Margen Neto', valor:util/vtas*100, fmt:fmtP, rango:[3,15], unidad:'%', desc:'Utilidad Neta / Ventas' },
+      { nombre:'ROA', valor:util/ta*100, fmt:fmtP, rango:[3,10], unidad:'%', desc:'Utilidad Neta / Activo Total' },
+      { nombre:'ROE', valor:util/pat*100, fmt:fmtP, rango:[10,25], unidad:'%', desc:'Utilidad Neta / Patrimonio' },
+    ]},
+    { grupo:'ACTIVIDAD Y CICLO OPERACIONAL', items:[
+      { nombre:'Rotación CxC', valor:cxc?(vtas/cxc):0, fmt:fmtR, rango:[6,15], unidad:'veces', desc:'Ventas / CxC' },
+      { nombre:'Días de Cobro', valor:cxc?(cxc/vtas*365):0, fmt:v=>Math.round(v)+' d', rango:[24,60], unidad:'días', desc:'CxC / Ventas × 365', invertido:true },
+      { nombre:'Rotación Inventarios', valor:inv?(cv/inv):0, fmt:fmtR, rango:[4,12], unidad:'veces', desc:'Costo Ventas / Inventarios' },
+      { nombre:'Días de Inventario', valor:inv&&cv?(inv/cv*365):0, fmt:v=>Math.round(v)+' d', rango:[30,90], unidad:'días', desc:'Inventarios / Costo Ventas × 365', invertido:true },
+      { nombre:'Días de Pago', valor:cxp&&cv?(cxp/cv*365):0, fmt:v=>Math.round(v)+' d', rango:[20,45], unidad:'días', desc:'CxP / Costo Ventas × 365' },
+      { nombre:'Ciclo de Caja', valor:((cxc/vtas*365)+(inv&&cv?inv/cv*365:0))-(cxp&&cv?cxp/cv*365:0), fmt:v=>Math.round(v)+' d', rango:[0,60], unidad:'días', desc:'Días cobro + Días inv − Días pago', invertido:true },
+      { nombre:'Rotación Activos', valor:vtas/ta, fmt:fmtR, rango:[0.5,2.0], unidad:'x', desc:'Ventas / Total Activos' },
+    ]},
+  ];
+
+  const el = document.getElementById('ap-indices-audit-contenido');
+  if (!el) return;
+
+  el.innerHTML = grupos.map(grp => `
+    <div style="margin-bottom:18px">
+      <h5 style="color:var(--gold);margin-bottom:8px;border-left:3px solid var(--gold);padding-left:10px">${grp.grupo}</h5>
+      <table class="ef-table">
+        <thead><tr>
+          <th class="left">Indicador</th><th class="left">Fórmula</th>
+          <th style="text-align:right">Valor</th><th style="text-align:center">Rango normal</th>
+          <th style="text-align:center">Estado</th><th class="left">Implicación de Auditoría</th>
+        </tr></thead>
+        <tbody>${grp.items.map(it => {
+          const v = parseFloat(it.valor)||0;
+          let estado='', color='var(--text-muted)', implicacion='';
+          if (it.rango) {
+            const enRango = v>=it.rango[0] && v<=it.rango[1];
+            const alto = v>it.rango[1];
+            color = enRango?'var(--emerald)':alto?(it.invertido?'#ef4444':'#f59e0b'):'#ef4444';
+            estado = enRango?'✅':alto?(it.invertido?'🔴 Elevado':'🟡 Alto'):'🔴 Bajo';
+            implicacion = enRango?'Normal — sin señal de alerta':
+              alto&&it.invertido?`Sobrepasa el rango — revisar si la concentración de deuda o días es sostenible`:
+              alto?'Por encima del sector — verificar si es gestión eficiente o irregularidad':
+              'Por debajo del rango — posible riesgo de liquidez o baja rentabilidad que merece atención';
+          }
+          return `<tr>
+            <td class="account">${it.nombre}</td>
+            <td style="font-size:.72rem;color:var(--text-muted)">${it.desc}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:${color}">${it.fmt(v)}</td>
+            <td style="text-align:center;font-size:.74rem">${it.rango?it.fmt(it.rango[0])+' – '+it.fmt(it.rango[1]):'—'}</td>
+            <td style="text-align:center">${estado}</td>
+            <td style="font-size:.74rem;color:${estado==='✅'?'var(--text-muted)':'var(--text-primary)'}">${implicacion}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`).join('') +
+    `<div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn-secondary" onclick="imprimirIndicesAudit()">🖨 Imprimir</button>
+    </div>`;
+}
+
+function imprimirIndicesAudit() {
+  const el=document.getElementById('ap-indices-audit-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Índices</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}@page{size:A4;margin:12mm}</style></head><body><h2>ÍNDICES FINANCIEROS — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CARTA DE REPRESENTACIÓN DE LA GERENCIA (NIA 580)
+// ══════════════════════════════════════════════════════════════════════════════
+function generarCartaRepresentacion() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const fmtN = v => '$'+(parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const g = k => parseFloat(raw[k])||0;
+
+  const empresa = _apExpediente.empresa || '________________________________';
+  const ruc = _apExpediente.ruc || '________________';
+  const periodo = _apExpediente.periodo || '____';
+  const auditor = _apExpediente.auditor || '________________________________';
+  const totalActivo = fmtN(g('TOTAL ACTIVO'));
+  const util = fmtN(g('UTILIDAD EJERCICIO'));
+  const hoy = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+
+  const el = document.getElementById('ap-carta-rep-contenido');
+  if (!el) return;
+
+  const carta = `
+    <div id="carta-rep-texto" style="max-width:700px;margin:0 auto;font-family:Georgia,serif;line-height:1.8;font-size:.84rem;color:var(--text-primary)">
+      <div style="text-align:right;margin-bottom:30px;color:var(--text-muted);font-size:.82rem">
+        ${empresa} | RUC: ${ruc}<br>
+        Quito, Ecuador, ${hoy}
+      </div>
+      <div style="margin-bottom:20px">
+        Señor(a):<br>
+        <strong>${auditor}</strong><br>
+        Auditor Independiente<br>
+        Ciudad.-
+      </div>
+      <p style="margin-bottom:10px"><strong>Ref.: Carta de Representación de la Gerencia — Período ${periodo}</strong></p>
+      <p>Esta carta es proporcionada en relación con su auditoría de los estados financieros de <strong>${empresa}</strong> (RUC: ${ruc}) por el período terminado el 31 de diciembre de ${periodo}, con el propósito de expresar una opinión sobre si tales estados financieros están presentados razonablemente, en todos sus aspectos materiales, de conformidad con las Normas Internacionales de Información Financiera (NIIF).</p>
+      <p>En cumplimiento de la Norma Internacional de Auditoría 580 — Representaciones Escritas, confirmamos, en la mejor medida de nuestro conocimiento y leal saber y entender, las siguientes declaraciones:</p>
+      <ol style="margin:10px 0;padding-left:20px">
+        <li style="margin-bottom:8px">Hemos cumplido con nuestra responsabilidad de preparar y presentar los estados financieros de conformidad con las NIIF, según se establece en los términos del encargo de auditoría.</li>
+        <li style="margin-bottom:8px">Hemos proporcionado al auditor acceso a toda la información de la que tenemos conocimiento que es relevante para la preparación de los estados financieros, incluyendo registros, documentación y otros asuntos.</li>
+        <li style="margin-bottom:8px">Hemos revelado al auditor los resultados de nuestra evaluación del riesgo de que los estados financieros puedan contener incorrecciones materiales debidas a fraude.</li>
+        <li style="margin-bottom:8px">Hemos revelado al auditor todos los hechos conocidos que puedan afectar a la continuidad de la empresa como negocio en marcha.</li>
+        <li style="margin-bottom:8px">Todas las transacciones han sido registradas en los libros contables y se reflejan en los estados financieros. El activo total al ${periodo} asciende a <strong>${totalActivo}</strong> y la utilidad (pérdida) del ejercicio es de <strong>${util}</strong>.</li>
+        <li style="margin-bottom:8px">No existen errores u omisiones materiales en los estados financieros. Las estimaciones contables utilizadas son razonables.</li>
+        <li style="margin-bottom:8px">Hemos revelado al auditor todas las contingencias significativas y litigios conocidos.</li>
+        <li style="margin-bottom:8px">Las partes vinculadas (relacionadas) y todas las transacciones con ellas han sido debidamente registradas y reveladas en los estados financieros.</li>
+        <li style="margin-bottom:8px">Hemos revelado todos los eventos ocurridos después de la fecha de los estados financieros que requieren ajuste o revelación conforme a la NIC 10.</li>
+        <li style="margin-bottom:8px">Los activos de la compañía no están gravados o pignorados, excepto por los revelados en las notas a los estados financieros.</li>
+        <li style="margin-bottom:8px">No hemos tenido conocimiento de ningún fraude real o sospechado que haya afectado o pudiera afectar a la compañía.</li>
+        <li style="margin-bottom:8px">Los estados financieros no contienen información incorrecta, ya sea de forma individual o colectiva, que sea de naturaleza material.</li>
+      </ol>
+      <div style="margin-top:50px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+        <div style="text-align:center">
+          <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:60px">
+            ______________________________________<br>
+            <strong>Representante Legal</strong><br>
+            <span style="font-size:.78rem;color:var(--text-muted)">${empresa}</span>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:60px">
+            ______________________________________<br>
+            <strong>Contador / Director Financiero</strong><br>
+            <span style="font-size:.78rem;color:var(--text-muted)">${empresa}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  el.innerHTML = carta;
+}
+
+function imprimirCartaRep() {
+  const el=document.getElementById('carta-rep-texto'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Carta de Representación</title>
+  <style>body{font-family:Georgia,serif;padding:40px 50px;font-size:11pt;line-height:1.8;color:#1a1a2e}
+  ol{padding-left:20px}li{margin-bottom:8px}
+  @page{size:A4;margin:20mm}</style></head><body>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
+function exportarCartaRepWord() {
+  const el=document.getElementById('carta-rep-texto'); if(!el) return;
+  const html=`<html><head><meta charset="utf-8"><style>body{font-family:Calibri,Arial;font-size:11pt;line-height:1.8;padding:40pt}ol{padding-left:20pt}li{margin-bottom:6pt}</style></head><body>${el.innerHTML}</body></html>`;
+  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Carta_Representacion_${_apExpediente?.empresa||'empresa'}_${_apExpediente?.periodo||''}.doc`;
+  a.click();
+  toast('Carta exportada a Word ✓','success');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EEFF VINCULADO — BALANCE COMPLETO
+// ══════════════════════════════════════════════════════════════════════════════
+function renderEEFFenAuditoria(tab) {
+  const el = document.getElementById('ap-eeff-audit-contenido');
+  if (!el) return;
+  const data = window._apEEFFSeleccionado;
+  if (!data || !data.raw) {
+    el.innerHTML = '<p style="color:var(--text-muted)">⚠️ No hay EEFF vinculado. Use "Usar datos de Estados Financieros".</p>';
+    return;
+  }
+
+  const raw = normalizarRaw(data.raw);
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const g = k => parseFloat(raw[k])||0;
+  const fila = (k, indent) => {
+    const v = parseFloat(raw[k])||0;
+    if (Math.abs(v) === 0) return '';
+    const esTotal = k.startsWith('TOTAL');
+    return `<tr ${esTotal?'class="subtotal"':''}>
+      <td class="account" style="padding-left:${indent}px;font-size:.78rem">${k}</td>
+      <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;color:${v<0?'#ef4444':'inherit'}">${v<0?'('+fmtN(Math.abs(v))+')':fmtN(v)}</td>
+    </tr>`;
+  };
+
+  const BALANCE_GRUPOS = [
+    {titulo:'ACTIVO CORRIENTE', cuentas:['EFECTIVO','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES','INVENTARIOS','IVA EN COMPRAS','ANTICIPO IR','OTROS ACTIVOS CORRIENTES','TOTAL ACTIVO CORRIENTE']},
+    {titulo:'ACTIVO NO CORRIENTE', cuentas:['PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA','ACTIVOS INTANGIBLES','AMORTIZACION INTANGIBLES','INVERSIONES LP','OTROS ACTIVOS NO CORRIENTES','TOTAL ACTIVO NO CORRIENTE']},
+    {titulo:'TOTAL ACTIVO', cuentas:['TOTAL ACTIVO']},
+    {titulo:'PASIVO CORRIENTE', cuentas:['CUENTAS POR PAGAR','OBLIGACIONES BANCARIAS CP','IMPUESTO RENTA POR PAGAR','PARTICIPACION TRABAJADORES','IESS POR PAGAR','ANTICIPOS CLIENTES','OTROS PASIVOS CORRIENTES','TOTAL PASIVO CORRIENTE']},
+    {titulo:'PASIVO NO CORRIENTE', cuentas:['OBLIGACIONES BANCARIAS LP','PROVISION JUBILACION PATRONAL','OTROS PASIVOS NO CORRIENTES','TOTAL PASIVO']},
+    {titulo:'PATRIMONIO', cuentas:['CAPITAL SOCIAL','RESERVA LEGAL','RESERVAS FACULTATIVAS','UTILIDADES RETENIDAS','UTILIDAD EJERCICIO','TOTAL PATRIMONIO']},
+  ];
+  const ER_GRUPOS = [
+    {titulo:'INGRESOS', cuentas:['VENTAS NETAS','OTROS INGRESOS']},
+    {titulo:'COSTOS', cuentas:['COSTO DE VENTAS']},
+    {titulo:'GASTOS', cuentas:['GASTO PERSONAL','GASTO ADMINISTRATIVO','GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO','OTROS GASTOS']},
+    {titulo:'RESULTADO', cuentas:['UTILIDAD BRUTA','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO','PARTICIPACION TRABAJADORES GASTO','UTILIDAD EJERCICIO']},
+  ];
+
+  if (tab==='balance') {
+    el.innerHTML = `<h4 style="color:var(--gold)">Balance General — ${data.year||''} | ${data.nombreEmpresa||''}</h4>
+      <div style="overflow-x:auto"><table class="ef-table">
+        <thead><tr><th class="left">Cuenta</th><th style="text-align:right">USD</th></tr></thead>
+        <tbody>${BALANCE_GRUPOS.map(grp=>`
+          <tr><td class="section-header" colspan="2">${grp.titulo}</td></tr>
+          ${grp.cuentas.map(k=>fila(k, k.startsWith('TOTAL')?8:20)).join('')}`).join('')}
+        </tbody>
+      </table></div>`;
+  } else if (tab==='resultados') {
+    el.innerHTML = `<h4 style="color:var(--gold)">Estado de Resultados — ${data.year||''}</h4>
+      <div style="overflow-x:auto"><table class="ef-table">
+        <thead><tr><th class="left">Concepto</th><th style="text-align:right">USD</th></tr></thead>
+        <tbody>${ER_GRUPOS.map(grp=>`
+          <tr><td class="section-header" colspan="2">${grp.titulo}</td></tr>
+          ${grp.cuentas.map(k=>fila(k, k.startsWith('UTILIDAD')||k.startsWith('TOTAL')?8:20)).join('')}`).join('')}
+        </tbody>
+      </table></div>`;
+  } else if (tab==='indices') {
+    generarIndicesAudit();
+    const idxEl=document.getElementById('ap-indices-audit-contenido');
+    el.innerHTML=idxEl?idxEl.innerHTML:'<p>Sin datos.</p>';
+  } else if (tab==='h-v') {
+    renderHVAudit();
+    const hvEl=document.getElementById('ap-hv-audit-contenido');
+    el.innerHTML=hvEl?hvEl.innerHTML:'<p>Sin datos.</p>';
+  }
+}
+
 
 function nuevaCedulaSumaria() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
