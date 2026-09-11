@@ -2152,13 +2152,14 @@ table.ef-table .negative { color: var(--red); }
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px">Visualice y analice los estados financieros cargados para esta auditoría.</p>
             <div class="doc-btn-row" style="margin-bottom:14px;flex-wrap:wrap">
               <button class="btn-secondary" onclick="usarDatosEstadosFinancieros()">🔗 Cambiar EEFF</button>
-              <button class="btn-calc" onclick="window._eeffTabActual='balance';renderEEFFenAuditoria('balance')">Balance General</button>
-              <button class="btn-calc" onclick="window._eeffTabActual='resultados';renderEEFFenAuditoria('resultados')">Resultados</button>
-              <button class="btn-calc" onclick="renderEEFFenAuditoria('indices')">Índices</button>
-              <button class="btn-calc" onclick="renderEEFFenAuditoria('h-v')">Análisis H/V</button>
+              <button class="btn-calc" onclick="window._eeffTabActual='balance';renderEEFFenAuditoria('balance')">📋 Balance General</button>
+              <button class="btn-calc" onclick="window._eeffTabActual='resultados';renderEEFFenAuditoria('resultados')">📈 Resultados</button>
+              <button class="btn-calc" onclick="window._eeffTabActual='hv';renderEEFFenAuditoria('hv')">📊 Análisis H/V</button>
+              <button class="btn-calc" onclick="window._eeffTabActual='indices';renderEEFFenAuditoria('indices')">📐 Índices</button>
             </div>
+            <div id="ap-datos-status" style="margin-bottom:10px;font-size:.78rem;color:var(--text-muted)"></div>
             <div id="ap-eeff-audit-contenido">
-              <p style="color:var(--text-muted);font-size:.82rem">Vincule un EEFF usando "Usar datos de Estados Financieros" en la sección de carga.</p>
+              <p style="color:var(--text-muted);font-size:.82rem">Vincule un EEFF usando "Cambiar EEFF" para comenzar.</p>
             </div>
           </div>
         </div>
@@ -16339,52 +16340,79 @@ function imprimirCorte() {
 function renderHVAudit() {
   const el = document.getElementById('ap-hv-audit-contenido');
   if (!el) return;
-  const data = window._apEEFFSeleccionado;
-  if (!data?.raw) { el.innerHTML='<p style="color:var(--text-muted)">Vincule un EEFF primero.</p>'; return; }
 
-  const raw = normalizarRaw(data.raw);
-  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const totalActivo = parseFloat(raw['TOTAL ACTIVO'])||
-    (parseFloat(raw['TOTAL ACTIVO CORRIENTE'])||0)+(parseFloat(raw['TOTAL ACTIVO NO CORRIENTE'])||0)||1;
-  const ventas = parseFloat(raw['VENTAS NETAS'])||1;
+  let data = window._apEEFFSeleccionado;
+  if (!data?.raw || Object.keys(data.raw).length === 0) {
+    if (_apExpediente?.eeffData?.raw && Object.keys(_apExpediente.eeffData.raw).length > 0) {
+      data = _apExpediente.eeffData;
+      window._apEEFFSeleccionado = data;
+    }
+  }
+  if (!data?.raw || Object.keys(data.raw).length === 0) {
+    const p = typeof periodos !== 'undefined' && periodos.length > 0 ? periodos[periodos.length-1] : null;
+    if (p?.raw) data = { raw:p.raw, rawGrupos:p.rawGrupos||{}, rawNorm:p.rawNorm||normalizarRaw(p.raw), year:p.nombre, nombreEmpresa:p.nombreEmpresa||p.ruc||'' };
+  }
+  if (!data?.raw || Object.keys(data.raw).length === 0) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted)">
+      <p style="margin-bottom:12px">⚠️ Vincule un EEFF primero.</p>
+      <button class="btn-calc" onclick="usarDatosEstadosFinancieros()">🔗 Vincular EEFF</button>
+    </div>`;
+    return;
+  }
 
-  // Todas las cuentas del raw ordenadas
-  const cuentas = Object.entries(raw)
+  const rawOrig  = data.raw;
+  const rawNorm  = (data.rawNorm && Object.keys(data.rawNorm).length > 0) ? data.rawNorm : normalizarRaw(rawOrig);
+  const rawGrupos= data.rawGrupos || {};
+  const año = data.year || '—';
+  const emp = data.nombreEmpresa || data.ruc || '—';
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const totalActivo = parseFloat(rawNorm['TOTAL ACTIVO']) ||
+    (parseFloat(rawNorm['TOTAL ACTIVO CORRIENTE'])||0)+(parseFloat(rawNorm['TOTAL ACTIVO NO CORRIENTE'])||0)||1;
+  const ventas = parseFloat(rawNorm['VENTAS NETAS'])||1;
+
+  const cuentas = Object.entries(rawOrig)
     .filter(([,v]) => Math.abs(parseFloat(v)||0) > 0)
     .sort(([a],[b]) => a.localeCompare(b));
 
-  const fila = ([k,v]) => {
-    const n = parseFloat(v)||0;
-    const pctAct = (Math.abs(n)/totalActivo*100).toFixed(1);
-    const pctVta = (Math.abs(n)/ventas*100).toFixed(1);
-    const esTotal = k.startsWith('TOTAL');
-    return `<tr ${esTotal?'class="subtotal"':''}>
-      <td class="account" style="font-size:.76rem;padding-left:${esTotal?8:16}px">${k}</td>
-      <td style="text-align:right;font-family:var(--font-mono);font-size:.76rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(Math.abs(n))+')':fmtN(n)}</td>
-      <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctAct}%</td>
-      <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctVta}%</td>
-      <td style="text-align:center;font-size:.72rem;color:${Math.abs(n)/totalActivo>0.01?'#f59e0b':'var(--text-muted)'}">${Math.abs(n)/totalActivo>0.1?'★ MATERIAL':Math.abs(n)/totalActivo>0.01?'● Significativa':'—'}</td>
-    </tr>`;
-  };
-
   el.innerHTML = `
-    <p style="font-size:.76rem;color:var(--text-muted);margin-bottom:10px">
-      ${cuentas.length} cuentas | Base % Activo Total: ${fmtN(totalActivo)} | Base % Ventas: ${fmtN(ventas)}
-    </p>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <div style="font-size:.76rem;color:var(--text-muted)">
+        <strong style="color:var(--text-primary)">${emp}</strong> — ${año}
+        &nbsp;·&nbsp; ${cuentas.length} cuentas
+        &nbsp;·&nbsp; Base activo: <strong>$${fmtN(totalActivo)}</strong>
+        &nbsp;·&nbsp; Base ventas: <strong>$${fmtN(ventas)}</strong>
+      </div>
+      <button onclick="imprimirHVAudit()" class="btn-secondary" style="font-size:.72rem">🖨 Imprimir</button>
+    </div>
     <div style="overflow-x:auto">
       <table class="ef-table">
         <thead><tr>
-          <th class="left">Cuenta</th>
+          <th class="left">Cuenta F101</th>
+          <th class="left" style="font-size:.71rem;color:var(--text-muted)">Grupo</th>
           <th style="text-align:right">Saldo USD</th>
-          <th style="text-align:right">% Activo Total</th>
+          <th style="text-align:right">% Activo</th>
           <th style="text-align:right">% Ventas</th>
           <th style="text-align:center">Relevancia</th>
         </tr></thead>
-        <tbody>${cuentas.map(fila).join('')}</tbody>
+        <tbody>${cuentas.map(([k,v]) => {
+          const n=parseFloat(v)||0, esT=/^TOTAL/i.test(k);
+          const pA=(Math.abs(n)/totalActivo*100).toFixed(1), pV=(Math.abs(n)/ventas*100).toFixed(1);
+          const grupo=rawGrupos[k]||'';
+          const niv=Math.abs(n)>=totalActivo*0.05
+            ? '<span style="color:#ef4444;font-size:.68rem;font-weight:700">★ MATERIAL</span>'
+            : Math.abs(n)>=totalActivo*0.01
+            ? '<span style="color:#f59e0b;font-size:.68rem;font-weight:600">● Significativa</span>'
+            : '<span style="color:var(--text-muted);font-size:.67rem">—</span>';
+          return `<tr ${esT?'class="subtotal"':''}><td class="account" style="font-size:.77rem;padding-left:${esT?8:16}px">${k}</td>
+            <td style="font-size:.7rem;color:var(--text-muted)">${grupo}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-size:.77rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(n)+')':fmtN(n)}</td>
+            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pA}%</td>
+            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pV}%</td>
+            <td style="text-align:center">${niv}</td></tr>`;
+        }).join('')}</tbody>
       </table>
     </div>`;
 }
-
 function imprimirHVAudit() {
   const el=document.getElementById('ap-hv-audit-contenido'); if(!el) return;
   const win=window.open('','_blank');
@@ -16789,21 +16817,8 @@ function renderEEFFenAuditoria(tab) {
   const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
   const fmtV = v => { const n=parseFloat(v)||0; return n<0?`(${fmtN(n)})`:fmtN(n); };
 
-  const btnRow = `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-      <button onclick="window._eeffTabActual='balance';renderEEFFenAuditoria('balance')"    class="btn-secondary" style="font-size:.75rem">📋 Balance</button>
-      <button onclick="window._eeffTabActual='resultados';renderEEFFenAuditoria('resultados')" class="btn-secondary" style="font-size:.75rem">📈 Resultados</button>
-      <button onclick="window._eeffTabActual='hv';renderEEFFenAuditoria('hv')"         class="btn-secondary" style="font-size:.75rem">📊 H/V</button>
-      <button onclick="renderEEFFenAuditoria('indices')"    class="btn-secondary" style="font-size:.75rem">📐 Índices</button>
-      <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:4px 10px;
-        background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);
-        border-radius:5px;cursor:pointer;margin-left:auto">🔄 Cambiar EEFF</button>
-    </div>
-    <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:14px;padding:8px 12px;
-      background:var(--bg-card2);border-radius:7px">
-      <strong style="color:var(--text-primary)">${emp}</strong>
-      &nbsp;·&nbsp; Período ${año}
-      &nbsp;·&nbsp; ${Object.keys(rawOrig).filter(k=>Math.abs(parseFloat(rawOrig[k])||0)>0).length} cuentas
+  const btnRow = `<div style="font-size:.75rem;color:var(--text-muted);margin-bottom:12px;padding:7px 12px;background:var(--bg-card2);border-radius:7px">
+      <strong style="color:var(--text-primary)">${emp}</strong> &nbsp;·&nbsp; Período ${año} &nbsp;·&nbsp; ${Object.keys(rawOrig).filter(k=>Math.abs(parseFloat(rawOrig[k])||0)>0).length} cuentas con saldo
     </div>`;
 
   const g = k => parseFloat(rawNorm[k])||0;
