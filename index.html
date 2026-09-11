@@ -6506,7 +6506,9 @@ async function procesarPDF101EnEF(input) {
     const periodoObj = { nombre: yearDoc, raw: rawPlano, rawGrupos, rawSignos, rawDetallado: raw, archivo: file.name, ruc, nombreEmpresa: nombre, fuentePDF: true, tipoPDF: 'F101', cuentasMapeadas };
     periodos.push(periodoObj);
     updatePeriodsUI();
-    guardarEstadosEnFirebase(yearDoc, ruc, periodoObj);
+    guardarEstadosEnFirebase(yearDoc, ruc, periodoObj)
+      .then(() => renderListaEEFFGuardados())
+      .catch(err => console.warn('Auto-guardado F101:', err));
     renderResumenF101(raw, yearDoc, nombre, ruc);
     status.textContent = `✅ ${cuentasMapeadas} cuentas cargadas del F101 — ${yearDoc} — ${nombre||ruc}. Total pares en PDF: ${Object.keys(todosLosPares).length}.`;
     toast(`F101: ${cuentasMapeadas} cuentas cargadas correctamente`, 'success');
@@ -6606,63 +6608,80 @@ function renderResumenF101(raw, year, nombre, ruc) {
 }
 
 // ── Guardar EEFF por año en Firebase ────────────────────────────
-function terminarYGuardarEstados() {
+async function terminarYGuardarEstados() {
   if (!periodos.length) { toast('Cargue al menos un período primero', 'warning'); return; }
 
   const rucBase = document.getElementById('ef-ruc-guardar')?.value || '';
-  let guardados = 0;
-  let nombres = [];
-
-  periodos.forEach(p => {
-    const year = p.nombre || document.getElementById('ef-year-guardar')?.value || new Date().getFullYear();
-    const ruc = rucBase || p.ruc || '';
-    const empresa = p.nombreEmpresa || rucBase || '—';
-    guardarEstadosEnFirebase(year, ruc, p);
-    guardarHistorialDocumento('estados_financieros', `EEFF ${year}${ruc?' — '+ruc:''}`, {
-      periodos: [{ nombre: p.nombre, cuentas: Object.keys(p.raw||{}).length }], year, ruc, empresa,
-    });
-    guardados++;
-    nombres.push(year);
-  });
-
-  renderListaEEFFGuardados();
-
   const status = document.getElementById('ef-guardado-status');
   if (status) {
-    status.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.8rem;color:var(--text-secondary)';
-    status.innerHTML = `✅ <strong>${guardados} período(s) guardado(s) en Firebase</strong>: ${nombres.join(', ')} &nbsp;|&nbsp; <span style="color:var(--text-muted)">${new Date().toLocaleString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span> &nbsp;|&nbsp; <span style="color:var(--emerald)">Disponibles en Auditoría Profesional ✓</span>`;
+    status.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.08);border:1px solid #f59e0b;border-radius:8px;font-size:.8rem';
+    status.innerHTML = '⏳ Guardando en Firebase...';
   }
-  toast(`${guardados} período(s) guardados: ${nombres.join(', ')} ✓`, 'success');
+
+  let guardados = 0, errores = 0, nombres = [];
+
+  for (const p of periodos) {
+    const year = p.nombre || document.getElementById('ef-year-guardar')?.value || new Date().getFullYear();
+    const ruc  = rucBase || p.ruc || '';
+    try {
+      await guardarEstadosEnFirebase(year, ruc, p);
+      guardarHistorialDocumento('estados_financieros', `EEFF ${year}${ruc?' — '+ruc:''}`, {
+        periodos:[{nombre:p.nombre, cuentas:Object.keys(p.raw||{}).length}], year, ruc,
+        empresa:p.nombreEmpresa||ruc||'—',
+      });
+      guardados++;
+      nombres.push(year);
+    } catch(err) {
+      errores++;
+      console.error('Error guardando EEFF:', err);
+      if (status) {
+        status.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(239,68,68,.08);border:1px solid #ef4444;border-radius:8px;font-size:.8rem';
+        status.innerHTML = `❌ Error al guardar EEFF ${year}: ${err.message}`;
+      }
+      toast(`Error guardando EEFF ${year}: ${err.message}`, 'error');
+    }
+  }
+
+  await renderListaEEFFGuardados();
+
+  if (guardados > 0 && status) {
+    status.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.8rem;color:var(--text-secondary)';
+    status.innerHTML = `✅ <strong>${guardados} período(s) guardado(s)</strong>: ${nombres.join(', ')}
+      &nbsp;|&nbsp; ${new Date().toLocaleString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+      &nbsp;|&nbsp; <span style="color:var(--emerald)">Disponibles en Auditoría Profesional ✓</span>`;
+    toast(`${guardados} período(s) guardados: ${nombres.join(', ')} ✓`, 'success');
+  }
 }
 
-function guardarEstadosEnFirebase(year, ruc, periodo) {
-  const key = (ruc ? `${ruc}_${year}` : String(year)).replace(/[.#$/[\]]/g,'_');
-  // Limpiar claves del raw para Firebase (sin . # $ [ ])
-  const L = k => (k||'').replace(/[.#$[\]]/g,'_');
-  const rawL = {}, rawGruposL = {}, rawSignosL = {};
-  Object.entries(periodo.raw||{}).forEach(([k,v]) => { rawL[L(k)] = v; });
-  Object.entries(periodo.rawGrupos||{}).forEach(([k,v]) => { rawGruposL[L(k)] = v; });
-  Object.entries(periodo.rawSignos||{}).forEach(([k,v]) => { rawSignosL[L(k)] = v; });
-  // rawNorm para cálculos
+async function guardarEstadosEnFirebase(year, ruc, periodo) {
+  const key = (ruc ? `${ruc}_${year}` : String(year)).replace(/[.#$[\]/]/g,'_');
+  const L = k => (k||'').replace(/[.#$[\]/]/g,'_');
+
+  const rawL={}, rawGruposL={}, rawNormL={};
+  Object.entries(periodo.raw||{}).forEach(([k,v])=>{ rawL[L(k)]=v; });
+  Object.entries(periodo.rawGrupos||{}).forEach(([k,v])=>{ rawGruposL[L(k)]=v; });
   const rawNormCalc = normalizarRaw(periodo.raw||{});
-  const rawNormL = {};
-  Object.entries(rawNormCalc).forEach(([k,v]) => { rawNormL[L(k)] = v; });
+  Object.entries(rawNormCalc).forEach(([k,v])=>{ rawNormL[L(k)]=v; });
 
-  FirebaseDB.set(`estados_financieros/${key}`, {
-    year, ruc, nombre: periodo.nombre,
-    raw: rawL,
-    rawGrupos: rawGruposL,
-    rawSignos: rawSignosL,
-    rawNorm: rawNormL,
-    rawDetallado: periodo.rawDetallado || null,
-    nombreEmpresa: periodo.nombreEmpresa || ruc || '',
-    archivo: periodo.archivo || '',
-    cuentasMapeadas: periodo.cuentasMapeadas || Object.keys(periodo.raw||{}).length,
-    fecha: new Date().toISOString(),
-    usuario: window._userDisplay || 'Administrador',
-  });
+  // NO incluir rawDetallado — demasiado grande y con claves inválidas
+  const payload = {
+    year:          String(year),
+    ruc:           ruc||'',
+    nombre:        String(periodo.nombre||year),
+    nombreEmpresa: periodo.nombreEmpresa||ruc||'',
+    archivo:       periodo.archivo||'',
+    cuentasMapeadas: periodo.cuentasMapeadas||Object.keys(rawL).length,
+    fecha:         new Date().toISOString(),
+    usuario:       window._userDisplay||'Administrador',
+    raw:           rawL,
+    rawGrupos:     rawGruposL,
+    rawNorm:       rawNormL,
+  };
+
+  const result = await FirebaseDB.set(`estados_financieros/${key}`, payload);
+  if (!result) throw new Error(`Error guardando EEFF ${year} — verifique autenticación y consola`);
+  return key;
 }
-
 async function renderListaEEFFGuardados() {
   const el = document.getElementById('ef-lista-guardados');
   if (!el) return;
@@ -6829,11 +6848,18 @@ function guardarPeriodoIndividual(i) {
   const empresa = document.getElementById(`ef-per-empresa-${i}`)?.value || p.nombreEmpresa || '';
   const ruc     = document.getElementById(`ef-per-ruc-${i}`)?.value || p.ruc || '';
   p.nombre = year; p.nombreEmpresa = empresa; p.ruc = ruc;
-  guardarEstadosEnFirebase(year, ruc, p);
-  const st = document.getElementById(`ef-per-status-${i}`);
-  if (st) st.innerHTML = `<span style="color:var(--emerald)">✅ Guardado ${new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}</span>`;
-  renderListaEEFFGuardados();
-  toast(`Período ${year} guardado en Firebase ✓`, 'success');
+  guardarEstadosEnFirebase(year, ruc, p)
+    .then(() => {
+      const st = document.getElementById(`ef-per-status-${i}`);
+      if (st) st.innerHTML = `<span style="color:var(--emerald)">✅ Guardado ${new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}</span>`;
+      renderListaEEFFGuardados();
+      toast(`Período ${year} guardado en Firebase ✓`, 'success');
+    })
+    .catch(err => {
+      const st = document.getElementById(`ef-per-status-${i}`);
+      if (st) st.innerHTML = `<span style="color:#ef4444">❌ Error: ${err.message}</span>`;
+      toast(`Error guardando ${year}: ${err.message}`, 'error');
+    });
 }
 
 function guardarTodosLosPeriodos() {
