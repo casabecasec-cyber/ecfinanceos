@@ -14392,6 +14392,239 @@ function insertarMarca(marca, targetId) {
 // ══════════════════════════════════════════════════════════════════════════════
 // CÉDULAS SUMARIAS — Recargadas con todos los valores del EEFF
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// HISTORIAL DE EXPEDIENTES — CARGAR, ABRIR, EDITAR, BORRAR
+// ══════════════════════════════════════════════════════
+async function cargarHistorialExpedientes() {
+  const el = document.getElementById('ap-historial-expedientes');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando expedientes...</p>';
+
+  try {
+    const data = await FirebaseDB.get('audit_pro') || {};
+    const items = Object.entries(data)
+      .filter(([, v]) => v && v.codigo)
+      .sort((a, b) => (b[1].fecha || '').localeCompare(a[1].fecha || ''));
+
+    if (!items.length) {
+      el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem;padding:12px 0">No hay expedientes guardados. Inicie una nueva auditoría para crear el primero.</p>';
+      return;
+    }
+
+    const estadoBadge = e => {
+      const col = e === 'completada' ? 'var(--emerald)' : e === 'en-proceso' ? '#f59e0b' : 'var(--text-muted)';
+      const txt = e === 'completada' ? '✅ Completada' : e === 'en-proceso' ? '🔄 En proceso' : '⬜ Pendiente';
+      return `<span style="font-size:.68rem;padding:2px 8px;border-radius:10px;background:${col}22;color:${col};font-weight:600">${txt}</span>`;
+    };
+
+    el.innerHTML = `
+      <div style="overflow-x:auto">
+        <table class="ef-table">
+          <thead><tr>
+            <th class="left">Código</th>
+            <th class="left">Empresa</th>
+            <th>Tipo</th>
+            <th>Período</th>
+            <th>Auditor</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody>
+            ${items.map(([key, exp]) => `
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:.74rem;color:var(--gold)">
+                  <strong>${exp.codigo || key}</strong>
+                </td>
+                <td class="account" style="font-size:.8rem">${exp.empresa || '—'}</td>
+                <td style="text-align:center;font-size:.74rem">${exp.tipo || '—'}</td>
+                <td style="font-size:.72rem;color:var(--text-muted)">${exp.periodo || '—'}</td>
+                <td style="font-size:.72rem;color:var(--text-muted)">${exp.auditor || '—'}</td>
+                <td style="font-size:.72rem;color:var(--text-muted)">
+                  ${exp.fecha ? new Date(exp.fecha).toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                </td>
+                <td style="text-align:center">${estadoBadge(exp.estado)}</td>
+                <td style="white-space:nowrap">
+                  <button onclick="abrirExpediente('${key}')"
+                    style="background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);
+                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
+                    📂 Abrir
+                  </button>
+                  <button onclick="editarExpediente('${key}')"
+                    style="background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);
+                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
+                    ✏️ Editar
+                  </button>
+                  <button onclick="borrarExpediente('${key}','${(exp.codigo||key).replace(/'/g,'')}','${(exp.empresa||'').replace(/'/g,'')}')"
+                    style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);
+                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem">
+                    🗑
+                  </button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    el.innerHTML = `<p style="color:#ef4444;font-size:.78rem">Error al cargar expedientes: ${err.message}</p>`;
+    console.error('cargarHistorialExpedientes:', err);
+  }
+}
+
+async function abrirExpediente(key) {
+  const exp = await FirebaseDB.get(`audit_pro/${key}`);
+  if (!exp) { toast('Expediente no encontrado', 'error'); return; }
+
+  _apExpediente = exp;
+  _apTransacciones = [];
+  window._apCedulas = {};
+
+  // Pre-llenar campos del formulario
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  setVal('ap-empresa', exp.empresa);
+  setVal('ap-ruc', exp.ruc);
+  setVal('ap-periodo', exp.periodo);
+  setVal('ap-auditor', exp.auditor);
+  setVal('ap-expediente', exp.codigo);
+
+  // Mostrar badge y panel
+  const badge = document.getElementById('ap-expediente-badge');
+  const panel = document.getElementById('ap-panel-principal');
+  const codEl = document.getElementById('ap-expediente-codigo');
+  const tipEl = document.getElementById('ap-tipo-label');
+  if (badge) badge.style.display = 'block';
+  if (panel) panel.style.display = 'block';
+  if (codEl) codEl.textContent = exp.codigo || key;
+  if (tipEl) tipEl.textContent = exp.tipo || '';
+
+  // Cargar cédulas analíticas guardadas
+  const cedulas = await FirebaseDB.get(`audit_pro/${key}/cedulas_analiticas`);
+  window._apCedulas = cedulas || {};
+
+  // Cargar sumarias
+  const sumarias = await FirebaseDB.get(`audit_pro/${key}/sumarias`);
+  if (sumarias) _apExpediente.sumarias = sumarias;
+
+  // Cargar EEFF vinculado si existe
+  if (exp.eeffKey) {
+    const eeffData = await FirebaseDB.get(`estados_financieros/${exp.eeffKey}`);
+    if (eeffData) {
+      window._apEEFFSeleccionado = eeffData;
+      _apTransacciones = Object.entries(eeffData.raw || {}).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v) || 0 }));
+      const status = document.getElementById('ap-datos-status');
+      if (status) status.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem">
+        ✅ EEFF vinculado: <strong>${eeffData.nombreEmpresa || eeffData.ruc || ''}</strong> — ${eeffData.year || ''}
+      </div>`;
+    }
+  }
+
+  renderFasesAuditoria && renderFasesAuditoria();
+  renderCedulasAnaliticasCompleto && renderCedulasAnaliticasCompleto();
+  renderCedulasSumarias && renderCedulasSumarias();
+
+  toast(`Expediente ${exp.codigo || key} cargado ✓`, 'success');
+  panel && panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+function editarExpediente(key) {
+  // Cerrar modal previo si existe
+  document.getElementById('ap-edit-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'ap-edit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:12px;padding:28px;width:min(560px,100%);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h3 style="margin:0;color:var(--gold)">✏️ Editar Expediente</h3>
+        <button onclick="document.getElementById('ap-edit-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group"><label>Empresa</label>
+          <input id="ape-empresa" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+        </div>
+        <div class="form-group"><label>RUC</label>
+          <input id="ape-ruc" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-family:var(--font-mono)">
+        </div>
+        <div class="form-group"><label>Período</label>
+          <input id="ape-periodo" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+        </div>
+        <div class="form-group"><label>Auditor</label>
+          <input id="ape-auditor" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+        </div>
+        <div class="form-group"><label>Estado</label>
+          <select id="ape-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+            <option value="pendiente">⬜ Pendiente</option>
+            <option value="en-proceso">🔄 En proceso</option>
+            <option value="completada">✅ Completada</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Tipo de Auditoría</label>
+          <select id="ape-tipo" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+            <option value="financiera">Financiera</option>
+            <option value="tributaria">Tributaria</option>
+            <option value="forense">Forense</option>
+            <option value="gestion">Gestión</option>
+          </select>
+        </div>
+      </div>
+      <div class="doc-btn-row">
+        <button onclick="document.getElementById('ap-edit-modal').remove()" class="btn-secondary">Cancelar</button>
+        <button onclick="guardarEdicionExpediente('${key}')" class="btn-calc"
+          style="background:linear-gradient(135deg,var(--emerald),#0a9468)">✅ Guardar cambios</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Cargar datos actuales
+  FirebaseDB.get(`audit_pro/${key}`).then(exp => {
+    if (!exp) return;
+    const s = id => document.getElementById(id);
+    if (s('ape-empresa')) s('ape-empresa').value = exp.empresa || '';
+    if (s('ape-ruc'))     s('ape-ruc').value     = exp.ruc || '';
+    if (s('ape-periodo')) s('ape-periodo').value  = exp.periodo || '';
+    if (s('ape-auditor')) s('ape-auditor').value  = exp.auditor || '';
+    if (s('ape-estado'))  s('ape-estado').value   = exp.estado || 'pendiente';
+    if (s('ape-tipo'))    s('ape-tipo').value      = exp.tipo || 'financiera';
+  });
+}
+
+async function guardarEdicionExpediente(key) {
+  const g = id => document.getElementById(id)?.value || '';
+  const updates = {
+    empresa: g('ape-empresa'),
+    ruc:     g('ape-ruc'),
+    periodo: g('ape-periodo'),
+    auditor: g('ape-auditor'),
+    estado:  g('ape-estado'),
+    tipo:    g('ape-tipo'),
+  };
+  await FirebaseDB.update(`audit_pro/${key}`, updates);
+  document.getElementById('ap-edit-modal')?.remove();
+  cargarHistorialExpedientes();
+  // Si es el expediente activo, actualizar en memoria
+  if (_apExpediente?.codigo === (await FirebaseDB.get(`audit_pro/${key}/codigo`))) {
+    Object.assign(_apExpediente, updates);
+  }
+  toast('Expediente actualizado ✓', 'success');
+}
+
+async function borrarExpediente(key, codigo, empresa) {
+  if (!confirm(`¿Eliminar el expediente "${codigo}"${empresa ? ' — ' + empresa : ''}?\n\nSe eliminarán también todas sus cédulas, sumarias y hallazgos. Esta acción no se puede deshacer.`)) return;
+  await FirebaseDB.remove(`audit_pro/${key}`);
+  // Si era el activo, limpiar panel
+  if (_apExpediente?.codigo === codigo) {
+    _apExpediente = null;
+    window._apCedulas = {};
+    document.getElementById('ap-panel-principal') && (document.getElementById('ap-panel-principal').style.display = 'none');
+    document.getElementById('ap-expediente-badge') && (document.getElementById('ap-expediente-badge').style.display = 'none');
+  }
+  cargarHistorialExpedientes();
+  toast(`Expediente ${codigo} eliminado`, 'success');
+}
+
+
 function generarSumariasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
   const data = window._apEEFFSeleccionado;
