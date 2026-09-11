@@ -15357,79 +15357,257 @@ async function editarCedulaAnalitica(cedulaId) {
   if (!ced) { toast('Cédula no encontrada', 'error'); return; }
 
   document.getElementById('ced-edit-modal')?.remove();
+
   const fmtV = v => (parseFloat(v)||0).toFixed(2);
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const totalLibros = ced.totalLibros || (ced.filas||[]).reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
 
   const modal = document.createElement('div');
   modal.id = 'ced-edit-modal';
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.78);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
+
   modal.innerHTML = `
-    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(820px,100%);margin:0 auto;border:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(900px,100%);margin:0 auto;border:1px solid var(--border)">
+
+      <!-- Encabezado -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
         <h3 style="margin:0;color:var(--gold)">✏️ Editar Cédula — Ref. ${ced.ref||'—'}</h3>
         <button onclick="document.getElementById('ced-edit-modal').remove()"
           style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="form-group"><label>Título</label>
-          <input id="ced-titulo" value="${ced.titulo||''}" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+
+      <!-- Fila 1: Título + Estado -->
+      <div style="display:grid;grid-template-columns:1fr 180px;gap:12px;margin-bottom:14px">
+        <div class="form-group">
+          <label style="font-size:.72rem">TÍTULO / CUENTA PRINCIPAL</label>
+          <input id="ced-titulo" value="${ced.titulo||''}"
+            style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-weight:600">
         </div>
-        <div class="form-group"><label>Estado</label>
-          <select id="ced-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+        <div class="form-group">
+          <label style="font-size:.72rem">ESTADO</label>
+          <select id="ced-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
             <option value="borrador" ${ced.estado==='borrador'?'selected':''}>Borrador</option>
             <option value="en-revision" ${ced.estado==='en-revision'?'selected':''}>En revisión</option>
             <option value="aprobada" ${ced.estado==='aprobada'?'selected':''}>Aprobada</option>
           </select>
         </div>
       </div>
-      <div style="overflow-x:auto;margin-bottom:14px">
-        <table class="ef-table">
-          <thead><tr>
-            <th class="left">Cuenta</th><th>Saldo Libros</th><th>Ajuste</th>
-            <th>Saldo Auditado</th><th>Marcas</th><th>Notas</th>
-          </tr></thead>
+
+      <!-- Fila 2: Saldo en libros total + indicador de cuadre -->
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:12px;margin-bottom:16px;
+        padding:12px 14px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.2);border-radius:8px">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:.72rem;color:var(--gold)">SALDO EN LIBROS TOTAL</label>
+          <input type="number" id="ced-saldo-total" value="${fmtV(totalLibros)}"
+            oninput="actualizarCuadreCedula()"
+            style="width:100%;background:var(--bg-card);border:2px solid var(--gold);border-radius:6px;
+              padding:7px 10px;color:var(--gold);font-family:var(--font-mono);font-size:.95rem;font-weight:700;text-align:right">
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end">
+          <label style="font-size:.72rem;color:var(--text-muted);margin-bottom:4px">VERIFICACIÓN DE CUADRE</label>
+          <div id="ced-cuadre-status" style="font-size:.84rem;padding:6px 12px;border-radius:6px;
+            background:var(--bg-card2);color:var(--text-muted)">
+            Ingrese subcuentas para verificar
+          </div>
+        </div>
+      </div>
+
+      <!-- Zona de pegado desde Excel -->
+      <div style="margin-bottom:12px">
+        <label style="font-size:.72rem;color:var(--text-muted);display:block;margin-bottom:6px">
+          📋 PEGAR DESDE EXCEL — Copie las celdas de Excel (Cuenta · Saldo · Ajuste · Notas) y pegue aquí.
+          Se generarán las filas automáticamente. <strong style="color:var(--gold)">Ctrl+V o clic derecho → Pegar</strong>
+        </label>
+        <textarea id="ced-paste-area" rows="3" placeholder="Pegue aquí el contenido copiado de Excel...&#10;Ejemplo:&#10;Banco Pichincha cta 1234	850000,00	0	Conciliado&#10;Caja chica	5000,00	0	Arqueo OK"
+          onpaste="setTimeout(()=>procesarPegarExcel(),50)"
+          style="width:100%;background:var(--bg-card2);border:2px dashed var(--border);border-radius:8px;
+            padding:10px 12px;color:var(--text-primary);font-size:.78rem;resize:vertical;
+            font-family:monospace;transition:border-color .2s"
+          onfocus="this.style.borderColor='var(--gold)'"
+          onblur="this.style.borderColor='var(--border)'"></textarea>
+      </div>
+
+      <!-- Tabla de subcuentas -->
+      <div style="overflow-x:auto;margin-bottom:12px">
+        <table class="ef-table" id="ced-filas-tabla">
+          <thead>
+            <tr>
+              <th class="left" style="min-width:200px">Subcuenta / Concepto</th>
+              <th style="text-align:right;width:120px">Saldo Libros</th>
+              <th style="text-align:right;width:100px">Ajuste</th>
+              <th style="text-align:right;width:120px">Saldo Auditado</th>
+              <th style="text-align:center;width:90px">Marcas</th>
+              <th style="min-width:150px">Notas</th>
+              <th style="width:36px"></th>
+            </tr>
+          </thead>
           <tbody id="ced-filas-edit">
-            ${(ced.filas||[]).map((f,fi)=>`<tr>
-              <td><input value="${f.cuenta||''}" onchange="actualizarFilaCed(${fi},'cuenta',this.value)"
-                style="width:150px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
-              <td><input type="number" value="${fmtV(f.saldoLibros)}" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)"
-                style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-              <td><input type="number" value="${fmtV(f.ajuste)}" onchange="actualizarFilaCed(${fi},'ajuste',this.value)"
-                style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-              <td><input type="number" value="${fmtV(f.saldoAuditado)}" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
-                style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-              <td>
-                <div style="display:flex;align-items:center;gap:3px">
-                  <input id="marca-input-${fi}" value="${f.marcas||'✓'}" onchange="actualizarFilaCed(${fi},'marcas',this.value)"
-                    style="width:45px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:.82rem;text-align:center;color:var(--gold)">
-                  <button onclick="abrirPickerMarcas('marca-input-${fi}')"
-                    style="padding:2px 5px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
-                </div>
-              </td>
-              <td><input value="${f.notas||''}" onchange="actualizarFilaCed(${fi},'notas',this.value)"
-                style="width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
-            </tr>`).join('')}
+            ${(ced.filas||[]).map((f,fi)=>_renderFilaCedula(f,fi)).join('')}
           </tbody>
         </table>
-        <button onclick="agregarFilaCedula('${cedulaId}')"
-          style="margin-top:6px;font-size:.72rem;padding:4px 10px;background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">+ Agregar fila</button>
       </div>
-      <div class="form-group" style="margin-bottom:12px"><label>Procedimientos aplicados</label>
-        <textarea id="ced-procedimiento" rows="3"
-          style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.procedimiento||''}</textarea>
+
+      <!-- Totales y cuadre -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <button onclick="agregarFilaCedula()"
+          style="font-size:.75rem;padding:5px 12px;background:rgba(16,185,129,.1);color:var(--emerald);
+            border:1px solid var(--emerald);border-radius:5px;cursor:pointer">+ Agregar fila</button>
+        <div id="ced-totales-bar" style="flex:1;display:flex;gap:14px;align-items:center;
+          padding:8px 12px;background:var(--bg-card2);border-radius:6px;font-size:.78rem;flex-wrap:wrap">
+          <span>Suma libros: <strong id="ced-suma-libros" style="font-family:var(--font-mono)">—</strong></span>
+          <span>Suma ajustes: <strong id="ced-suma-ajustes" style="font-family:var(--font-mono)">—</strong></span>
+          <span>Suma auditado: <strong id="ced-suma-auditado" style="font-family:var(--font-mono)">—</strong></span>
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom:16px"><label>Conclusión del auditor</label>
-        <textarea id="ced-conclusion" rows="3"
-          style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.conclusion||''}</textarea>
+
+      <!-- Procedimientos y conclusión -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group">
+          <label style="font-size:.72rem">PROCEDIMIENTOS APLICADOS</label>
+          <textarea id="ced-procedimiento" rows="3"
+            style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;
+              padding:6px 10px;color:var(--text-primary);font-size:.78rem;resize:vertical">${ced.procedimiento||''}</textarea>
+        </div>
+        <div class="form-group">
+          <label style="font-size:.72rem">CONCLUSIÓN DEL AUDITOR</label>
+          <textarea id="ced-conclusion" rows="3"
+            style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;
+              padding:6px 10px;color:var(--text-primary);font-size:.78rem;resize:vertical">${ced.conclusion||''}</textarea>
+        </div>
       </div>
+
       <div class="doc-btn-row">
         <button onclick="document.getElementById('ced-edit-modal').remove()" class="btn-secondary">Cancelar</button>
         <button onclick="guardarCedulaEditada('${cedulaId}')" class="btn-calc"
           style="background:linear-gradient(135deg,var(--emerald),#0a9468)">✅ Guardar Cédula</button>
       </div>
     </div>`;
+
   document.body.appendChild(modal);
   window._cedulaEditando = { id: cedulaId, filas: JSON.parse(JSON.stringify(ced.filas||[])) };
+  actualizarCuadreCedula();
 }
+
+// Render de una fila individual de la cédula
+function _renderFilaCedula(f, fi) {
+  const fmtV = v => (parseFloat(v)||0).toFixed(2);
+  return `<tr id="ced-fila-row-${fi}">
+    <td><input value="${(f.cuenta||'').replace(/"/g,'&quot;')}"
+      oninput="actualizarFilaCed(${fi},'cuenta',this.value)"
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+    <td><input type="number" value="${fmtV(f.saldoLibros)}" step="0.01"
+      oninput="actualizarFilaCed(${fi},'saldoLibros',this.value);actualizarCuadreCedula()"
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="${fmtV(f.ajuste)}" step="0.01"
+      oninput="actualizarFilaCed(${fi},'ajuste',this.value);actualizarCuadreCedula()"
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="${fmtV(f.saldoAuditado)}" step="0.01"
+      oninput="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td>
+      <div style="display:flex;align-items:center;gap:3px;justify-content:center">
+        <input id="marca-inp-${fi}" value="${f.marcas||'✓'}"
+          oninput="actualizarFilaCed(${fi},'marcas',this.value)"
+          style="width:38px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+            padding:3px 4px;font-size:.85rem;text-align:center;color:var(--gold)">
+        <button onclick="abrirPickerMarcas('marca-inp-${fi}')"
+          style="padding:3px 5px;background:rgba(212,175,55,.1);color:var(--gold);
+            border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
+      </div>
+    </td>
+    <td><input value="${(f.notas||'').replace(/"/g,'&quot;')}"
+      oninput="actualizarFilaCed(${fi},'notas',this.value)"
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+    <td><button onclick="eliminarFilaCedula(${fi})"
+      style="padding:3px 6px;background:rgba(239,68,68,.1);color:#ef4444;
+        border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.75rem">✕</button></td>
+  </tr>`;
+}
+
+// Actualizar cuadre en tiempo real
+function actualizarCuadreCedula() {
+  if (!window._cedulaEditando) return;
+  const filas = window._cedulaEditando.filas;
+  const totalRef  = parseFloat(document.getElementById('ced-saldo-total')?.value)||0;
+  const sumaLib   = filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
+  const sumaAj    = filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
+  const sumaAud   = filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0);
+  const dif       = Math.abs(totalRef - sumaLib);
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  const statusEl = document.getElementById('ced-cuadre-status');
+  if (statusEl) {
+    if (filas.length === 0) {
+      statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:var(--bg-card2);color:var(--text-muted)';
+      statusEl.textContent = 'Ingrese subcuentas para verificar';
+    } else if (dif < 0.02) {
+      statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:rgba(16,185,129,.12);color:var(--emerald);font-weight:600;border:1px solid var(--emerald)';
+      statusEl.innerHTML = `✅ CUADRADO — Suma subcuentas = $${fmtN(sumaLib)} = Saldo en libros`;
+    } else {
+      statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:rgba(239,68,68,.1);color:#ef4444;font-weight:600;border:1px solid rgba(239,68,68,.3)';
+      statusEl.innerHTML = `⚠️ DIFERENCIA: $${fmtN(dif)} — Suma subcuentas: $${fmtN(sumaLib)} vs Saldo: $${fmtN(totalRef)}`;
+    }
+  }
+
+  const libEl = document.getElementById('ced-suma-libros');
+  const ajEl  = document.getElementById('ced-suma-ajustes');
+  const audEl = document.getElementById('ced-suma-auditado');
+  if (libEl) libEl.textContent = '$'+fmtN(sumaLib);
+  if (ajEl)  ajEl.textContent  = (sumaAj!==0?'$'+fmtN(sumaAj):'—');
+  if (audEl) audEl.textContent = '$'+fmtN(sumaAud);
+}
+
+// Pegar desde Excel — detectar filas automáticamente
+function procesarPegarExcel() {
+  const ta = document.getElementById('ced-paste-area');
+  if (!ta || !ta.value.trim()) return;
+  const texto = ta.value.trim();
+  ta.value = '';
+
+  const lineas = texto.split('\n').filter(l => l.trim());
+  if (!lineas.length) return;
+
+  let agregadas = 0;
+  lineas.forEach(linea => {
+    // Separar por tabulador (Excel usa tab como separador)
+    const cols = linea.split('\t').map(c => c.trim().replace(/^"|"$/g,''));
+    if (!cols.length || !cols[0]) return;
+
+    // Col 0 = Cuenta, Col 1 = Saldo libros, Col 2 = Ajuste, Col 3 = Notas
+    const cuenta = cols[0] || '';
+    // Limpiar número: quitar puntos de miles, reemplazar coma decimal por punto
+    const limpiarNum = s => parseFloat((s||'0').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,''))||0;
+    const saldoLibros  = limpiarNum(cols[1] || '0');
+    const ajuste       = limpiarNum(cols[2] || '0');
+    const saldoAuditado= saldoLibros + ajuste;
+    const notas        = cols[3] || '';
+
+    if (!cuenta) return;
+
+    if (!window._cedulaEditando) return;
+    const fi = window._cedulaEditando.filas.length;
+    window._cedulaEditando.filas.push({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas });
+
+    const tbody = document.getElementById('ced-filas-edit');
+    if (tbody) {
+      const tr = document.createElement('tr');
+      tr.id = `ced-fila-row-${fi}`;
+      tr.innerHTML = _renderFilaCedula({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas }, fi).replace(/^<tr[^>]*>|<\/tr>$/g,'');
+      tbody.appendChild(tr);
+    }
+    agregadas++;
+  });
+
+  actualizarCuadreCedula();
+  toast(`${agregadas} fila${agregadas!==1?'s':''} agregada${agregadas!==1?'s':''} desde Excel ✓`, 'success');
+}
+
+
 
 function actualizarFilaCed(fi, campo, valor) {
   if (!window._cedulaEditando) return;
@@ -15443,25 +15621,27 @@ function actualizarFilaCed(fi, campo, valor) {
 
 function agregarFilaCedula() {
   if (!window._cedulaEditando) return;
-  window._cedulaEditando.filas.push({ cuenta:'Nueva cuenta', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' });
+  const fi = window._cedulaEditando.filas.length;
+  const nuevaFila = { cuenta:'', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' };
+  window._cedulaEditando.filas.push(nuevaFila);
   const tbody = document.getElementById('ced-filas-edit');
   if (!tbody) return;
-  const fi = window._cedulaEditando.filas.length-1;
   const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input value="Nueva cuenta" onchange="actualizarFilaCed(${fi},'cuenta',this.value)"
-      style="width:150px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
-    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)"
-      style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'ajuste',this.value)"
-      style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
-      style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
-    <td><input value="✓" onchange="actualizarFilaCed(${fi},'marcas',this.value)"
-      style="width:45px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:.82rem;text-align:center;color:var(--gold)"></td>
-    <td><input value="" onchange="actualizarFilaCed(${fi},'notas',this.value)"
-      style="width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>`;
+  tr.id = `ced-fila-row-${fi}`;
+  tr.innerHTML = _renderFilaCedula(nuevaFila, fi).replace(/^<tr[^>]*>|<\/tr>$/g,'');
   tbody.appendChild(tr);
+  actualizarCuadreCedula();
+  // Focus en el campo cuenta de la nueva fila
+  setTimeout(()=>tr.querySelector('input')?.focus(), 50);
+}
+
+function eliminarFilaCedula(fi) {
+  if (!window._cedulaEditando) return;
+  window._cedulaEditando.filas.splice(fi, 1);
+  // Re-renderizar toda la tabla para reindexar
+  const tbody = document.getElementById('ced-filas-edit');
+  if (tbody) tbody.innerHTML = window._cedulaEditando.filas.map((f,i)=>_renderFilaCedula(f,i)).join('');
+  actualizarCuadreCedula();
 }
 
 async function guardarCedulaEditada(cedulaId) {
@@ -15470,6 +15650,7 @@ async function guardarCedulaEditada(cedulaId) {
   if (!ced || !window._cedulaEditando) { toast('Error: cédula no encontrada', 'error'); return; }
 
   const filas = window._cedulaEditando.filas;
+  const saldoTotalRef = parseFloat(document.getElementById('ced-saldo-total')?.value)||0;
   const updated = {
     ...ced,
     titulo:        document.getElementById('ced-titulo')?.value || ced.titulo,
@@ -15477,9 +15658,10 @@ async function guardarCedulaEditada(cedulaId) {
     procedimiento: document.getElementById('ced-procedimiento')?.value || ced.procedimiento,
     conclusion:    document.getElementById('ced-conclusion')?.value || '',
     filas,
-    totalLibros:   filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
+    totalLibros:   saldoTotalRef || filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
     totalAjustes:  filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0),
     totalAuditado: filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0),
+    sumaSubcuentas:filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
     fechaModificacion: new Date().toISOString(),
   };
 
