@@ -17312,6 +17312,108 @@ function nuevaCedulaSumaria() {
   renderCedulasSumarias();
 }
 
+// ── Vincular cédula analítica a fila sumaria ─────────────────────────────
+function vincularCedulaASumaria(si, pi, refCedula) {
+  if (!_apExpediente?.sumarias?.[si]?.partidas?.[pi]) return;
+  const partida = _apExpediente.sumarias[si].partidas[pi];
+  partida.cedulaRef = refCedula.trim();
+
+  if (!refCedula.trim()) {
+    // Sin referencia — limpiar vínculo
+    partida.cedulaVinculada = false;
+    actualizarSumaria(si, pi, 'cedulaRef', '');
+    return;
+  }
+
+  // Buscar cédula analítica por referencia
+  const cedulas = window._apCedulas || {};
+  const cedEncontrada = Object.values(cedulas).find(ced =>
+    (ced.ref||'').toUpperCase() === refCedula.trim().toUpperCase()
+  );
+
+  if (cedEncontrada) {
+    const saldoAud = parseFloat(cedEncontrada.totalAuditado) || parseFloat(cedEncontrada.totalLibros) || 0;
+    partida.cedulaRef = cedEncontrada.ref;
+    partida.saldoAuditoria = saldoAud;
+    partida.cedulaVinculada = true;
+    partida.cedulaTitulo = cedEncontrada.titulo || '';
+    partida.notaCambio = '';  // limpiar nota si viene de cédula
+
+    // Actualizar el input de saldo auditado
+    const inputAud = document.getElementById(`sum-aud-${si}-${pi}`);
+    if (inputAud) {
+      inputAud.value = saldoAud.toFixed(2);
+      inputAud.style.color = 'var(--emerald)';
+      inputAud.title = `Cargado desde cédula ${cedEncontrada.ref}: ${cedEncontrada.titulo||''}`;
+    }
+    toast(`Cédula ${cedEncontrada.ref} vinculada — Saldo auditado: $${saldoAud.toLocaleString('es-EC',{minimumFractionDigits:2})} ✓`, 'success');
+  } else {
+    toast(`No se encontró cédula con Ref. "${refCedula}" — puede ingresar el valor manualmente`, 'warning');
+    partida.cedulaVinculada = false;
+  }
+
+  // Guardar en Firebase
+  if (_apExpediente?.codigo) {
+    FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
+  }
+  renderCedulasSumarias();
+}
+
+// ── Cambiar saldo auditoría manualmente con nota de justificación ─────────
+function cambiarSaldoAuditoriaConNota(si, pi, nuevoValor) {
+  if (!_apExpediente?.sumarias?.[si]?.partidas?.[pi]) return;
+  const partida = _apExpediente.sumarias[si].partidas[pi];
+  const valorAnterior = parseFloat(partida.saldoAuditoria) || 0;
+  const valorNuevo    = parseFloat(nuevoValor) || 0;
+
+  if (Math.abs(valorNuevo - valorAnterior) < 0.01) return; // Sin cambio
+
+  // Si venía de una cédula vinculada, pedir nota obligatoria
+  if (partida.cedulaVinculada) {
+    const nota = prompt(
+      `⚠️ Está cambiando el saldo auditado vinculado a la cédula "${partida.cedulaRef}".
+
+` +
+      `Valor anterior (cédula): $${valorAnterior.toLocaleString('es-EC',{minimumFractionDigits:2})}
+` +
+      `Nuevo valor: $${valorNuevo.toLocaleString('es-EC',{minimumFractionDigits:2})}
+
+` +
+      `Ingrese la justificación del cambio (requerido):`
+    );
+    if (!nota?.trim()) {
+      // Revertir el input al valor anterior
+      const input = document.getElementById(`sum-aud-${si}-${pi}`);
+      if (input) input.value = valorAnterior.toFixed(2);
+      toast('Cambio cancelado — se requiere justificación', 'warning');
+      return;
+    }
+    partida.notaCambio = `${new Date().toLocaleDateString('es-EC')}: ${nota.trim()}`;
+    partida.cedulaVinculada = false; // ya no está 100% vinculada
+  } else if (partida.saldoLibros && Math.abs(valorNuevo - (partida.saldoLibros||0)) > 0.01) {
+    // Cambio manual sin cédula — pedir nota opcional
+    const nota = prompt(
+      `Saldo en libros: $${(partida.saldoLibros||0).toLocaleString('es-EC',{minimumFractionDigits:2})}
+` +
+      `Saldo auditado: $${valorNuevo.toLocaleString('es-EC',{minimumFractionDigits:2})}
+
+` +
+      `Nota de ajuste (opcional — Enter para omitir):`
+    );
+    if (nota?.trim()) {
+      partida.notaCambio = `${new Date().toLocaleDateString('es-EC')}: ${nota.trim()}`;
+    }
+  }
+
+  partida.saldoAuditoria = valorNuevo;
+  actualizarSumaria(si, pi, 'saldoAuditoria', valorNuevo);
+
+  if (_apExpediente?.codigo) {
+    FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
+  }
+}
+
+
 function renderCedulasSumarias() {
   const el = document.getElementById('ap-sumarias-contenido');
   if (!el) return;
@@ -17340,9 +17442,19 @@ function renderCedulasSumarias() {
               ${s.partidas.map((p,pi)=>`<tr>
                 <td>${p.cuenta}</td>
                 <td class="num"><input type="number" value="${p.saldoLibros||0}" step="0.01" style="width:90px;background:none;border:none;color:var(--text-primary);font-family:var(--font-mono);text-align:right" onchange="actualizarSumaria(${si},${pi},'saldoLibros',this.value)"></td>
-                <td style="text-align:center"><input type="text" value="${p.cedulaRef||''}" placeholder="Ref." style="width:50px;background:rgba(212,175,55,.08);border:1px solid var(--gold);border-radius:4px;padding:2px 4px;color:var(--gold);font-size:.68rem;text-align:center;font-weight:700" onchange="actualizarSumaria(${si},${pi},'cedulaRef',this.value)"></td>
+                <td style="text-align:center">
+                  <input type="text" value="${p.cedulaRef||''}" placeholder="Ref." id="sum-ref-${si}-${pi}"
+                    style="width:55px;background:rgba(212,175,55,.08);border:1px solid var(--gold);border-radius:4px;padding:2px 4px;color:var(--gold);font-size:.68rem;text-align:center;font-weight:700"
+                    onchange="vincularCedulaASumaria(${si},${pi},this.value)">
+                </td>
                 <td class="num" style="color:${(p.saldoAuditoria-p.saldoLibros)!==0?'#ef4444':'inherit'}">${(p.saldoAuditoria-p.saldoLibros)!==0?fmt(p.saldoAuditoria-p.saldoLibros):'—'}</td>
-                <td class="num"><input type="number" value="${p.saldoAuditoria||p.saldoLibros||0}" step="0.01" style="width:90px;background:none;border:none;color:var(--emerald);font-family:var(--font-mono);text-align:right;font-weight:700" onchange="actualizarSumaria(${si},${pi},'saldoAuditoria',this.value)"></td>
+                <td class="num" style="position:relative">
+                  <input type="number" value="${p.saldoAuditoria||p.saldoLibros||0}" step="0.01"
+                    id="sum-aud-${si}-${pi}"
+                    style="width:110px;background:none;border:none;color:${p.notaCambio?'#f59e0b':'var(--text-primary)'};font-family:var(--font-mono);text-align:right;font-weight:700"
+                    onchange="cambiarSaldoAuditoriaConNota(${si},${pi},this.value)">
+                  ${p.notaCambio?`<span title="${p.notaCambio}" style="position:absolute;top:2px;right:2px;width:8px;height:8px;background:#f59e0b;border-radius:50%;cursor:help;display:inline-block"></span>`:''}
+                </td>
                 <td style="text-align:center"><span class="ap-marca">✓</span></td>
               </tr>`).join('')}
               <tr class="total"><td><strong>TOTALES</strong></td><td class="num"><strong>${fmt(tL)}</strong></td><td></td><td class="num" style="color:${Math.abs(tDiff)>0?'#ef4444':'var(--emerald)'}"><strong>${tDiff!==0?fmt(tDiff):'—'}</strong></td><td class="num"><strong style="color:var(--emerald)">${fmt(tA)}</strong></td><td><span class="ap-marca">Σ</span></td></tr>
