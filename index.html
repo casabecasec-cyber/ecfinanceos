@@ -2209,8 +2209,195 @@ table.ef-table .negative { color: var(--red); }
             <div id="ap-informe-preview" style="margin-top:16px"></div>
           </div>
         </div>
+</div><!-- fin ap-panel-principal -->
 
-      </div><!-- fin ap-panel-principal -->
+
+        <!-- PROGRAMA DE AUDITORÍA -->
+        <div class="bib-content" id="ap-programa">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📋 Programa de Auditoría</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarProgramaAuditoria()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="agregarProcedimientoPrograma()">+ Procedimiento</button>
+                <button class="btn-secondary" onclick="guardarPrograma()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirPrograma()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Plan de procedimientos de auditoría por área. Se genera automáticamente desde el EEFF vinculado con procedimientos adaptados al tamaño y riesgo de cada cuenta.</p>
+            <div id="ap-programa-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear el programa automáticamente.</p></div>
+          </div>
+        </div>
+
+        <!-- PRUEBAS SUSTANTIVAS -->
+        <div class="bib-content" id="ap-pruebas-sust">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🔍 Pruebas Sustantivas</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarPruebasSustantivas()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="agregarPruebaSustantiva()">+ Prueba manual</button>
+                <button class="btn-secondary" onclick="guardarPruebasSustantivas()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirPruebasSustantivas()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Pruebas de detalle y procedimientos analíticos sustantivos por cuenta. Cada prueba incluye objetivo, muestra, resultado y conclusión.</p>
+            <div id="ap-pruebas-sust-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear las pruebas sustantivas automáticamente.</p></div>
+          </div>
+        </div>
+
+        <!-- SISTEMA COSO -->
+        <div class="bib-content" id="ap-coso">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🛡️ Sistema COSO — Control Interno</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn-secondary" onclick="guardarCoso()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirCoso()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Evaluación del control interno bajo el marco COSO 2013. Califique cada componente y principio del 1 (deficiente) al 5 (excelente).</p>
+            <div id="ap-coso-contenido"></div>
+          </div>
+        </div>
+
+        <!-- CUENTAS DE ALTO RIESGO -->
+        <div class="bib-content" id="ap-alto-riesgo">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">⚠️ Identificación de Cuentas de Alto Riesgo</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn-calc" onclick="analizarAltoRiesgo()" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🔍 Analizar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarAltoRiesgo()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirAltoRiesgo()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación automática de cuentas susceptibles a error material basada en criterios cuantitativos (materialidad, variación) y cualitativos (naturaleza de la cuenta, historial de errores).</p>
+            <div id="ap-alto-riesgo-contenido"><p style="color:var(--text-muted)">Use "Analizar desde EEFF" para identificar las cuentas de mayor riesgo.</p></div>
+          </div>
+        </div>
+
+        <!-- PRUEBAS DE CORTE -->
+        <div class="bib-content" id="ap-corte">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">✂️ Pruebas de Corte de Ingresos y Gastos</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarPruebasCorte()">🔗 Generar</button>
+                <button class="btn-secondary" onclick="guardarCorte()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirCorte()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Verificación del reconocimiento de ingresos y gastos en el período correcto (cutoff). Incluye revisión de facturas de los últimos 15 días del ejercicio y primeros 15 días del siguiente.</p>
+            <div id="ap-corte-contenido"><p style="color:var(--text-muted)">Genere las pruebas de corte para verificar el reconocimiento de ingresos y gastos.</p></div>
+          </div>
+        </div>
+
+        <!-- ANÁLISIS H/V EN AUDITORÍA -->
+        <div class="bib-content" id="ap-hv-audit">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📊 Análisis Horizontal y Vertical</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="renderHVAudit()">🔗 Cargar desde EEFF</button>
+                <button class="btn-secondary" onclick="imprimirHVAudit()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Análisis completo de todas las cuentas del balance y estado de resultados con variaciones horizontales y participación vertical. Las variaciones >10% se destacan para revisión adicional.</p>
+            <div id="ap-hv-audit-contenido"><p style="color:var(--text-muted)">Use "Cargar desde EEFF" para generar el análisis completo.</p></div>
+          </div>
+        </div>
+
+        <!-- BENCHMARKS DEL SECTOR -->
+        <div class="bib-content" id="ap-benchmarks">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📈 Comparación de Benchmarks del Sector</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarBenchmarks()">🔗 Generar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarBenchmarks()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirBenchmarks()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Comparación de los índices financieros de la empresa contra rangos de referencia del sector. Las desviaciones significativas son señales de alerta de auditoría.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="form-group"><label>Sector económico</label>
+                <select id="ap-sector" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+                  <option value="comercial">Comercial / Trading</option>
+                  <option value="industrial">Industrial / Manufactura</option>
+                  <option value="servicios">Servicios Profesionales</option>
+                  <option value="construccion">Construcción</option>
+                  <option value="agropecuario">Agropecuario</option>
+                  <option value="tecnologia">Tecnología</option>
+                  <option value="salud">Salud / Farma</option>
+                  <option value="educacion">Educación</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Tamaño de empresa</label>
+                <select id="ap-tamano" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+                  <option value="micro">Micro (&lt;$100K ventas)</option>
+                  <option value="pequena">Pequeña ($100K–$1M)</option>
+                  <option value="mediana" selected>Mediana ($1M–$5M)</option>
+                  <option value="grande">Grande (&gt;$5M)</option>
+                </select>
+              </div>
+              <div class="form-group"><label>&nbsp;</label>
+                <button class="btn-calc" onclick="generarBenchmarks()" style="width:100%;margin-top:0">Comparar</button>
+              </div>
+            </div>
+            <div id="ap-benchmarks-contenido"><p style="color:var(--text-muted)">Seleccione el sector y tamaño de empresa, luego use "Comparar".</p></div>
+          </div>
+        </div>
+
+        <!-- VARIACIONES >10% -->
+        <div class="bib-content" id="ap-variaciones">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🔎 Indagaciones sobre Variaciones &gt;10%</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="analizarVariaciones()">🔗 Analizar desde EEFF</button>
+                <button class="btn-secondary" onclick="guardarVariaciones()">💾 Guardar</button>
+                <button class="btn-secondary" onclick="imprimirVariaciones()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación y documentación de todas las variaciones horizontales mayores al 10% que requieren explicación del cliente o procedimientos adicionales de auditoría.</p>
+            <div id="ap-variaciones-contenido"><p style="color:var(--text-muted)">Necesita 2 períodos cargados en el EEFF. Use "Analizar desde EEFF".</p></div>
+          </div>
+        </div>
+
+        <!-- ÍNDICES FINANCIEROS AUDITORÍA -->
+        <div class="bib-content" id="ap-indices-audit">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📐 Índices Financieros de Auditoría</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarIndicesAudit()">🔗 Calcular desde EEFF</button>
+                <button class="btn-secondary" onclick="imprimirIndicesAudit()">🖨 Imprimir</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Cálculo completo de índices de liquidez, solvencia, rentabilidad, actividad y endeudamiento con interpretación para auditoría. Alertas automáticas cuando los ratios están fuera de rangos normales.</p>
+            <div id="ap-indices-audit-contenido"><p style="color:var(--text-muted)">Use "Calcular desde EEFF" para generar los índices.</p></div>
+          </div>
+        </div>
+
+        <!-- CARTA DE REPRESENTACIÓN -->
+        <div class="bib-content" id="ap-carta-rep">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">✉️ Carta de Representación de la Gerencia</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarCartaRepresentacion()">🔗 Generar</button>
+                <button class="btn-secondary" onclick="imprimirCartaRep()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="exportarCartaRepWord()">📄 Word</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Carta de representación de la gerencia según NIA 580 — declaraciones escritas que la administración proporciona al auditor. Auto-completada con los datos del expediente y EEFF.</p>
+            <div id="ap-carta-rep-contenido"><p style="color:var(--text-muted)">Use "Generar" para crear la carta con los datos del expediente actual.</p></div>
+          </div>
+        </div>
+
+      </div>
+      
     </section>
 
     <!-- ═══════════════════════════════════ SEGUIMIENTO ═══════════════════════════════════ -->
@@ -2580,191 +2767,6 @@ table.ef-table .negative { color: var(--red); }
           </div>
           <div id="audit-revisiones-historial"></div>
         </div>
-        <!-- PROGRAMA DE AUDITORÍA -->
-        <div class="bib-content" id="ap-programa">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">📋 Programa de Auditoría</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarProgramaAuditoria()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
-                <button class="btn-secondary" onclick="agregarProcedimientoPrograma()">+ Procedimiento</button>
-                <button class="btn-secondary" onclick="guardarPrograma()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirPrograma()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Plan de procedimientos de auditoría por área. Se genera automáticamente desde el EEFF vinculado con procedimientos adaptados al tamaño y riesgo de cada cuenta.</p>
-            <div id="ap-programa-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear el programa automáticamente.</p></div>
-          </div>
-        </div>
-
-        <!-- PRUEBAS SUSTANTIVAS -->
-        <div class="bib-content" id="ap-pruebas-sust">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">🔍 Pruebas Sustantivas</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarPruebasSustantivas()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
-                <button class="btn-secondary" onclick="agregarPruebaSustantiva()">+ Prueba manual</button>
-                <button class="btn-secondary" onclick="guardarPruebasSustantivas()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirPruebasSustantivas()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Pruebas de detalle y procedimientos analíticos sustantivos por cuenta. Cada prueba incluye objetivo, muestra, resultado y conclusión.</p>
-            <div id="ap-pruebas-sust-contenido"><p style="color:var(--text-muted)">Use "Generar desde EEFF" para crear las pruebas sustantivas automáticamente.</p></div>
-          </div>
-        </div>
-
-        <!-- SISTEMA COSO -->
-        <div class="bib-content" id="ap-coso">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">🛡️ Sistema COSO — Control Interno</h3>
-              <div style="display:flex;gap:8px">
-                <button class="btn-secondary" onclick="guardarCoso()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirCoso()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Evaluación del control interno bajo el marco COSO 2013. Califique cada componente y principio del 1 (deficiente) al 5 (excelente).</p>
-            <div id="ap-coso-contenido"></div>
-          </div>
-        </div>
-
-        <!-- CUENTAS DE ALTO RIESGO -->
-        <div class="bib-content" id="ap-alto-riesgo">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">⚠️ Identificación de Cuentas de Alto Riesgo</h3>
-              <div style="display:flex;gap:8px">
-                <button class="btn-calc" onclick="analizarAltoRiesgo()" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🔍 Analizar desde EEFF</button>
-                <button class="btn-secondary" onclick="guardarAltoRiesgo()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirAltoRiesgo()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación automática de cuentas susceptibles a error material basada en criterios cuantitativos (materialidad, variación) y cualitativos (naturaleza de la cuenta, historial de errores).</p>
-            <div id="ap-alto-riesgo-contenido"><p style="color:var(--text-muted)">Use "Analizar desde EEFF" para identificar las cuentas de mayor riesgo.</p></div>
-          </div>
-        </div>
-
-        <!-- PRUEBAS DE CORTE -->
-        <div class="bib-content" id="ap-corte">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">✂️ Pruebas de Corte de Ingresos y Gastos</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarPruebasCorte()">🔗 Generar</button>
-                <button class="btn-secondary" onclick="guardarCorte()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirCorte()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Verificación del reconocimiento de ingresos y gastos en el período correcto (cutoff). Incluye revisión de facturas de los últimos 15 días del ejercicio y primeros 15 días del siguiente.</p>
-            <div id="ap-corte-contenido"><p style="color:var(--text-muted)">Genere las pruebas de corte para verificar el reconocimiento de ingresos y gastos.</p></div>
-          </div>
-        </div>
-
-        <!-- ANÁLISIS H/V EN AUDITORÍA -->
-        <div class="bib-content" id="ap-hv-audit">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">📊 Análisis Horizontal y Vertical</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="renderHVAudit()">🔗 Cargar desde EEFF</button>
-                <button class="btn-secondary" onclick="imprimirHVAudit()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Análisis completo de todas las cuentas del balance y estado de resultados con variaciones horizontales y participación vertical. Las variaciones >10% se destacan para revisión adicional.</p>
-            <div id="ap-hv-audit-contenido"><p style="color:var(--text-muted)">Use "Cargar desde EEFF" para generar el análisis completo.</p></div>
-          </div>
-        </div>
-
-        <!-- BENCHMARKS DEL SECTOR -->
-        <div class="bib-content" id="ap-benchmarks">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">📈 Comparación de Benchmarks del Sector</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarBenchmarks()">🔗 Generar desde EEFF</button>
-                <button class="btn-secondary" onclick="guardarBenchmarks()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirBenchmarks()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Comparación de los índices financieros de la empresa contra rangos de referencia del sector. Las desviaciones significativas son señales de alerta de auditoría.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
-              <div class="form-group"><label>Sector económico</label>
-                <select id="ap-sector" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
-                  <option value="comercial">Comercial / Trading</option>
-                  <option value="industrial">Industrial / Manufactura</option>
-                  <option value="servicios">Servicios Profesionales</option>
-                  <option value="construccion">Construcción</option>
-                  <option value="agropecuario">Agropecuario</option>
-                  <option value="tecnologia">Tecnología</option>
-                  <option value="salud">Salud / Farma</option>
-                  <option value="educacion">Educación</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Tamaño de empresa</label>
-                <select id="ap-tamano" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
-                  <option value="micro">Micro (&lt;$100K ventas)</option>
-                  <option value="pequena">Pequeña ($100K–$1M)</option>
-                  <option value="mediana" selected>Mediana ($1M–$5M)</option>
-                  <option value="grande">Grande (&gt;$5M)</option>
-                </select>
-              </div>
-              <div class="form-group"><label>&nbsp;</label>
-                <button class="btn-calc" onclick="generarBenchmarks()" style="width:100%;margin-top:0">Comparar</button>
-              </div>
-            </div>
-            <div id="ap-benchmarks-contenido"><p style="color:var(--text-muted)">Seleccione el sector y tamaño de empresa, luego use "Comparar".</p></div>
-          </div>
-        </div>
-
-        <!-- VARIACIONES >10% -->
-        <div class="bib-content" id="ap-variaciones">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">🔎 Indagaciones sobre Variaciones &gt;10%</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="analizarVariaciones()">🔗 Analizar desde EEFF</button>
-                <button class="btn-secondary" onclick="guardarVariaciones()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirVariaciones()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación y documentación de todas las variaciones horizontales mayores al 10% que requieren explicación del cliente o procedimientos adicionales de auditoría.</p>
-            <div id="ap-variaciones-contenido"><p style="color:var(--text-muted)">Necesita 2 períodos cargados en el EEFF. Use "Analizar desde EEFF".</p></div>
-          </div>
-        </div>
-
-        <!-- ÍNDICES FINANCIEROS AUDITORÍA -->
-        <div class="bib-content" id="ap-indices-audit">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">📐 Índices Financieros de Auditoría</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarIndicesAudit()">🔗 Calcular desde EEFF</button>
-                <button class="btn-secondary" onclick="imprimirIndicesAudit()">🖨 Imprimir</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Cálculo completo de índices de liquidez, solvencia, rentabilidad, actividad y endeudamiento con interpretación para auditoría. Alertas automáticas cuando los ratios están fuera de rangos normales.</p>
-            <div id="ap-indices-audit-contenido"><p style="color:var(--text-muted)">Use "Calcular desde EEFF" para generar los índices.</p></div>
-          </div>
-        </div>
-
-        <!-- CARTA DE REPRESENTACIÓN -->
-        <div class="bib-content" id="ap-carta-rep">
-          <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-              <h3 style="margin:0">✉️ Carta de Representación de la Gerencia</h3>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn-calc" onclick="generarCartaRepresentacion()">🔗 Generar</button>
-                <button class="btn-secondary" onclick="imprimirCartaRep()">🖨 Imprimir</button>
-                <button class="btn-secondary" onclick="exportarCartaRepWord()">📄 Word</button>
-              </div>
-            </div>
-            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Carta de representación de la gerencia según NIA 580 — declaraciones escritas que la administración proporciona al auditor. Auto-completada con los datos del expediente y EEFF.</p>
-            <div id="ap-carta-rep-contenido"><p style="color:var(--text-muted)">Use "Generar" para crear la carta con los datos del expediente actual.</p></div>
-          </div>
-        </div>
-
-      </div>
 
       <!-- HISTORIAL -->
       <div class="bib-content" id="audit-historial">
