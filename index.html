@@ -13104,6 +13104,18 @@ function iniciarExpedienteAuditoria() {
 function showApTab(tab) {
   const mod = document.getElementById('mod-audit-pro');
   if (!mod) return;
+
+  // Auto-guardar el tab actual antes de cambiar
+  const tabActivo = mod.querySelector('.bib-tab.active')?.onclick?.toString().match(/'([^']+)'/)?.[1];
+  if (tabActivo && _apExpediente) {
+    if (tabActivo === 'coso') { try { guardarCoso(); } catch(e){} }
+    if (tabActivo === 'pruebas-sust') { try { guardarPruebasSustantivas(); } catch(e){} }
+    if (tabActivo === 'programa') { try { guardarPrograma(); } catch(e){} }
+    if (tabActivo === 'alto-riesgo') { try { guardarAltoRiesgo(); } catch(e){} }
+    if (tabActivo === 'benchmarks') { try { guardarBenchmarks(); } catch(e){} }
+    if (tabActivo === 'variaciones') { try { guardarVariaciones(); } catch(e){} }
+  }
+
   mod.querySelectorAll('.bib-tab').forEach(t => t.classList.remove('active'));
   mod.querySelectorAll('.bib-content').forEach(c => c.classList.remove('active'));
   if (event?.target) event.target.classList.add('active');
@@ -13648,17 +13660,24 @@ async function seleccionarEEFFParaAuditoria(key, rowEl) {
       nombreEmpresa: data.nombreEmpresa || data.ruc || '',
       raw:           raw,
     };
-    // Guardar en el nodo raíz del expediente (no en subnodo separado)
-    try {
-      await FirebaseDB.update(`audit_pro/${_apExpediente.codigo}`, {
-        eeffKey:     _apExpediente.eeffKey,
-        eeffYear:    _apExpediente.eeffYear,
+    // Limpiar claves para Firebase (no permite . # $ [ ])
+    const rawLimpio = {};
+    Object.entries(raw).forEach(([k,v]) => { rawLimpio[k.replace(/[.#$\[\]]/g,'_')] = v; });
+    _apExpediente.eeffData.raw = rawLimpio;
+    window._apEEFFSeleccionado = { ...data, raw: rawLimpio };
+
+    // Guardar en nodo dedicado (set completo) + meta en raíz
+    const codigoExp = _apExpediente.codigo;
+    const eeffGuardar = { ...(_apExpediente.eeffData), cuentas:Object.keys(rawLimpio).length, fechaVinculo:new Date().toISOString() };
+    FirebaseDB.set(`audit_pro/${codigoExp}/eeff_vinculado`, eeffGuardar)
+      .then(() => FirebaseDB.update(`audit_pro/${codigoExp}`, {
+        eeffKey: _apExpediente.eeffKey,
+        eeffYear: _apExpediente.eeffYear,
         eeffEmpresa: _apExpediente.eeffEmpresa,
-        eeffData:    _apExpediente.eeffData,
-      });
-    } catch(e) { console.warn('Error guardando EEFF en expediente:', e); }
+      }))
+      .catch(e => console.warn('Error guardando EEFF:', e));
   }
-  window._apEEFFSeleccionado = data;
+  window._apEEFFSeleccionado = window._apEEFFSeleccionado || data;
 
   // Buscar cifras clave
   const buscar = (...ns) => { for(const n of ns){ const v=parseFloat(raw[n]); if(!isNaN(v)&&v!==0) return v; } return 0; };
@@ -13692,45 +13711,68 @@ async function seleccionarEEFFParaAuditoria(key, rowEl) {
 function confirmarUsoEEFF() {
   const data = window._apEEFFSeleccionado;
   if (!data) { toast('Seleccione un EEFF primero', 'warning'); return; }
-  const cuentas = Object.keys(data.raw||{}).length;
+  const raw    = data.raw || {};
+  const cuentas = Object.keys(raw).length;
 
   document.getElementById('ap-eeff-selector').style.display = 'none';
 
+  // Actualizar status visual
   const status = document.getElementById('ap-datos-status');
-  if (status) {
-    status.innerHTML = `<div style="padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px">
-      ✅ <strong>EEFF activo:</strong> ${data.nombreEmpresa||data.ruc||'—'} — Año ${data.year||'—'} — ${cuentas} cuentas disponibles
+  if (status) status.innerHTML = `
+    <div style="padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <span>✅ <strong>EEFF activo:</strong> ${data.nombreEmpresa||data.ruc||'—'} — Año ${data.year||'—'} — ${cuentas} cuentas</span>
+      <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
     </div>`;
+
+  if (!_apExpediente) {
+    toast(`EEFF confirmado — ${cuentas} cuentas listas ✓`, 'success');
+    return;
   }
 
-  // ── Guardar vínculo en Firebase dentro del expediente ──────────────────
-  if (_apExpediente) {
-    _apExpediente.eeffKey   = data.key || data.year || 'eeff';
-    _apExpediente.eeffYear  = data.year;
-    _apExpediente.eeffEmpresa = data.nombreEmpresa || data.ruc || '';
-    _apExpediente.eeffData  = {
-      year:         data.year,
-      ruc:          data.ruc || '',
-      nombreEmpresa:data.nombreEmpresa || '',
-      raw:          data.raw || {},
-    };
-    // Persistir en Firebase
-    FirebaseDB.update(`audit_pro/${_apExpediente.codigo}`, {
-      eeffKey:    _apExpediente.eeffKey,
-      eeffYear:   _apExpediente.eeffYear,
-      eeffEmpresa:_apExpediente.eeffEmpresa,
-      eeffData:   _apExpediente.eeffData,
-    }).then(() => {
-      toast(`EEFF "${_apExpediente.eeffEmpresa || _apExpediente.eeffYear}" vinculado y guardado en el expediente ✓`, 'success');
-    }).catch(err => {
-      console.error('Error guardando EEFF en expediente:', err);
-      toast('EEFF vinculado en memoria (error al guardar en Firebase)', 'warning');
+  // Construir objeto a guardar — limpiar claves para Firebase (sin ., #, $, [, ])
+  const rawLimpio = {};
+  Object.entries(raw).forEach(([k, v]) => {
+    const kLimpio = k.replace(/[.#$\[\]]/g, '_');
+    rawLimpio[kLimpio] = v;
+  });
+
+  const eeffGuardar = {
+    year:          data.year || '',
+    ruc:           data.ruc || '',
+    nombreEmpresa: data.nombreEmpresa || data.ruc || '',
+    archivo:       data.archivo || '',
+    cuentas:       cuentas,
+    fechaVinculo:  new Date().toISOString(),
+    raw:           rawLimpio,
+  };
+
+  // Actualizar en memoria
+  _apExpediente.eeffKey     = data.key || data.year || 'eeff';
+  _apExpediente.eeffYear    = data.year;
+  _apExpediente.eeffEmpresa = data.nombreEmpresa || data.ruc || '';
+  _apExpediente.eeffData    = eeffGuardar;
+  window._apEEFFSeleccionado = { ...data, raw: rawLimpio };
+
+  // Guardar en nodo dedicado (set, no update, para asegurar escritura completa)
+  const codigoExp = _apExpediente.codigo;
+  FirebaseDB.set(`audit_pro/${codigoExp}/eeff_vinculado`, eeffGuardar)
+    .then(() => {
+      // También actualizar meta del expediente
+      return FirebaseDB.update(`audit_pro/${codigoExp}`, {
+        eeffKey:     _apExpediente.eeffKey,
+        eeffYear:    _apExpediente.eeffYear,
+        eeffEmpresa: _apExpediente.eeffEmpresa,
+      });
+    })
+    .then(() => {
+      toast(`EEFF "${eeffGuardar.nombreEmpresa || eeffGuardar.year}" guardado en el expediente ✓`, 'success');
+    })
+    .catch(err => {
+      console.error('Error guardando EEFF:', err);
+      toast('EEFF activo en memoria — error al guardar en Firebase', 'warning');
     });
-    // Generar sumarias automáticamente
-    try { generarSumariasDesdeEEFF(); } catch(e) { console.warn('Sumarias:', e); }
-  } else {
-    toast(`EEFF confirmado — ${cuentas} cuentas listas ✓`, 'success');
-  }
+
+  try { generarSumariasDesdeEEFF(); } catch(e) { console.warn('Sumarias:', e); }
 }
 
 
@@ -14544,32 +14586,48 @@ async function abrirExpediente(key) {
   const sumarias = await FirebaseDB.get(`audit_pro/${key}/sumarias`);
   if (sumarias) _apExpediente.sumarias = sumarias;
 
-  // Cargar EEFF vinculado si existe
-  if (exp.eeffData && exp.eeffData.raw) {
-    // Tenemos los datos guardados directamente — no necesitamos otra consulta Firebase
-    window._apEEFFSeleccionado = exp.eeffData;
-    _apTransacciones = Object.entries(exp.eeffData.raw || {}).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v) || 0 }));
+  // Cargar EEFF vinculado — buscar en nodo dedicado primero, luego en eeffData del expediente
+  let eeffRestaurado = false;
+
+  const eeffVinculado = await FirebaseDB.get(`audit_pro/${key}/eeff_vinculado`);
+  if (eeffVinculado && eeffVinculado.raw && Object.keys(eeffVinculado.raw).length > 0) {
+    window._apEEFFSeleccionado = eeffVinculado;
+    _apTransacciones = Object.entries(eeffVinculado.raw).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v)||0 }));
+    eeffRestaurado = true;
     const status = document.getElementById('ap-datos-status');
-    if (status) status.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem">
-      ✅ EEFF vinculado: <strong>${exp.eeffData.nombreEmpresa || exp.eeffData.ruc || ''}</strong> — ${exp.eeffData.year || ''}
-      — ${Object.keys(exp.eeffData.raw||{}).length} cuentas
-    </div>`;
-  } else if (exp.eeffKey) {
-    // Fallback: buscar por key en estados_financieros
-    const eeffData = await FirebaseDB.get(`estados_financieros/${exp.eeffKey}`);
-    if (eeffData) {
-      window._apEEFFSeleccionado = eeffData;
-      _apTransacciones = Object.entries(eeffData.raw || {}).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v) || 0 }));
-      const status = document.getElementById('ap-datos-status');
-      if (status) status.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem">
-        ✅ EEFF vinculado: <strong>${eeffData.nombreEmpresa || eeffData.ruc || ''}</strong> — ${eeffData.year || ''}
+    if (status) status.innerHTML = `
+      <div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <span>✅ EEFF: <strong>${eeffVinculado.nombreEmpresa||eeffVinculado.ruc||'—'}</strong> — ${eeffVinculado.year||'—'} — ${Object.keys(eeffVinculado.raw).length} cuentas</span>
+        <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
       </div>`;
-    }
+  } else if (exp.eeffData && exp.eeffData.raw && Object.keys(exp.eeffData.raw).length > 0) {
+    // Fallback: datos guardados en el nodo raíz del expediente
+    window._apEEFFSeleccionado = exp.eeffData;
+    _apTransacciones = Object.entries(exp.eeffData.raw).map(([n, v]) => ({ Cuenta: n, Monto: parseFloat(v)||0 }));
+    eeffRestaurado = true;
+    const status = document.getElementById('ap-datos-status');
+    if (status) status.innerHTML = `
+      <div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <span>✅ EEFF: <strong>${exp.eeffData.nombreEmpresa||exp.eeffData.ruc||'—'}</strong> — ${exp.eeffData.year||'—'}</span>
+        <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
+      </div>`;
+  }
+
+  if (!eeffRestaurado) {
+    const status = document.getElementById('ap-datos-status');
+    if (status) status.innerHTML = `
+      <div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid #f59e0b;border-radius:8px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <span>⚠️ Sin EEFF vinculado</span>
+        <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔗 Vincular EEFF</button>
+      </div>`;
   }
 
   renderFasesAuditoria && renderFasesAuditoria();
   renderCedulasAnaliticasCompleto && renderCedulasAnaliticasCompleto();
   renderCedulasSumarias && renderCedulasSumarias();
+
+  // Restaurar todos los módulos guardados
+  await restaurarModulosExpediente(key);
 
   toast(`Expediente ${exp.codigo || key} cargado ✓`, 'success');
   panel && panel.scrollIntoView({ behavior: 'smooth' });
@@ -15239,6 +15297,152 @@ async function borrarCedulaAnalitica(cedulaId) {
 }
 
 
+
+
+// ══════════════════════════════════════════════════════
+// RESTAURAR TODOS LOS MÓDULOS AL ABRIR EXPEDIENTE
+// ══════════════════════════════════════════════════════
+async function restaurarModulosExpediente(key) {
+  if (!key || !_apExpediente) return;
+  const codigo = _apExpediente.codigo;
+
+  // Cargar todos los subnodos del expediente en paralelo
+  const [
+    programa, pruebasSust, coso, altoRiesgo,
+    corte, benchmarks, variaciones, hallazgos
+  ] = await Promise.all([
+    FirebaseDB.get(`audit_pro/${codigo}/programa`),
+    FirebaseDB.get(`audit_pro/${codigo}/pruebas_sustantivas`),
+    FirebaseDB.get(`audit_pro/${codigo}/coso`),
+    FirebaseDB.get(`audit_pro/${codigo}/alto_riesgo`),
+    FirebaseDB.get(`audit_pro/${codigo}/pruebas_corte`),
+    FirebaseDB.get(`audit_pro/${codigo}/benchmarks`),
+    FirebaseDB.get(`audit_pro/${codigo}/variaciones`),
+    FirebaseDB.get(`audit_pro/${codigo}/hallazgos`),
+  ]);
+
+  // Programa de Auditoría
+  if (programa) {
+    window._apPrograma = programa;
+    const el = document.getElementById('ap-programa-contenido');
+    if (el && el.children.length === 0) {
+      el.innerHTML = `<div style="padding:12px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;font-size:.78rem;color:var(--text-muted)">
+        ✅ Programa de auditoría cargado (${Array.isArray(programa)?programa.length:'N/A'} áreas). Use "🔗 Generar desde EEFF" para visualizar o actualizar.
+      </div>`;
+    }
+  }
+
+  // Pruebas Sustantivas
+  if (pruebasSust && Array.isArray(pruebasSust)) {
+    window._apPruebasSust = pruebasSust;
+    const el = document.getElementById('ap-pruebas-sust-contenido');
+    if (el) {
+      el.innerHTML = `<div style="padding:12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;margin-bottom:12px;font-size:.78rem">
+        ✅ ${pruebasSust.length} pruebas sustantivas guardadas. Use "🔗 Generar desde EEFF" para ver y editar.
+      </div>` + pruebasSust.map((p,i) => `
+        <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+            <div><span style="font-family:var(--font-mono);font-size:.74rem;color:var(--gold)">${p.ref}</span>
+              <strong style="margin-left:8px">${p.cuenta}</strong>
+              <span style="font-size:.7rem;margin-left:8px;color:var(--text-muted)">${p.tipo||''}</span>
+            </div>
+            <select onchange="if(window._apPruebasSust)window._apPruebasSust[${i}].estado=this.value"
+              style="background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.72rem;color:var(--text-primary)">
+              <option value="pendiente" ${p.estado==='pendiente'?'selected':''}>⬜ Pendiente</option>
+              <option value="en-proceso" ${p.estado==='en-proceso'?'selected':''}>🔄 En proceso</option>
+              <option value="completado" ${p.estado==='completado'?'selected':''}>✅ Completada</option>
+            </select>
+          </div>
+          <div style="margin-top:8px;font-size:.78rem;color:var(--text-muted)">
+            <strong>Objetivo:</strong> ${p.objetivo||'—'}<br>
+            <strong>Muestra:</strong> ${p.muestra||'—'}
+          </div>
+          <div style="margin-top:6px">
+            <label style="font-size:.72rem;color:var(--gold)">Conclusión:</label>
+            <textarea rows="2" style="width:100%;margin-top:3px;background:var(--bg-card2);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--text-primary);font-size:.78rem;resize:vertical"
+              onchange="if(window._apPruebasSust)window._apPruebasSust[${i}].conclusion=this.value">${p.conclusion||''}</textarea>
+          </div>
+        </div>`).join('') +
+        `<button class="btn-calc" onclick="guardarPruebasSustantivas()">💾 Guardar cambios</button>`;
+    }
+  }
+
+  // COSO — restaurar UI con valores guardados
+  if (coso && coso.componentes) {
+    // Inicializar el COSO primero para que existan los inputs
+    initCoso();
+    setTimeout(() => {
+      coso.componentes.forEach((comp, ci) => {
+        comp.principios?.forEach((p, pi) => {
+          const selCal = document.getElementById(`coso-${ci}-${pi}`);
+          const inpObs = document.getElementById(`coso-obs-${ci}-${pi}`);
+          const selNiv = document.getElementById(`coso-nivel-${ci}-${pi}`);
+          if (selCal) selCal.value = p.calificacion || '';
+          if (inpObs) inpObs.value = p.observaciones || '';
+          if (selNiv) selNiv.value = p.riesgo || 'medio';
+        });
+        const concl = document.getElementById(`coso-concl-${ci}`);
+        if (concl) concl.value = comp.conclusion || '';
+      });
+      // Añadir indicador de datos cargados
+      const el = document.getElementById('ap-coso-contenido');
+      if (el) {
+        const badge = document.createElement('div');
+        badge.style.cssText = 'padding:8px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:.76rem;color:var(--emerald);margin-bottom:12px';
+        badge.textContent = '✅ Evaluación COSO restaurada desde Firebase';
+        el.prepend(badge);
+      }
+    }, 300);
+  }
+
+  // Alto Riesgo
+  if (altoRiesgo && altoRiesgo.analisis) {
+    // Generar primero para que existan los inputs, luego restaurar
+    analizarAltoRiesgo();
+    setTimeout(() => {
+      altoRiesgo.analisis.forEach((a, i) => {
+        const selNiv = document.getElementById(`ar-nivel-${i}`);
+        const inpRes = document.getElementById(`ar-resp-${i}`);
+        if (selNiv) selNiv.value = a.nivel || 'bajo';
+        if (inpRes) inpRes.value = a.respuesta || '';
+      });
+    }, 300);
+  }
+
+  // Corte — mostrar indicador
+  if (corte) {
+    const el = document.getElementById('ap-corte-contenido');
+    if (el && corte.html) {
+      el.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:.76rem;color:var(--emerald);margin-bottom:12px">
+        ✅ Pruebas de corte guardadas el ${new Date(corte.fecha||Date.now()).toLocaleDateString('es-EC')}. Use "🔗 Generar" para ver.
+      </div>`;
+    }
+  }
+
+  // Benchmarks
+  if (benchmarks) {
+    if (document.getElementById('ap-sector') && benchmarks.sector)
+      document.getElementById('ap-sector').value = benchmarks.sector;
+    if (document.getElementById('ap-tamano') && benchmarks.tamano)
+      document.getElementById('ap-tamano').value = benchmarks.tamano;
+    if (benchmarks.sector) generarBenchmarks();
+  }
+
+  // Variaciones
+  if (variaciones && variaciones.filas?.length) {
+    const el = document.getElementById('ap-variaciones-contenido');
+    if (el) el.innerHTML = `<div style="padding:8px 12px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:.76rem;color:var(--emerald);margin-bottom:12px">
+      ✅ ${variaciones.filas.length} variaciones documentadas. Use "🔗 Analizar desde EEFF" para ver y editar.
+    </div>`;
+  }
+
+  // Hallazgos
+  if (hallazgos) {
+    _apExpediente.hallazgos = Array.isArray(hallazgos) ? hallazgos : Object.values(hallazgos);
+  }
+
+  console.log('✅ Módulos del expediente restaurados:', codigo);
+}
 
 
 function generarSumariasDesdeEEFF() {
@@ -15934,7 +16138,13 @@ function generarPruebasCorte() {
     </div>`;
 }
 
-function guardarCorte() { toast('Pruebas de corte guardadas ✓','success'); }
+function guardarCorte() {
+  if (!_apExpediente) { toast('Inicie un expediente primero','warning'); return; }
+  const el = document.getElementById('ap-corte-contenido');
+  const data = { html: el?.innerHTML||'', fecha: new Date().toISOString() };
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/pruebas_corte`, data);
+  toast('Pruebas de corte guardadas ✓','success');
+}
 function imprimirCorte() {
   const el=document.getElementById('ap-corte-contenido'); if(!el) return;
   const win=window.open('','_blank');
@@ -16075,7 +16285,15 @@ function generarBenchmarks() {
     </table>`;
 }
 
-function guardarBenchmarks() { toast('Benchmarks guardados ✓','success'); }
+function guardarBenchmarks() {
+  if (!_apExpediente) { toast('Inicie un expediente primero','warning'); return; }
+  const sector = document.getElementById('ap-sector')?.value || '';
+  const tamano = document.getElementById('ap-tamano')?.value || '';
+  const el = document.getElementById('ap-benchmarks-contenido');
+  const data = { sector, tamano, html: el?.innerHTML||'', fecha: new Date().toISOString() };
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/benchmarks`, data);
+  toast('Benchmarks guardados ✓','success');
+}
 function imprimirBenchmarks() {
   const el=document.getElementById('ap-benchmarks-contenido'); if(!el) return;
   const win=window.open('','_blank');
@@ -16137,7 +16355,21 @@ function analizarVariaciones() {
     </div>`;
 }
 
-function guardarVariaciones() { toast('Indagaciones guardadas ✓','success'); }
+function guardarVariaciones() {
+  if (!_apExpediente) { toast('Inicie un expediente primero','warning'); return; }
+  // Recoger explicaciones y estados de cada fila
+  const filas = Array.from(document.querySelectorAll('#ap-variaciones-contenido tbody tr')).map((tr,i) => {
+    const inputs = tr.querySelectorAll('input,select');
+    return {
+      cuenta: tr.cells[0]?.textContent?.trim()||'',
+      riesgo: inputs[0]?.value||'bajo',
+      explicacion: inputs[1]?.value||'',
+      estado: inputs[2]?.value||'pendiente',
+    };
+  }).filter(f => f.cuenta);
+  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/variaciones`, { filas, fecha: new Date().toISOString() });
+  toast('Indagaciones guardadas ✓','success');
+}
 function imprimirVariaciones() {
   const el=document.getElementById('ap-variaciones-contenido'); if(!el) return;
   const win=window.open('','_blank');
