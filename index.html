@@ -14674,6 +14674,573 @@ async function borrarExpediente(key, codigo, empresa) {
 }
 
 
+// ══════════════════════════════════════════════════════
+// CÉDULAS ANALÍTICAS — SELECTOR + RENDER + EDICIÓN
+// ══════════════════════════════════════════════════════
+
+// Niveles de materialidad accesibles globalmente
+function _nivelCuenta(rawData, k, material, significativa) {
+  const v = Math.abs(parseFloat(rawData[k])||0);
+  if (v >= material) return 'material';
+  if (v >= significativa) return 'significativa';
+  return 'menor';
+}
+
+function generarCedulasDesdeEEFF() {
+  if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
+
+  // Intentar obtener raw desde varias fuentes
+  let raw = null;
+  if (window._apEEFFSeleccionado?.raw) {
+    raw = normalizarRaw(window._apEEFFSeleccionado.raw);
+  } else if (_apExpediente.eeffData?.raw) {
+    raw = normalizarRaw(_apExpediente.eeffData.raw);
+  } else if (typeof periodos !== 'undefined' && periodos.length > 0) {
+    raw = normalizarRaw(periodos[periodos.length-1].raw);
+  }
+
+  if (!raw || Object.keys(raw).length === 0) {
+    toast('Vincule un EEFF primero usando "Usar datos de Estados Financieros"', 'warning');
+    return;
+  }
+
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  // ── Materialidad ─────────────────────────────────────────────────────────
+  const totalActivo = parseFloat(raw['TOTAL ACTIVO']) ||
+    (parseFloat(raw['TOTAL ACTIVO CORRIENTE'])||0)+(parseFloat(raw['TOTAL ACTIVO NO CORRIENTE'])||0) || 1;
+  const MATERIAL      = totalActivo * 0.05;
+  const SIGNIFICATIVA = totalActivo * 0.01;
+
+  // ── Secciones del F101 ────────────────────────────────────────────────────
+  const SECCIONES = [
+    { nombre:'ACTIVO CORRIENTE', cuentas:[
+      'EFECTIVO','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES',
+      'INVENTARIOS','IVA EN COMPRAS','ANTICIPO IR','OTROS ACTIVOS CORRIENTES','TOTAL ACTIVO CORRIENTE'] },
+    { nombre:'ACTIVO NO CORRIENTE', cuentas:[
+      'PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA','ACTIVOS INTANGIBLES',
+      'AMORTIZACION INTANGIBLES','INVERSIONES LP','OTROS ACTIVOS NO CORRIENTES','TOTAL ACTIVO NO CORRIENTE'] },
+    { nombre:'PASIVO CORRIENTE', cuentas:[
+      'CUENTAS POR PAGAR','OBLIGACIONES BANCARIAS CP','IMPUESTO RENTA POR PAGAR',
+      'PARTICIPACION TRABAJADORES','IESS POR PAGAR','ANTICIPOS CLIENTES','OTROS PASIVOS CORRIENTES','TOTAL PASIVO CORRIENTE'] },
+    { nombre:'PASIVO NO CORRIENTE', cuentas:[
+      'OBLIGACIONES BANCARIAS LP','PROVISION JUBILACION PATRONAL','OTROS PASIVOS NO CORRIENTES','TOTAL PASIVO'] },
+    { nombre:'PATRIMONIO', cuentas:[
+      'CAPITAL SOCIAL','RESERVA LEGAL','RESERVAS FACULTATIVAS',
+      'UTILIDADES RETENIDAS','UTILIDAD EJERCICIO','TOTAL PATRIMONIO'] },
+    { nombre:'INGRESOS', cuentas:['VENTAS NETAS','OTROS INGRESOS'] },
+    { nombre:'COSTOS Y GASTOS', cuentas:[
+      'COSTO DE VENTAS','GASTO PERSONAL','GASTO ADMINISTRATIVO',
+      'GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO','OTROS GASTOS'] },
+    { nombre:'RESULTADO', cuentas:[
+      'UTILIDAD BRUTA','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO',
+      'PARTICIPACION TRABAJADORES GASTO','UTILIDAD EJERCICIO'] },
+  ];
+
+  // Agregar cuentas del F101 no mapeadas en los grupos estándar
+  const cuentasEnGrupos = new Set(SECCIONES.flatMap(s => s.cuentas));
+  const cuentasExtra = Object.keys(raw)
+    .filter(k => !cuentasEnGrupos.has(k) && Math.abs(parseFloat(raw[k])||0) > 0)
+    .sort();
+  if (cuentasExtra.length) {
+    SECCIONES.push({ nombre:'OTRAS CUENTAS DEL F101', cuentas: cuentasExtra });
+  }
+
+  // Contar auto-seleccionadas
+  let autoCount = 0;
+  SECCIONES.forEach(sec => {
+    sec.cuentas.forEach(k => {
+      if (Math.abs(parseFloat(raw[k])||0) > 0) {
+        if (_nivelCuenta(raw, k, MATERIAL, SIGNIFICATIVA) !== 'menor') autoCount++;
+      }
+    });
+  });
+
+  // ── Guardar referencias en modal para uso de funciones inline ─────────────
+  window._selectorRaw          = raw;
+  window._selectorMaterial     = MATERIAL;
+  window._selectorSignificativa = SIGNIFICATIVA;
+
+  // ── Construir filas del selector ──────────────────────────────────────────
+  const filasCuentas = SECCIONES.map(sec => {
+    const cuentasConSaldo = sec.cuentas.filter(k => Math.abs(parseFloat(raw[k])||0) > 0);
+    if (!cuentasConSaldo.length) return '';
+    return `
+      <div style="margin-bottom:14px">
+        <div style="font-size:.73rem;font-weight:700;color:var(--gold);letter-spacing:.05em;
+          padding:5px 10px;background:rgba(212,175,55,.08);border-radius:5px;margin-bottom:6px;
+          display:flex;align-items:center;justify-content:space-between">
+          <span>📂 ${sec.nombre}</span>
+          <div style="display:flex;gap:6px">
+            <button onclick="seleccionarSeccionCedulas('${sec.nombre}',true)"
+              style="font-size:.62rem;padding:1px 7px;background:rgba(212,175,55,.15);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer">Todas</button>
+            <button onclick="seleccionarSeccionCedulas('${sec.nombre}',false)"
+              style="font-size:.62rem;padding:1px 7px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer">Ninguna</button>
+          </div>
+        </div>
+        ${cuentasConSaldo.map(k => {
+          const v = parseFloat(raw[k])||0;
+          const nivel = _nivelCuenta(raw, k, MATERIAL, SIGNIFICATIVA);
+          const autoCheck = nivel !== 'menor';
+          const badge = nivel==='material'
+            ? '<span style="font-size:.6rem;padding:1px 6px;background:rgba(239,68,68,.15);color:#ef4444;border-radius:6px;font-weight:700;margin-left:4px">★ MATERIAL</span>'
+            : nivel==='significativa'
+            ? '<span style="font-size:.6rem;padding:1px 6px;background:rgba(245,158,11,.12);color:#f59e0b;border-radius:6px;font-weight:600;margin-left:4px">● SIG.</span>'
+            : '';
+          return `
+          <label style="display:flex;align-items:center;gap:10px;padding:5px 10px;cursor:pointer;border-radius:5px;
+            background:${autoCheck?'rgba(212,175,55,.04)':'transparent'}"
+            onmouseover="this.style.background='rgba(255,255,255,.05)'"
+            onmouseout="this.style.background='${autoCheck?'rgba(212,175,55,.04)':'transparent'}'">
+            <input type="checkbox" class="ced-check" data-cuenta="${k}"
+              data-saldo="${v}" data-seccion="${sec.nombre}"
+              ${autoCheck?'checked':''}
+              style="width:15px;height:15px;accent-color:var(--gold);cursor:pointer;flex-shrink:0">
+            <span style="flex:1;font-size:.79rem;color:var(--text-primary)">${k}${badge}</span>
+            <span style="font-family:var(--font-mono);font-size:.77rem;color:${v<0?'#ef4444':'var(--text-secondary)'}">
+              $${fmtN(v)}
+            </span>
+          </label>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  document.getElementById('ced-selector-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'ced-selector-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.82);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
+  const year = window._apEEFFSeleccionado?.year || _apExpediente.eeffYear || '—';
+  const emp  = window._apEEFFSeleccionado?.nombreEmpresa || _apExpediente.eeffEmpresa || '—';
+
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:14px;padding:22px;width:min(780px,100%);margin:0 auto;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <h3 style="margin:0;color:var(--gold)">📄 Selector de Cédulas Analíticas</h3>
+          <p style="font-size:.76rem;color:var(--text-muted);margin:4px 0 0">
+            EEFF: <strong style="color:var(--text-primary)">${emp}</strong> — Año <strong>${year}</strong>
+          </p>
+        </div>
+        <button onclick="document.getElementById('ced-selector-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>
+      </div>
+
+      <!-- Leyenda -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:8px;margin-bottom:12px;font-size:.74rem">
+        <span>★ Material ≥ <strong style="color:#ef4444">$${fmtN(MATERIAL)}</strong></span>
+        <span>|</span>
+        <span>● Significativa ≥ <strong style="color:#f59e0b">$${fmtN(SIGNIFICATIVA)}</strong></span>
+        <span>|</span>
+        <span style="color:var(--emerald)"><strong>${autoCount}</strong> pre-seleccionadas automáticamente</span>
+      </div>
+
+      <!-- Controles globales -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;padding:8px 12px;background:var(--bg-card2);border-radius:8px">
+        <button onclick="document.querySelectorAll('.ced-check').forEach(c=>c.checked=true);actualizarContadorCedulas()"
+          style="font-size:.71rem;padding:3px 10px;background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">✅ Todas</button>
+        <button onclick="document.querySelectorAll('.ced-check').forEach(c=>c.checked=false);actualizarContadorCedulas()"
+          style="font-size:.71rem;padding:3px 10px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">✕ Ninguna</button>
+        <button onclick="document.querySelectorAll('.ced-check').forEach(c=>{c.checked=_nivelCuenta(window._selectorRaw,c.dataset.cuenta,window._selectorMaterial,window._selectorSignificativa)!=='menor'});actualizarContadorCedulas()"
+          style="font-size:.71rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">★ Solo material/sig.</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <label style="font-size:.73rem;color:var(--text-secondary)">Modo:</label>
+          <select id="ced-modo-agrupacion" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:.74rem">
+            <option value="individual">Una cédula por cuenta</option>
+            <option value="por-seccion">Una cédula por sección</option>
+            <option value="una-sola">Todo en una sola cédula</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ref y procedimiento -->
+      <div style="display:grid;grid-template-columns:90px 1fr;gap:10px;margin-bottom:12px">
+        <div class="form-group">
+          <label style="font-size:.71rem">Ref. inicial</label>
+          <input id="ced-ref-inicial" value="A" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-family:var(--font-mono);text-align:center">
+        </div>
+        <div class="form-group">
+          <label style="font-size:.71rem">Procedimiento por defecto</label>
+          <input id="ced-proc-default" value="Verificación de saldos, análisis de variaciones, pruebas sustantivas sobre saldo auditado." style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);font-size:.77rem">
+        </div>
+      </div>
+
+      <!-- Lista de cuentas -->
+      <div style="max-height:42vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;background:var(--bg-primary)">
+        ${filasCuentas}
+      </div>
+
+      <!-- Contador -->
+      <div id="ced-contador" style="font-size:.74rem;color:var(--text-secondary);margin-bottom:12px;padding:6px 10px;background:var(--bg-card2);border-radius:6px">
+        ${autoCount} cuentas seleccionadas (material/significativa)
+      </div>
+
+      <div class="doc-btn-row">
+        <button onclick="document.getElementById('ced-selector-modal').remove()" class="btn-secondary">Cancelar</button>
+        <button onclick="crearCedulasDesdeSeleccion()" class="btn-calc" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
+          📄 Crear cédula(s)
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('change', actualizarContadorCedulas);
+}
+
+function seleccionarSeccionCedulas(seccion, checked) {
+  document.querySelectorAll(`.ced-check[data-seccion="${seccion}"]`).forEach(c => c.checked = checked);
+  actualizarContadorCedulas();
+}
+
+function actualizarContadorCedulas() {
+  const checks = [...document.querySelectorAll('.ced-check:checked')];
+  const el = document.getElementById('ced-contador');
+  if (!el) return;
+  const n = checks.length;
+  const raw = window._selectorRaw || {};
+  const mat = window._selectorMaterial || 0;
+  const sig = window._selectorSignificativa || 0;
+  const nMat = checks.filter(c => _nivelCuenta(raw, c.dataset.cuenta, mat, sig) === 'material').length;
+  const nSig = checks.filter(c => _nivelCuenta(raw, c.dataset.cuenta, mat, sig) === 'significativa').length;
+  el.innerHTML = `<strong style="color:var(--gold)">${n}</strong> cuentas seleccionadas —
+    <span style="color:#ef4444">${nMat} materiales</span> ·
+    <span style="color:#f59e0b">${nSig} significativas</span> ·
+    <span style="color:var(--text-muted)">${n-nMat-nSig} menores</span>`;
+}
+
+async function crearCedulasDesdeSeleccion() {
+  if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
+
+  const checks = [...document.querySelectorAll('.ced-check:checked')];
+  if (!checks.length) { toast('Seleccione al menos una cuenta', 'warning'); return; }
+
+  const raw     = window._selectorRaw || {};
+  const modo    = document.getElementById('ced-modo-agrupacion')?.value || 'individual';
+  const procDef = document.getElementById('ced-proc-default')?.value || 'Verificación de saldos, análisis de variaciones, pruebas sustantivas.';
+  const year    = window._apEEFFSeleccionado?.year || _apExpediente.eeffYear || '—';
+  const fmtN    = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  // Ref. secuencial
+  const nextRef = r => {
+    const chars = r.split('');
+    let i = chars.length-1;
+    while (i>=0) {
+      if (chars[i]<'Z') { chars[i]=String.fromCharCode(chars[i].charCodeAt(0)+1); break; }
+      chars[i]='A'; i--;
+    }
+    if (i<0) chars.unshift('A');
+    return chars.join('');
+  };
+
+  const existentes = window._apCedulas || {};
+  const refsUsadas = new Set(Object.values(existentes).map(c=>c.ref));
+  let refActual = document.getElementById('ced-ref-inicial')?.value?.trim() || 'A';
+  while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+
+  const crearCedula = (ref, titulo, filas) => {
+    const id = `ANA-${ref}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const totalLibros = filas.reduce((s,f) => s+(parseFloat(f.saldoLibros)||0), 0);
+    return {
+      id, ref, titulo,
+      expediente: _apExpediente.codigo,
+      empresa:    _apExpediente.empresa || '',
+      periodo:    _apExpediente.periodo || year,
+      auditor:    _apExpediente.auditor || '',
+      fecha:      new Date().toISOString(),
+      filas, totalLibros, totalAjustes:0, totalAuditado:totalLibros,
+      procedimiento: procDef,
+      marcasLeyenda: '✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja',
+      conclusion: '', estado: 'borrador', autoGenerada: true, eeffYear: year,
+    };
+  };
+
+  const nuevasCedulas = {};
+
+  if (modo === 'individual') {
+    checks.forEach(chk => {
+      const cuenta = chk.dataset.cuenta;
+      const saldo  = parseFloat(raw[cuenta])||0;
+      const ced = crearCedula(refActual, cuenta, [{ cuenta, saldoLibros:saldo, ajuste:0, saldoAuditado:saldo, marcas:'✓', notas:'' }]);
+      nuevasCedulas[ced.id] = ced;
+      refActual = nextRef(refActual);
+      while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+    });
+  } else if (modo === 'por-seccion') {
+    const porSec = {};
+    checks.forEach(chk => {
+      const sec = chk.dataset.seccion || 'OTRAS';
+      if (!porSec[sec]) porSec[sec] = [];
+      const saldo = parseFloat(raw[chk.dataset.cuenta])||0;
+      porSec[sec].push({ cuenta:chk.dataset.cuenta, saldoLibros:saldo, ajuste:0, saldoAuditado:saldo, marcas:'✓', notas:'' });
+    });
+    Object.entries(porSec).forEach(([sec, filas]) => {
+      const ced = crearCedula(refActual, sec, filas);
+      nuevasCedulas[ced.id] = ced;
+      refActual = nextRef(refActual);
+      while (refsUsadas.has(refActual)) refActual = nextRef(refActual);
+    });
+  } else {
+    const filas = checks.map(chk => {
+      const saldo = parseFloat(raw[chk.dataset.cuenta])||0;
+      return { cuenta:chk.dataset.cuenta, saldoLibros:saldo, ajuste:0, saldoAuditado:saldo, marcas:'✓', notas:'' };
+    });
+    const ced = crearCedula(refActual, `Cédula analítica — ${checks.length} cuentas`, filas);
+    nuevasCedulas[ced.id] = ced;
+  }
+
+  // Merge y guardar
+  const todas = { ...existentes, ...nuevasCedulas };
+  window._apCedulas = todas;
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`, todas);
+
+  document.getElementById('ced-selector-modal')?.remove();
+  renderCedulasAnaliticasCompleto();
+  const n = Object.keys(nuevasCedulas).length;
+  toast(`${n} cédula${n!==1?'s':''} creada${n!==1?'s':''} ✓`, 'success');
+}
+
+function renderCedulasAnaliticasCompleto() {
+  const el = document.getElementById('ap-cedulas-lista');
+  if (!el) return;
+  const cedulas = window._apCedulas || {};
+  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+
+  if (!lista.length) {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:24px">
+      <p style="color:var(--text-muted);margin-bottom:12px">No hay cédulas analíticas. Genérelas desde el EEFF o cree una nueva.</p>
+      <button class="btn-calc" onclick="generarCedulasDesdeEEFF()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
+    </div>`;
+    return;
+  }
+
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const fmtC = v => { const n=parseFloat(v)||0; return n<0?`<span class="negative">(${fmtN(Math.abs(n))})</span>`:`${fmtN(n)}`; };
+
+  el.innerHTML = lista.map(ced => `
+    <div class="card" style="margin-bottom:14px" id="ced-card-${ced.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <span style="font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono)">REF. ${ced.ref||'—'}</span>
+          <h4 style="margin:2px 0;color:var(--gold);font-size:.9rem">${ced.titulo}</h4>
+          <div style="font-size:.72rem;color:var(--text-muted)">
+            ${ced.empresa||''} | Período: ${ced.periodo||''} | Auditor: ${ced.auditor||''} | ${new Date(ced.fecha||Date.now()).toLocaleDateString('es-EC')}
+            ${ced.autoGenerada?'<span style="color:#f59e0b;margin-left:6px">● Auto-generada</span>':''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="font-size:.68rem;padding:2px 8px;border-radius:8px;
+            background:${ced.estado==='aprobada'?'rgba(16,185,129,.15)':'rgba(245,158,11,.12)'};
+            color:${ced.estado==='aprobada'?'var(--emerald)':'#f59e0b'}">${ced.estado||'borrador'}</span>
+          <button onclick="editarCedulaAnalitica('${ced.id}')"
+            style="font-size:.7rem;padding:3px 8px;background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);border-radius:5px;cursor:pointer">✏️ Editar</button>
+          <button onclick="imprimirCedula('${ced.id}')"
+            style="font-size:.7rem;padding:3px 8px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🖨</button>
+          <button onclick="borrarCedulaAnalitica('${ced.id}')"
+            style="font-size:.7rem;padding:3px 8px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">🗑</button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto">
+        <table class="ef-table">
+          <thead><tr>
+            <th class="left">Cuenta / Concepto</th>
+            <th>Saldo s/Libros</th><th>Ajuste</th><th>Saldo Auditado</th>
+            <th>Marcas</th><th>Notas</th>
+          </tr></thead>
+          <tbody>
+            ${(ced.filas||[]).map(f=>`<tr>
+              <td class="account" style="font-size:.78rem">${f.cuenta}</td>
+              <td class="num" style="font-size:.78rem">$${fmtN(f.saldoLibros)}</td>
+              <td class="num" style="font-size:.78rem;color:${(parseFloat(f.ajuste)||0)!==0?'#ef4444':'var(--text-muted)'}">
+                ${(parseFloat(f.ajuste)||0)!==0?'($'+fmtN(Math.abs(f.ajuste))+')':'—'}
+              </td>
+              <td class="num" style="font-size:.78rem"><strong>$${fmtN(f.saldoAuditado)}</strong></td>
+              <td style="text-align:center;font-size:.85rem">${f.marcas||'✓'}</td>
+              <td style="font-size:.74rem;color:var(--text-muted)">${f.notas||''}</td>
+            </tr>`).join('')}
+            <tr class="total-row">
+              <td><strong>TOTAL</strong></td>
+              <td class="num"><strong>$${fmtN(ced.totalLibros)}</strong></td>
+              <td class="num">${(parseFloat(ced.totalAjustes)||0)!==0?'($'+fmtN(Math.abs(ced.totalAjustes))+')':'—'}</td>
+              <td class="num"><strong>$${fmtN(ced.totalAuditado)}</strong></td>
+              <td></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.78rem">
+        <div style="padding:10px;background:rgba(99,102,241,.05);border-radius:6px;border:1px solid rgba(99,102,241,.15)">
+          <strong style="color:#6366f1;font-size:.7rem">PROCEDIMIENTOS</strong>
+          <p style="margin:4px 0;color:var(--text-secondary);font-size:.77rem">${ced.procedimiento||'—'}</p>
+        </div>
+        <div style="padding:10px;background:rgba(212,175,55,.05);border-radius:6px;border:1px solid rgba(212,175,55,.2)">
+          <strong style="color:var(--gold);font-size:.7rem">CONCLUSIÓN</strong>
+          <p style="margin:4px 0;color:var(--text-secondary);font-size:.77rem">${ced.conclusion||'<em>Pendiente</em>'}</p>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:.7rem;color:var(--text-muted)">
+        <strong>Marcas:</strong> ${ced.marcasLeyenda||'✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja'}
+      </div>
+    </div>`).join('');
+}
+
+async function editarCedulaAnalitica(cedulaId) {
+  const cedulas = window._apCedulas || {};
+  const ced = cedulas[cedulaId];
+  if (!ced) { toast('Cédula no encontrada', 'error'); return; }
+
+  document.getElementById('ced-edit-modal')?.remove();
+  const fmtV = v => (parseFloat(v)||0).toFixed(2);
+
+  const modal = document.createElement('div');
+  modal.id = 'ced-edit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.78);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(820px,100%);margin:0 auto;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0;color:var(--gold)">✏️ Editar Cédula — Ref. ${ced.ref||'—'}</h3>
+        <button onclick="document.getElementById('ced-edit-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group"><label>Título</label>
+          <input id="ced-titulo" value="${ced.titulo||''}" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+        </div>
+        <div class="form-group"><label>Estado</label>
+          <select id="ced-estado" style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary)">
+            <option value="borrador" ${ced.estado==='borrador'?'selected':''}>Borrador</option>
+            <option value="en-revision" ${ced.estado==='en-revision'?'selected':''}>En revisión</option>
+            <option value="aprobada" ${ced.estado==='aprobada'?'selected':''}>Aprobada</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:14px">
+        <table class="ef-table">
+          <thead><tr>
+            <th class="left">Cuenta</th><th>Saldo Libros</th><th>Ajuste</th>
+            <th>Saldo Auditado</th><th>Marcas</th><th>Notas</th>
+          </tr></thead>
+          <tbody id="ced-filas-edit">
+            ${(ced.filas||[]).map((f,fi)=>`<tr>
+              <td><input value="${f.cuenta||''}" onchange="actualizarFilaCed(${fi},'cuenta',this.value)"
+                style="width:150px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+              <td><input type="number" value="${fmtV(f.saldoLibros)}" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)"
+                style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+              <td><input type="number" value="${fmtV(f.ajuste)}" onchange="actualizarFilaCed(${fi},'ajuste',this.value)"
+                style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+              <td><input type="number" value="${fmtV(f.saldoAuditado)}" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
+                style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:3px">
+                  <input id="marca-input-${fi}" value="${f.marcas||'✓'}" onchange="actualizarFilaCed(${fi},'marcas',this.value)"
+                    style="width:45px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:.82rem;text-align:center;color:var(--gold)">
+                  <button onclick="abrirPickerMarcas('marca-input-${fi}')"
+                    style="padding:2px 5px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
+                </div>
+              </td>
+              <td><input value="${f.notas||''}" onchange="actualizarFilaCed(${fi},'notas',this.value)"
+                style="width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <button onclick="agregarFilaCedula('${cedulaId}')"
+          style="margin-top:6px;font-size:.72rem;padding:4px 10px;background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">+ Agregar fila</button>
+      </div>
+      <div class="form-group" style="margin-bottom:12px"><label>Procedimientos aplicados</label>
+        <textarea id="ced-procedimiento" rows="3"
+          style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.procedimiento||''}</textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:16px"><label>Conclusión del auditor</label>
+        <textarea id="ced-conclusion" rows="3"
+          style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text-primary);font-size:.82rem;resize:vertical">${ced.conclusion||''}</textarea>
+      </div>
+      <div class="doc-btn-row">
+        <button onclick="document.getElementById('ced-edit-modal').remove()" class="btn-secondary">Cancelar</button>
+        <button onclick="guardarCedulaEditada('${cedulaId}')" class="btn-calc"
+          style="background:linear-gradient(135deg,var(--emerald),#0a9468)">✅ Guardar Cédula</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  window._cedulaEditando = { id: cedulaId, filas: JSON.parse(JSON.stringify(ced.filas||[])) };
+}
+
+function actualizarFilaCed(fi, campo, valor) {
+  if (!window._cedulaEditando) return;
+  if (!window._cedulaEditando.filas[fi]) window._cedulaEditando.filas[fi] = {};
+  window._cedulaEditando.filas[fi][campo] = ['saldoLibros','ajuste','saldoAuditado'].includes(campo) ? parseFloat(valor)||0 : valor;
+  if (campo==='saldoLibros'||campo==='ajuste') {
+    const f = window._cedulaEditando.filas[fi];
+    f.saldoAuditado = (f.saldoLibros||0)+(f.ajuste||0);
+  }
+}
+
+function agregarFilaCedula() {
+  if (!window._cedulaEditando) return;
+  window._cedulaEditando.filas.push({ cuenta:'Nueva cuenta', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' });
+  const tbody = document.getElementById('ced-filas-edit');
+  if (!tbody) return;
+  const fi = window._cedulaEditando.filas.length-1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input value="Nueva cuenta" onchange="actualizarFilaCed(${fi},'cuenta',this.value)"
+      style="width:150px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoLibros',this.value)"
+      style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'ajuste',this.value)"
+      style="width:90px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input type="number" value="0" onchange="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
+      style="width:100px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+    <td><input value="✓" onchange="actualizarFilaCed(${fi},'marcas',this.value)"
+      style="width:45px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:.82rem;text-align:center;color:var(--gold)"></td>
+    <td><input value="" onchange="actualizarFilaCed(${fi},'notas',this.value)"
+      style="width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text-primary);font-size:.78rem"></td>`;
+  tbody.appendChild(tr);
+}
+
+async function guardarCedulaEditada(cedulaId) {
+  const cedulas = window._apCedulas || {};
+  const ced = cedulas[cedulaId];
+  if (!ced || !window._cedulaEditando) { toast('Error: cédula no encontrada', 'error'); return; }
+
+  const filas = window._cedulaEditando.filas;
+  const updated = {
+    ...ced,
+    titulo:        document.getElementById('ced-titulo')?.value || ced.titulo,
+    estado:        document.getElementById('ced-estado')?.value || ced.estado,
+    procedimiento: document.getElementById('ced-procedimiento')?.value || ced.procedimiento,
+    conclusion:    document.getElementById('ced-conclusion')?.value || '',
+    filas,
+    totalLibros:   filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
+    totalAjustes:  filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0),
+    totalAuditado: filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0),
+    fechaModificacion: new Date().toISOString(),
+  };
+
+  cedulas[cedulaId] = updated;
+  window._apCedulas = cedulas;
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`, updated);
+  document.getElementById('ced-edit-modal')?.remove();
+  window._cedulaEditando = null;
+  renderCedulasAnaliticasCompleto();
+  toast('Cédula guardada ✓', 'success');
+}
+
+async function borrarCedulaAnalitica(cedulaId) {
+  if (!confirm('¿Eliminar esta cédula analítica?')) return;
+  const cedulas = window._apCedulas || {};
+  delete cedulas[cedulaId];
+  window._apCedulas = cedulas;
+  if (_apExpediente) {
+    await FirebaseDB.remove(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`);
+  }
+  renderCedulasAnaliticasCompleto();
+  toast('Cédula eliminada', 'success');
+}
+
+
+
+
 function generarSumariasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
   const data = window._apEEFFSeleccionado;
