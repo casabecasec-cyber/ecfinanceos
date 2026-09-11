@@ -17313,50 +17313,63 @@ function nuevaCedulaSumaria() {
 }
 
 // ── Vincular cédula analítica a fila sumaria ─────────────────────────────
-function vincularCedulaASumaria(si, pi, refCedula) {
+async function vincularCedulaASumaria(si, pi, refCedula) {
   if (!_apExpediente?.sumarias?.[si]?.partidas?.[pi]) return;
   const partida = _apExpediente.sumarias[si].partidas[pi];
   partida.cedulaRef = refCedula.trim();
 
   if (!refCedula.trim()) {
-    // Sin referencia — limpiar vínculo
     partida.cedulaVinculada = false;
     actualizarSumaria(si, pi, 'cedulaRef', '');
     return;
   }
 
-  // Buscar cédula analítica por referencia
+  // Cargar cédulas desde Firebase si no están en memoria
+  if (!window._apCedulas || Object.keys(window._apCedulas).length === 0) {
+    if (_apExpediente?.codigo) {
+      const cedFb = await FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`);
+      if (cedFb) window._apCedulas = cedFb;
+    }
+  }
+
+  // Buscar cédula por referencia (insensible a mayúsculas/minúsculas y espacios)
   const cedulas = window._apCedulas || {};
+  const refBuscar = refCedula.trim().toUpperCase();
   const cedEncontrada = Object.values(cedulas).find(ced =>
-    (ced.ref||'').toUpperCase() === refCedula.trim().toUpperCase()
+    (ced.ref||'').trim().toUpperCase() === refBuscar
   );
 
   if (cedEncontrada) {
-    const saldoAud = parseFloat(cedEncontrada.totalAuditado) || parseFloat(cedEncontrada.totalLibros) || 0;
-    partida.cedulaRef = cedEncontrada.ref;
+    const saldoAud = parseFloat(cedEncontrada.totalAuditado) ||
+                     parseFloat(cedEncontrada.totalLibros) || 0;
+    partida.cedulaRef      = cedEncontrada.ref;
     partida.saldoAuditoria = saldoAud;
-    partida.cedulaVinculada = true;
-    partida.cedulaTitulo = cedEncontrada.titulo || '';
-    partida.notaCambio = '';  // limpiar nota si viene de cédula
+    partida.cedulaVinculada= true;
+    partida.cedulaTitulo   = cedEncontrada.titulo || '';
+    partida.notaCambio     = '';
 
-    // Actualizar el input de saldo auditado
+    // Actualizar el input visualmente sin re-renderizar toda la tabla
     const inputAud = document.getElementById(`sum-aud-${si}-${pi}`);
     if (inputAud) {
       inputAud.value = saldoAud.toFixed(2);
       inputAud.style.color = 'var(--emerald)';
-      inputAud.title = `Cargado desde cédula ${cedEncontrada.ref}: ${cedEncontrada.titulo||''}`;
+      inputAud.title = `Cargado automáticamente desde Cédula ${cedEncontrada.ref}: ${cedEncontrada.titulo||''}`;
     }
-    toast(`Cédula ${cedEncontrada.ref} vinculada — Saldo auditado: $${saldoAud.toLocaleString('es-EC',{minimumFractionDigits:2})} ✓`, 'success');
+    // Actualizar total de la sección
+    actualizarSumaria(si, pi, 'saldoAuditoria', saldoAud);
+    toast(`✅ Ref. ${cedEncontrada.ref} — Saldo auditado: $${saldoAud.toLocaleString('es-EC',{minimumFractionDigits:2})} cargado desde cédula analítica`, 'success');
   } else {
-    toast(`No se encontró cédula con Ref. "${refCedula}" — puede ingresar el valor manualmente`, 'warning');
+    // No encontrada — mostrar qué refs existen para ayudar al usuario
+    const cedulas = window._apCedulas || {};
+    const refsExistentes = Object.values(cedulas).map(c=>c.ref).filter(Boolean).join(', ');
+    toast(`⚠️ No se encontró cédula con Ref. "${refCedula}". ${refsExistentes ? 'Refs disponibles: '+refsExistentes : 'No hay cédulas analíticas.'} — Ingrese el valor manualmente.`, 'warning');
     partida.cedulaVinculada = false;
   }
 
   // Guardar en Firebase
   if (_apExpediente?.codigo) {
-    FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
+    await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
   }
-  renderCedulasSumarias();
 }
 
 // ── Cambiar saldo auditoría manualmente con nota de justificación ─────────
@@ -17457,7 +17470,7 @@ function renderCedulasSumarias() {
                 </td>
                 <td style="text-align:center"><span class="ap-marca">✓</span></td>
               </tr>`).join('')}
-              <tr class="total"><td><strong>TOTALES</strong></td><td class="num"><strong>${fmt(tL)}</strong></td><td></td><td class="num" style="color:${Math.abs(tDiff)>0?'#ef4444':'var(--emerald)'}"><strong>${tDiff!==0?fmt(tDiff):'—'}</strong></td><td class="num"><strong style="color:var(--emerald)">${fmt(tA)}</strong></td><td><span class="ap-marca">Σ</span></td></tr>
+              <tr class="total"><td><strong>TOTALES</strong></td><td class="num"><strong id="sum-total-lib-${si}">${fmt(tL)}</strong></td><td></td><td class="num" style="color:${Math.abs(tDiff)>0?'#ef4444':'var(--emerald)'}"><strong>${tDiff!==0?fmt(tDiff):'—'}</strong></td><td class="num"><strong style="color:var(--emerald)">${fmt(tA)}</strong></td><td><span class="ap-marca">Σ</span></td></tr>
             </tbody>
           </table>
           ${Math.abs(tDiff)>0?`<div class="ap-hallazgo moderado" style="margin-top:8px">⚠️ Diferencia: ${fmt(tDiff)} — requiere ajuste.</div>`:`<div class="ap-hallazgo ok" style="margin-top:8px">✅ Sin diferencias en este grupo.</div>`}
@@ -17476,9 +17489,19 @@ function renderCedulasSumarias() {
   }).join('');
 }
 
-function actualizarSumaria(si,pi,campo,valor) {
+function actualizarSumaria(si, pi, campo, valor) {
   if (!_apExpediente?.sumarias?.[si]?.partidas?.[pi]) return;
-  _apExpediente.sumarias[si].partidas[pi][campo] = campo.includes('saldo')?parseFloat(valor)||0:valor;
+  _apExpediente.sumarias[si].partidas[pi][campo] = campo.includes('saldo') ? parseFloat(valor)||0 : valor;
+  // Recalcular totales de la sección en el DOM sin re-renderizar todo
+  const sumaria = _apExpediente.sumarias[si];
+  const tL = sumaria.partidas.reduce((t,p)=>t+(parseFloat(p.saldoLibros)||0),0);
+  const tA = sumaria.partidas.reduce((t,p)=>t+(parseFloat(p.saldoAuditoria)||0),0);
+  const fmt = n => '$'+(Math.abs(parseFloat(n)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  // Actualizar total visible en el encabezado de la sección
+  const totalEl = document.getElementById(`sum-total-aud-${si}`);
+  if (totalEl) { totalEl.textContent = fmt(tA); totalEl.style.color = Math.abs(tA-tL)>0.01?'#ef4444':'var(--emerald)'; }
+  const totalLibEl = document.getElementById(`sum-total-lib-${si}`);
+  if (totalLibEl) totalLibEl.textContent = fmt(tL);
 }
 function actualizarSumariaConclusion(si,valor) { if (_apExpediente?.sumarias?.[si]) _apExpediente.sumarias[si].conclusion=valor; }
 function agregarPartidaSumaria(si) {
