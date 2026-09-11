@@ -16581,69 +16581,204 @@ function exportarCartaRepWord() {
 function renderEEFFenAuditoria(tab) {
   const el = document.getElementById('ap-eeff-audit-contenido');
   if (!el) return;
-  const data = window._apEEFFSeleccionado;
-  if (!data || !data.raw) {
-    el.innerHTML = '<p style="color:var(--text-muted)">⚠️ No hay EEFF vinculado. Use "Usar datos de Estados Financieros".</p>';
+
+  // Resolver fuente de datos
+  let data = window._apEEFFSeleccionado;
+  if (!data || !data.raw || Object.keys(data.raw).length === 0) {
+    if (_apExpediente?.eeffData?.raw && Object.keys(_apExpediente.eeffData.raw).length > 0) {
+      data = _apExpediente.eeffData;
+      window._apEEFFSeleccionado = data;
+    }
+  }
+
+  if (!data || !data.raw || Object.keys(data.raw).length === 0) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted)">
+      <p>⚠️ No hay EEFF vinculado.</p>
+      <button class="btn-calc" onclick="usarDatosEstadosFinancieros()" style="margin-top:10px">🔗 Vincular EEFF</button>
+    </div>`;
     return;
   }
 
-  const raw = normalizarRaw(data.raw);
-  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const g = k => parseFloat(raw[k])||0;
-  const fila = (k, indent) => {
-    const v = parseFloat(raw[k])||0;
-    if (Math.abs(v) === 0) return '';
-    const esTotal = k.startsWith('TOTAL');
-    return `<tr ${esTotal?'class="subtotal"':''}>
-      <td class="account" style="padding-left:${indent}px;font-size:.78rem">${k}</td>
-      <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;color:${v<0?'#ef4444':'inherit'}">${v<0?'('+fmtN(Math.abs(v))+')':fmtN(v)}</td>
-    </tr>`;
+  const año  = data.year || _apExpediente?.eeffYear || '—';
+  const emp  = data.nombreEmpresa || data.ruc || _apExpediente?.eeffEmpresa || '—';
+  const raw  = data.raw;
+  const norm = normalizarRaw(raw);
+
+  // Botones de vista
+  const btnRow = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+    <button onclick="renderEEFFenAuditoria('balance')" class="btn-secondary" style="font-size:.75rem">📋 Balance</button>
+    <button onclick="renderEEFFenAuditoria('resultados')" class="btn-secondary" style="font-size:.75rem">📈 Resultados</button>
+    <button onclick="renderEEFFenAuditoria('completo')" class="btn-secondary" style="font-size:.75rem">📄 Todas las cuentas</button>
+    <button onclick="renderEEFFenAuditoria('indices')" class="btn-secondary" style="font-size:.75rem">📐 Índices</button>
+    <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:4px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer;margin-left:auto">🔄 Cambiar</button>
+  </div>
+  <div style="font-size:.76rem;color:var(--text-muted);margin-bottom:14px">
+    <strong style="color:var(--text-primary)">${emp}</strong> · Año ${año} · ${Object.keys(norm).filter(k=>parseFloat(norm[k])||0).length} cuentas con saldo
+  </div>`;
+
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const celda = v => {
+    const n = parseFloat(v)||0;
+    return `<td style="text-align:right;font-family:var(--font-mono);font-size:.79rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(n)+')':fmtN(n)}</td>`;
   };
 
-  const BALANCE_GRUPOS = [
-    {titulo:'ACTIVO CORRIENTE', cuentas:['EFECTIVO','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES','INVENTARIOS','IVA EN COMPRAS','ANTICIPO IR','OTROS ACTIVOS CORRIENTES','TOTAL ACTIVO CORRIENTE']},
-    {titulo:'ACTIVO NO CORRIENTE', cuentas:['PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA','ACTIVOS INTANGIBLES','AMORTIZACION INTANGIBLES','INVERSIONES LP','OTROS ACTIVOS NO CORRIENTES','TOTAL ACTIVO NO CORRIENTE']},
-    {titulo:'TOTAL ACTIVO', cuentas:['TOTAL ACTIVO']},
-    {titulo:'PASIVO CORRIENTE', cuentas:['CUENTAS POR PAGAR','OBLIGACIONES BANCARIAS CP','IMPUESTO RENTA POR PAGAR','PARTICIPACION TRABAJADORES','IESS POR PAGAR','ANTICIPOS CLIENTES','OTROS PASIVOS CORRIENTES','TOTAL PASIVO CORRIENTE']},
-    {titulo:'PASIVO NO CORRIENTE', cuentas:['OBLIGACIONES BANCARIAS LP','PROVISION JUBILACION PATRONAL','OTROS PASIVOS NO CORRIENTES','TOTAL PASIVO']},
-    {titulo:'PATRIMONIO', cuentas:['CAPITAL SOCIAL','RESERVA LEGAL','RESERVAS FACULTATIVAS','UTILIDADES RETENIDAS','UTILIDAD EJERCICIO','TOTAL PATRIMONIO']},
-  ];
-  const ER_GRUPOS = [
-    {titulo:'INGRESOS', cuentas:['VENTAS NETAS','OTROS INGRESOS']},
-    {titulo:'COSTOS', cuentas:['COSTO DE VENTAS']},
-    {titulo:'GASTOS', cuentas:['GASTO PERSONAL','GASTO ADMINISTRATIVO','GASTO VENTAS','GASTO DEPRECIACION','GASTO FINANCIERO','OTROS GASTOS']},
-    {titulo:'RESULTADO', cuentas:['UTILIDAD BRUTA','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO','PARTICIPACION TRABAJADORES GASTO','UTILIDAD EJERCICIO']},
-  ];
+  if (tab === 'balance') {
+    // Usar ESTRUCTURA_BALANCE igual que renderBalance() — inyectando norm como raw
+    let html = `<div style="overflow-x:auto"><table class="ef-table">
+      <thead><tr><th class="left">Cuenta</th><th style="text-align:right">${año}</th></tr></thead><tbody>`;
 
-  if (tab==='balance') {
-    el.innerHTML = `<h4 style="color:var(--gold)">Balance General — ${data.year||''} | ${data.nombreEmpresa||''}</h4>
+    Object.entries(ESTRUCTURA_BALANCE).forEach(([seccion, info]) => {
+      // Añadir todas las cuentas que tienen saldo — incluyendo las del F101 que mapean a estas claves
+      const cuentas = info.cuentas.filter(k => Math.abs(parseFloat(norm[k])||0) > 0);
+      // También buscar cuentas del raw original que no estén en la estructura pero pertenezcan a esta sección
+      if (cuentas.length === 0 && !['TOTAL ACTIVO','TOTAL PASIVO','TOTAL PATRIMONIO'].includes(seccion)) return;
+      html += `<tr><td class="section-header" colspan="2">${seccion}</td></tr>`;
+      cuentas.forEach(k => {
+        const v = parseFloat(norm[k])||0;
+        html += `<tr><td class="account" style="padding-left:20px;font-size:.79rem">${k}</td>${celda(v)}</tr>`;
+      });
+      const total = cuentas.reduce((s,k) => s+(parseFloat(norm[k])||0), 0);
+      html += `<tr class="subtotal"><td><strong>TOTAL ${seccion}</strong></td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.79rem"><strong>${total<0?'('+fmtN(total)+')':fmtN(total)}</strong></td></tr>`;
+    });
+
+    // Añadir cuentas del raw normalizado que NO estén en ESTRUCTURA_BALANCE
+    const cuentasEnEstructura = new Set(Object.values(ESTRUCTURA_BALANCE).flatMap(s=>s.cuentas));
+    const cuentasExtra = Object.entries(norm)
+      .filter(([k,v]) => !cuentasEnEstructura.has(k) && Math.abs(parseFloat(v)||0)>0
+        && !k.startsWith('GASTO') && !['VENTAS NETAS','COSTO DE VENTAS','OTROS INGRESOS',
+          'UTILIDAD BRUTA','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO',
+          'PARTICIPACION TRABAJADORES GASTO','TOTAL INGRESOS','TOTAL GASTOS',
+          'TOTAL COSTOS Y GASTOS','GASTOS NO DEDUCIBLES'].includes(k));
+    if (cuentasExtra.length > 0) {
+      html += `<tr><td class="section-header" colspan="2">OTRAS CUENTAS DEL F101</td></tr>`;
+      cuentasExtra.forEach(([k,v]) => {
+        html += `<tr><td class="account" style="padding-left:20px;font-size:.79rem">${k}</td>${celda(v)}</tr>`;
+      });
+    }
+
+    // Totales finales
+    const ta = parseFloat(norm['TOTAL ACTIVO'])||0;
+    const tp = parseFloat(norm['TOTAL PASIVO'])||0;
+    const pat = parseFloat(norm['TOTAL PATRIMONIO'])||0;
+    html += `<tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td>
+      <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtN(ta)}</td></tr>
+    <tr class="total-row"><td><strong>TOTAL PASIVO + PATRIMONIO</strong></td>
+      <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:${Math.abs(ta-(tp+pat))<1?'var(--emerald)':'#ef4444'}">${fmtN(tp+pat)}</td></tr>
+    <tr><td colspan="2" style="text-align:center;font-size:.72rem;padding:6px;color:${Math.abs(ta-(tp+pat))<1?'var(--emerald)':'#ef4444'}">
+      ${Math.abs(ta-(tp+pat))<1?'✅ Balance cuadra':'⚠️ Diferencia: $'+fmtN(Math.abs(ta-(tp+pat)))}
+    </td></tr>`;
+    html += '</tbody></table></div>';
+    el.innerHTML = btnRow + html;
+
+  } else if (tab === 'resultados') {
+    const g = k => parseFloat(norm[k])||0;
+    const vtas = g('VENTAS NETAS'), cv = g('COSTO DE VENTAS');
+    const utilBruta = vtas - cv;
+    const gOper = g('GASTO PERSONAL')+g('GASTO ADMINISTRATIVO')+g('GASTO VENTAS');
+    const ebitda = utilBruta - gOper;
+    const ebit   = ebitda - g('GASTO DEPRECIACION');
+    const util   = g('UTILIDAD EJERCICIO');
+
+    const filaER = (nombre, valor, tipo) => {
+      const n = parseFloat(valor)||0;
+      const cls = tipo==='total'?'total-row':tipo==='sub'?'subtotal':'';
+      const bold = tipo==='total'||tipo==='sub';
+      return `<tr ${cls?`class="${cls}"`:''}>
+        <td class="account" style="padding-left:${tipo==='item'?24:8}px;font-size:.79rem">
+          ${bold?`<strong>${nombre}</strong>`:nombre}
+        </td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.79rem;color:${n<0?'#ef4444':tipo==='total'?(n>=0?'var(--emerald)':'#ef4444'):'inherit'}">
+          ${bold?'<strong>':''}${n<0?'('+fmtN(n)+')':fmtN(n)}${bold?'</strong>':''}
+        </td>
+      </tr>`;
+    };
+
+    el.innerHTML = btnRow + `<div style="overflow-x:auto"><table class="ef-table">
+      <thead><tr><th class="left">Concepto</th><th style="text-align:right">${año}</th></tr></thead>
+      <tbody>
+        <tr><td class="section-header" colspan="2">INGRESOS</td></tr>
+        ${filaER('Ventas Netas',g('VENTAS NETAS'),'item')}
+        ${g('OTROS INGRESOS')?filaER('Otros Ingresos',g('OTROS INGRESOS'),'item'):''}
+        ${filaER('= UTILIDAD BRUTA',utilBruta,'sub')}
+        <tr><td class="section-header" colspan="2">COSTOS Y GASTOS OPERACIONALES</td></tr>
+        ${filaER('(-) Costo de Ventas',g('COSTO DE VENTAS'),'item')}
+        ${g('GASTO PERSONAL')?filaER('(-) Gastos de Personal',g('GASTO PERSONAL'),'item'):''}
+        ${g('GASTO ADMINISTRATIVO')?filaER('(-) Gastos Administrativos',g('GASTO ADMINISTRATIVO'),'item'):''}
+        ${g('GASTO VENTAS')?filaER('(-) Gastos de Ventas',g('GASTO VENTAS'),'item'):''}
+        ${g('GASTO DEPRECIACION')?filaER('(-) Depreciación y Amortización',g('GASTO DEPRECIACION'),'item'):''}
+        ${g('GASTO FINANCIERO')?filaER('(-) Gastos Financieros',g('GASTO FINANCIERO'),'item'):''}
+        ${g('OTROS GASTOS')?filaER('(-) Otros Gastos',g('OTROS GASTOS'),'item'):''}
+        ${filaER('= EBITDA',ebitda,'sub')}
+        ${filaER('= UTILIDAD OPERACIONAL (EBIT)',ebit,'sub')}
+        <tr><td class="section-header" colspan="2">RESULTADO ANTES DE IMPUESTOS</td></tr>
+        ${g('PARTICIPACION TRABAJADORES GASTO')?filaER('(-) Participación Trabajadores 15%',g('PARTICIPACION TRABAJADORES GASTO'),'item'):''}
+        ${g('GASTOS NO DEDUCIBLES')?filaER('(+) Gastos No Deducibles',g('GASTOS NO DEDUCIBLES'),'item'):''}
+        ${g('UTILIDAD GRAVABLE')?filaER('= Utilidad Gravable',g('UTILIDAD GRAVABLE'),'sub'):''}
+        ${g('IMPUESTO RENTA GASTO')?filaER('(-) Impuesto a la Renta Causado',g('IMPUESTO RENTA GASTO'),'item'):''}
+        ${filaER('= UTILIDAD NETA DEL EJERCICIO',util,'total')}
+        <tr><td colspan="2" style="font-size:.73rem;padding:6px 10px;color:var(--text-muted)">
+          Margen bruto: ${vtas?(utilBruta/vtas*100).toFixed(1)+'%':'—'} &nbsp;|&nbsp;
+          Margen neto: ${vtas?(util/vtas*100).toFixed(1)+'%':'—'} &nbsp;|&nbsp;
+          EBITDA: $${fmtN(ebitda)}
+        </td></tr>
+      </tbody>
+    </table></div>`;
+
+  } else if (tab === 'completo') {
+    // TODAS las cuentas del raw original + normalizado
+    const taTotal = parseFloat(norm['TOTAL ACTIVO'])||1;
+    // Combinar raw original y normalizado para mostrar todo
+    const todasCuentas = new Map();
+    // Primero el normalizado (claves estándar con valores)
+    Object.entries(norm).forEach(([k,v]) => {
+      if (Math.abs(parseFloat(v)||0)>0) todasCuentas.set(k, parseFloat(v)||0);
+    });
+    // También el raw original (nombres largos del F101)
+    Object.entries(raw).forEach(([k,v]) => {
+      const vN = parseFloat(v)||0;
+      if (Math.abs(vN)>0 && !todasCuentas.has(k)) todasCuentas.set(k, vN);
+    });
+    const lista = [...todasCuentas.entries()].sort(([a],[b])=>a.localeCompare(b));
+
+    el.innerHTML = btnRow + `
+      <p style="font-size:.74rem;color:var(--text-muted);margin-bottom:10px">${lista.length} cuentas con saldo — ★ ≥5% activo = Material &nbsp;·&nbsp; ● ≥1% activo = Significativa</p>
       <div style="overflow-x:auto"><table class="ef-table">
-        <thead><tr><th class="left">Cuenta</th><th style="text-align:right">USD</th></tr></thead>
-        <tbody>${BALANCE_GRUPOS.map(grp=>`
-          <tr><td class="section-header" colspan="2">${grp.titulo}</td></tr>
-          ${grp.cuentas.map(k=>fila(k, k.startsWith('TOTAL')?8:20)).join('')}`).join('')}
-        </tbody>
+        <thead><tr>
+          <th class="left">Cuenta</th>
+          <th style="text-align:right">Saldo USD</th>
+          <th style="text-align:right">% Activo</th>
+          <th style="text-align:center">Nivel</th>
+        </tr></thead>
+        <tbody>${lista.map(([k,v]) => {
+          const n=v, pct=(Math.abs(n)/taTotal*100).toFixed(1), esT=/^TOTAL/i.test(k);
+          const nivel = Math.abs(n)>=taTotal*0.05
+            ? '<span style="color:#ef4444;font-size:.68rem;font-weight:700">★ MATERIAL</span>'
+            : Math.abs(n)>=taTotal*0.01
+            ? '<span style="color:#f59e0b;font-size:.68rem;font-weight:600">● SIG.</span>'
+            : '<span style="color:var(--text-muted);font-size:.67rem">—</span>';
+          return `<tr ${esT?'class="subtotal"':''}>
+            <td class="account" style="font-size:.77rem;padding-left:${esT?8:16}px">${k}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-size:.77rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(n)+')':fmtN(n)}</td>
+            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pct}%</td>
+            <td style="text-align:center">${nivel}</td>
+          </tr>`;
+        }).join('')}</tbody>
       </table></div>`;
-  } else if (tab==='resultados') {
-    el.innerHTML = `<h4 style="color:var(--gold)">Estado de Resultados — ${data.year||''}</h4>
-      <div style="overflow-x:auto"><table class="ef-table">
-        <thead><tr><th class="left">Concepto</th><th style="text-align:right">USD</th></tr></thead>
-        <tbody>${ER_GRUPOS.map(grp=>`
-          <tr><td class="section-header" colspan="2">${grp.titulo}</td></tr>
-          ${grp.cuentas.map(k=>fila(k, k.startsWith('UTILIDAD')||k.startsWith('TOTAL')?8:20)).join('')}`).join('')}
-        </tbody>
-      </table></div>`;
-  } else if (tab==='indices') {
+
+  } else if (tab === 'indices') {
+    // Inyectar temporalmente como período para usar generarIndicesAudit
+    const periodosSave = typeof periodos!=='undefined' ? [...periodos] : [];
+    if (typeof periodos!=='undefined') {
+      periodos.length=0;
+      periodos.push({ nombre:año, raw, rawNorm:norm, ruc:data.ruc||'', nombreEmpresa:emp });
+    }
     generarIndicesAudit();
-    const idxEl=document.getElementById('ap-indices-audit-contenido');
-    el.innerHTML=idxEl?idxEl.innerHTML:'<p>Sin datos.</p>';
-  } else if (tab==='h-v') {
-    renderHVAudit();
-    const hvEl=document.getElementById('ap-hv-audit-contenido');
-    el.innerHTML=hvEl?hvEl.innerHTML:'<p>Sin datos.</p>';
+    const idxEl = document.getElementById('ap-indices-audit-contenido');
+    el.innerHTML = btnRow + (idxEl?idxEl.innerHTML:'<p style="color:var(--text-muted)">Sin datos.</p>');
+    if (typeof periodos!=='undefined') { periodos.length=0; periodosSave.forEach(p=>periodos.push(p)); }
   }
 }
-
 
 function nuevaCedulaSumaria() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
