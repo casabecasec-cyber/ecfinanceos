@@ -740,6 +740,11 @@ table.ef-table .negative { color: var(--red); }
 .btn-sm.btn-secondary { background:var(--bg-hover); color:var(--text-secondary); }
 .btn-sm.btn-secondary:hover { background:var(--gold-dim); color:var(--text-primary); }
 
+
+/* Cédulas colapsables */
+details[id^="ced-card-"] summary::-webkit-details-marker { display:none; }
+details[id^="ced-card-"][open] .ced-toggle-icon { transform: rotate(90deg); }
+details[id^="ced-card-"] summary { outline:none; }
 </style>
 </head>
 <body>
@@ -15269,7 +15274,7 @@ function renderCedulasAnaliticasCompleto() {
   const el = document.getElementById('ap-cedulas-lista');
   if (!el) return;
   const cedulas = window._apCedulas || {};
-  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  const lista   = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
 
   if (!lista.length) {
     el.innerHTML = `<div class="card" style="text-align:center;padding:24px">
@@ -15279,78 +15284,111 @@ function renderCedulasAnaliticasCompleto() {
     return;
   }
 
-  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const fmtC = v => { const n=parseFloat(v)||0; return n<0?`<span class="negative">(${fmtN(Math.abs(n))})</span>`:`${fmtN(n)}`; };
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
 
-  el.innerHTML = lista.map(ced => `
-    <div class="card" style="margin-bottom:14px" id="ced-card-${ced.id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div>
-          <span style="font-size:.68rem;color:var(--text-muted);font-family:var(--font-mono)">REF. ${ced.ref||'—'}</span>
-          <h4 style="margin:2px 0;color:var(--gold);font-size:.9rem">${ced.titulo}</h4>
-          <div style="font-size:.72rem;color:var(--text-muted)">
-            ${ced.empresa||''} | Período: ${ced.periodo||''} | Auditor: ${ced.auditor||''} | ${new Date(ced.fecha||Date.now()).toLocaleDateString('es-EC')}
-            ${ced.autoGenerada?'<span style="color:#f59e0b;margin-left:6px">● Auto-generada</span>':''}
+  let html = '';
+  lista.forEach(ced => {
+    const dif        = (parseFloat(ced.totalAuditado)||0) - (parseFloat(ced.totalLibros)||0);
+    const hayAjuste  = Math.abs(dif) > 0.01;
+    const estadoColor= ced.estado==='aprobada'?'var(--emerald)':ced.estado==='en-revision'?'#6366f1':'var(--text-muted)';
+    const estadoLabel= ced.estado==='aprobada'?'✅ Aprobada':ced.estado==='en-revision'?'🔄 En revisión':'⬜ Borrador';
+
+    const filasHtml = (ced.filas||[]).map(f => `
+      <tr>
+        <td class="account" style="font-size:.78rem">${f.cuenta||''}</td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem">$${fmtN(f.saldoLibros)}</td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;color:${(parseFloat(f.ajuste)||0)!==0?'#ef4444':'var(--text-muted)'}">
+          ${(parseFloat(f.ajuste)||0)!==0?'$'+fmtN(Math.abs(f.ajuste)):'—'}</td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;font-weight:700">$${fmtN(f.saldoAuditado)}</td>
+        <td style="text-align:center;font-size:.85rem">${f.marcas||'✓'}</td>
+        <td style="font-size:.74rem;color:var(--text-muted)">${f.notas||''}</td>
+      </tr>`).join('');
+
+    html += `
+    <details id="ced-card-${ced.id}" style="margin-bottom:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+      <summary style="cursor:pointer;padding:12px 16px;background:var(--bg-card2);
+        display:flex;align-items:center;gap:10px;flex-wrap:wrap;list-style:none;
+        -webkit-appearance:none;outline:none"
+        onmouseover="this.style.background='var(--bg-hover)'"
+        onmouseout="this.style.background='var(--bg-card2)'">
+        <span class="ced-arr" style="font-size:.75rem;color:var(--text-muted);transition:transform .2s;display:inline-block;flex-shrink:0">▶</span>
+        <span style="font-family:var(--font-mono);font-size:.72rem;font-weight:700;color:var(--gold);
+          padding:2px 8px;background:rgba(212,175,55,.1);border-radius:5px;flex-shrink:0">${ced.ref||'—'}</span>
+        <span style="font-weight:600;color:var(--text-primary);font-size:.87rem;flex:1;min-width:100px">${ced.titulo||''}</span>
+        <span style="font-family:var(--font-mono);font-size:.82rem;font-weight:700;
+          color:${hayAjuste?'#f59e0b':'inherit'};flex-shrink:0">
+          $${fmtN(ced.totalAuditado||ced.totalLibros)}${hayAjuste?' ▲':''}
+        </span>
+        <span style="font-size:.68rem;padding:2px 8px;border-radius:8px;flex-shrink:0;
+          background:${estadoColor}22;color:${estadoColor}">${estadoLabel}</span>
+        <span onclick="event.preventDefault();event.stopPropagation();editarCedulaAnalitica('${ced.id}')"
+          style="font-size:.7rem;padding:3px 8px;background:rgba(99,102,241,.1);color:#6366f1;
+          border:1px solid rgba(99,102,241,.3);border-radius:5px;cursor:pointer;flex-shrink:0">✏️</span>
+        <span onclick="event.preventDefault();event.stopPropagation();imprimirCedula('${ced.id}')"
+          style="font-size:.7rem;padding:3px 8px;background:rgba(212,175,55,.1);color:var(--gold);
+          border:1px solid var(--gold);border-radius:5px;cursor:pointer;flex-shrink:0">🖨</span>
+        <span onclick="event.preventDefault();event.stopPropagation();borrarCedulaAnalitica('${ced.id}')"
+          style="font-size:.7rem;padding:3px 8px;background:rgba(239,68,68,.1);color:#ef4444;
+          border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer;flex-shrink:0">🗑</span>
+      </summary>
+
+      <div style="padding:14px 16px;background:var(--bg-card)">
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:10px">
+          ${ced.empresa||''} | Período: ${ced.periodo||''} | Auditor: ${ced.auditor||''}
+          | ${new Date(ced.fecha||Date.now()).toLocaleDateString('es-EC')}
+          ${ced.autoGenerada?'<span style="color:#f59e0b;margin-left:6px">● Auto-generada</span>':''}
+        </div>
+        <div style="overflow-x:auto">
+          <table class="ef-table">
+            <thead><tr>
+              <th class="left">Subcuenta / Concepto</th>
+              <th style="text-align:right">Saldo s/Libros</th>
+              <th style="text-align:right">Ajuste</th>
+              <th style="text-align:right">Saldo Auditado</th>
+              <th style="text-align:center">Marcas</th>
+              <th class="left">Notas</th>
+            </tr></thead>
+            <tbody>
+              ${filasHtml}
+              <tr class="total-row">
+                <td><strong>TOTAL</strong></td>
+                <td style="text-align:right;font-family:var(--font-mono)"><strong>$${fmtN(ced.totalLibros)}</strong></td>
+                <td style="text-align:right;color:${hayAjuste?'#ef4444':'var(--text-muted)'}">
+                  ${hayAjuste?'$'+fmtN(Math.abs(dif)):'—'}</td>
+                <td style="text-align:right;font-family:var(--font-mono);font-weight:700;
+                  color:${hayAjuste?'#f59e0b':'var(--emerald)'}">$${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+                <td></td><td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.78rem">
+          <div style="padding:10px;background:rgba(99,102,241,.05);border-radius:6px;border:1px solid rgba(99,102,241,.15)">
+            <strong style="color:#6366f1;font-size:.7rem">PROCEDIMIENTOS</strong>
+            <p style="margin:4px 0;color:var(--text-secondary)">${ced.procedimiento||'—'}</p>
+          </div>
+          <div style="padding:10px;background:rgba(212,175,55,.05);border-radius:6px;border:1px solid rgba(212,175,55,.2)">
+            <strong style="color:var(--gold);font-size:.7rem">CONCLUSIÓN</strong>
+            <p style="margin:4px 0;color:var(--text-secondary)">${ced.conclusion||'<em style="color:var(--text-muted)">Pendiente</em>'}</p>
           </div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <span style="font-size:.68rem;padding:2px 8px;border-radius:8px;
-            background:${ced.estado==='aprobada'?'rgba(16,185,129,.15)':'rgba(245,158,11,.12)'};
-            color:${ced.estado==='aprobada'?'var(--emerald)':'#f59e0b'}">${ced.estado||'borrador'}</span>
-          <button onclick="editarCedulaAnalitica('${ced.id}')"
-            style="font-size:.7rem;padding:3px 8px;background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);border-radius:5px;cursor:pointer">✏️ Editar</button>
-          <button onclick="imprimirCedula('${ced.id}')"
-            style="font-size:.7rem;padding:3px 8px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🖨</button>
-          <button onclick="borrarCedulaAnalitica('${ced.id}')"
-            style="font-size:.7rem;padding:3px 8px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">🗑</button>
+        <div style="margin-top:6px;font-size:.7rem;color:var(--text-muted)">
+          <strong>Marcas:</strong> ${ced.marcasLeyenda||'✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja'}
         </div>
       </div>
+    </details>`;
+  });
 
-      <div style="overflow-x:auto">
-        <table class="ef-table">
-          <thead><tr>
-            <th class="left">Cuenta / Concepto</th>
-            <th>Saldo s/Libros</th><th>Ajuste</th><th>Saldo Auditado</th>
-            <th>Marcas</th><th>Notas</th>
-          </tr></thead>
-          <tbody>
-            ${(ced.filas||[]).map(f=>`<tr>
-              <td class="account" style="font-size:.78rem">${f.cuenta}</td>
-              <td class="num" style="font-size:.78rem">$${fmtN(f.saldoLibros)}</td>
-              <td class="num" style="font-size:.78rem;color:${(parseFloat(f.ajuste)||0)!==0?'#ef4444':'var(--text-muted)'}">
-                ${(parseFloat(f.ajuste)||0)!==0?'($'+fmtN(Math.abs(f.ajuste))+')':'—'}
-              </td>
-              <td class="num" style="font-size:.78rem"><strong>$${fmtN(f.saldoAuditado)}</strong></td>
-              <td style="text-align:center;font-size:.85rem">${f.marcas||'✓'}</td>
-              <td style="font-size:.74rem;color:var(--text-muted)">${f.notas||''}</td>
-            </tr>`).join('')}
-            <tr class="total-row">
-              <td><strong>TOTAL</strong></td>
-              <td class="num"><strong>$${fmtN(ced.totalLibros)}</strong></td>
-              <td class="num">${(parseFloat(ced.totalAjustes)||0)!==0?'($'+fmtN(Math.abs(ced.totalAjustes))+')':'—'}</td>
-              <td class="num"><strong>$${fmtN(ced.totalAuditado)}</strong></td>
-              <td></td><td></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  el.innerHTML = html;
 
-      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.78rem">
-        <div style="padding:10px;background:rgba(99,102,241,.05);border-radius:6px;border:1px solid rgba(99,102,241,.15)">
-          <strong style="color:#6366f1;font-size:.7rem">PROCEDIMIENTOS</strong>
-          <p style="margin:4px 0;color:var(--text-secondary);font-size:.77rem">${ced.procedimiento||'—'}</p>
-        </div>
-        <div style="padding:10px;background:rgba(212,175,55,.05);border-radius:6px;border:1px solid rgba(212,175,55,.2)">
-          <strong style="color:var(--gold);font-size:.7rem">CONCLUSIÓN</strong>
-          <p style="margin:4px 0;color:var(--text-secondary);font-size:.77rem">${ced.conclusion||'<em>Pendiente</em>'}</p>
-        </div>
-      </div>
-      <div style="margin-top:6px;font-size:.7rem;color:var(--text-muted)">
-        <strong>Marcas:</strong> ${ced.marcasLeyenda||'✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja'}
-      </div>
-    </div>`).join('');
+  // Rotar flecha al abrir/cerrar
+  el.querySelectorAll('details').forEach(d => {
+    d.addEventListener('toggle', () => {
+      const arr = d.querySelector('.ced-arr');
+      if (arr) arr.style.transform = d.open ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
+  });
 }
-
 async function editarCedulaAnalitica(cedulaId) {
   const cedulas = window._apCedulas || {};
   const ced = cedulas[cedulaId];
