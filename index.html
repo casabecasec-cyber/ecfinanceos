@@ -6495,10 +6495,14 @@ async function procesarPDF101EnEF(input) {
 
     if (periodos.length >= 5) { status.textContent = '⚠️ Máximo 5 períodos cargados.'; return; }
 
-    const rawPlano = {};
-    Object.entries(raw).forEach(([cod, info]) => { rawPlano[info.nombre] = info.valor; });
+    const rawPlano = {}, rawGrupos = {}, rawSignos = {};
+    Object.entries(raw).forEach(([cod, info]) => {
+      rawPlano[info.nombre] = info.valor;
+      rawGrupos[info.nombre] = info.g || info.grupo || '';
+      rawSignos[info.nombre] = info.s || info.signo || 1;
+    });
 
-    const periodoObj = { nombre: yearDoc, raw: rawPlano, rawDetallado: raw, archivo: file.name, ruc, nombreEmpresa: nombre, fuentePDF: true, tipoPDF: 'F101', cuentasMapeadas };
+    const periodoObj = { nombre: yearDoc, raw: rawPlano, rawGrupos, rawSignos, rawDetallado: raw, archivo: file.name, ruc, nombreEmpresa: nombre, fuentePDF: true, tipoPDF: 'F101', cuentasMapeadas };
     periodos.push(periodoObj);
     updatePeriodsUI();
     guardarEstadosEnFirebase(yearDoc, ruc, periodoObj);
@@ -6632,9 +6636,23 @@ function terminarYGuardarEstados() {
 
 function guardarEstadosEnFirebase(year, ruc, periodo) {
   const key = (ruc ? `${ruc}_${year}` : String(year)).replace(/[.#$/[\]]/g,'_');
+  // Limpiar claves del raw para Firebase (sin . # $ [ ])
+  const L = k => (k||'').replace(/[.#$[\]]/g,'_');
+  const rawL = {}, rawGruposL = {}, rawSignosL = {};
+  Object.entries(periodo.raw||{}).forEach(([k,v]) => { rawL[L(k)] = v; });
+  Object.entries(periodo.rawGrupos||{}).forEach(([k,v]) => { rawGruposL[L(k)] = v; });
+  Object.entries(periodo.rawSignos||{}).forEach(([k,v]) => { rawSignosL[L(k)] = v; });
+  // rawNorm para cálculos
+  const rawNormCalc = normalizarRaw(periodo.raw||{});
+  const rawNormL = {};
+  Object.entries(rawNormCalc).forEach(([k,v]) => { rawNormL[L(k)] = v; });
+
   FirebaseDB.set(`estados_financieros/${key}`, {
     year, ruc, nombre: periodo.nombre,
-    raw: periodo.raw,
+    raw: rawL,
+    rawGrupos: rawGruposL,
+    rawSignos: rawSignosL,
+    rawNorm: rawNormL,
     rawDetallado: periodo.rawDetallado || null,
     nombreEmpresa: periodo.nombreEmpresa || ruc || '',
     archivo: periodo.archivo || '',
@@ -13883,18 +13901,20 @@ async function seleccionarEEFFParaAuditoria(key, rowEl) {
       raw:           raw,
     };
     // Limpiar claves para Firebase (no permite . # $ [ ])
-    const L = k => k.replace(/[.#$[\]]/g,'_');
-    const rawLimpio = {}, rawNormLimpio = {};
-    Object.entries(raw).forEach(([k,v]) => { rawLimpio[L(k)] = v; });
+    const L = k => (k||'').replace(/[.#$[\]]/g,'_');
+    const rawLimpio={}, rawGruposLimpio={}, rawNormLimpio={};
+    Object.entries(raw).forEach(([k,v])=>{ rawLimpio[L(k)]=v; });
+    Object.entries(data.rawGrupos||{}).forEach(([k,v])=>{ rawGruposLimpio[L(k)]=v; });
     const rawNormCalc = normalizarRaw(raw);
-    Object.entries(rawNormCalc).forEach(([k,v]) => { rawNormLimpio[L(k)] = v; });
+    Object.entries(rawNormCalc).forEach(([k,v])=>{ rawNormLimpio[L(k)]=v; });
     _apExpediente.eeffData.raw = rawLimpio;
+    _apExpediente.eeffData.rawGrupos = rawGruposLimpio;
     _apExpediente.eeffData.rawNorm = rawNormLimpio;
-    window._apEEFFSeleccionado = { ...data, raw: rawLimpio, rawNorm: rawNormLimpio };
+    window._apEEFFSeleccionado = {...data, raw:rawLimpio, rawGrupos:rawGruposLimpio, rawNorm:rawNormLimpio};
 
-    // Guardar en nodo dedicado con rawNorm incluido
+    // Guardar en nodo dedicado con rawGrupos y rawNorm
     const codigoExp = _apExpediente.codigo;
-    const eeffGuardar = { ...(_apExpediente.eeffData), cuentas:Object.keys(rawLimpio).length, fechaVinculo:new Date().toISOString() };
+    const eeffGuardar = {...(_apExpediente.eeffData), cuentas:Object.keys(rawLimpio).length, fechaVinculo:new Date().toISOString()};
     FirebaseDB.set(`audit_pro/${codigoExp}/eeff_vinculado`, eeffGuardar)
       .then(() => FirebaseDB.update(`audit_pro/${codigoExp}`, {
         eeffKey: _apExpediente.eeffKey,
@@ -13944,44 +13964,49 @@ function confirmarUsoEEFF() {
 
   const status = document.getElementById('ap-datos-status');
   if (status) status.innerHTML = `
-    <div style="padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);border-radius:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div style="padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);
+      border-radius:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <span>✅ <strong>EEFF activo:</strong> ${data.nombreEmpresa||data.ruc||'—'} — Año ${data.year||'—'} — ${cuentas} cuentas</span>
-      <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
+      <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;
+        background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);
+        border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
     </div>`;
 
-  if (!_apExpediente) { toast(`EEFF confirmado — ${cuentas} cuentas listas ✓`, 'success'); return; }
+  if (!_apExpediente) { toast(`EEFF confirmado — ${cuentas} cuentas ✓`, 'success'); return; }
 
-  // Limpiar claves para Firebase (no permite . # $ [ ])
-  const L = k => k.replace(/[.#$[\]]/g, '_');
-  const rawL = {}, rawNorm = normalizarRaw(raw), rawNormL = {};
-  Object.entries(raw).forEach(([k,v]) => { rawL[L(k)] = v; });
-  Object.entries(rawNorm).forEach(([k,v]) => { rawNormL[L(k)] = v; });
+  // Limpiar claves para Firebase
+  const L = k => (k||'').replace(/[.#$[\]]/g,'_');
+  const rawL={}, rawGruposL={}, rawNormL={};
+  Object.entries(raw).forEach(([k,v])=>{ rawL[L(k)]=v; });
+  Object.entries(data.rawGrupos||{}).forEach(([k,v])=>{ rawGruposL[L(k)]=v; });
+  const rawNormCalc = normalizarRaw(raw);
+  Object.entries(rawNormCalc).forEach(([k,v])=>{ rawNormL[L(k)]=v; });
 
   const eeffGuardar = {
-    year: data.year||'', ruc: data.ruc||'',
-    nombreEmpresa: data.nombreEmpresa||data.ruc||'',
-    archivo: data.archivo||'', cuentas,
-    fechaVinculo: new Date().toISOString(),
-    raw: rawL, rawNorm: rawNormL,
+    year:data.year||'', ruc:data.ruc||'',
+    nombreEmpresa:data.nombreEmpresa||data.ruc||'',
+    archivo:data.archivo||'', cuentas,
+    fechaVinculo:new Date().toISOString(),
+    raw:rawL, rawGrupos:rawGruposL, rawNorm:rawNormL,
   };
 
   _apExpediente.eeffKey     = data.key||data.year||'eeff';
   _apExpediente.eeffYear    = data.year;
   _apExpediente.eeffEmpresa = data.nombreEmpresa||data.ruc||'';
   _apExpediente.eeffData    = eeffGuardar;
-  window._apEEFFSeleccionado = { ...data, raw: rawL, rawNorm: rawNormL };
+  window._apEEFFSeleccionado = {...data, raw:rawL, rawGrupos:rawGruposL, rawNorm:rawNormL};
 
   const cod = _apExpediente.codigo;
   FirebaseDB.set(`audit_pro/${cod}/eeff_vinculado`, eeffGuardar)
-    .then(() => FirebaseDB.update(`audit_pro/${cod}`, {
-      eeffKey: _apExpediente.eeffKey,
-      eeffYear: _apExpediente.eeffYear,
-      eeffEmpresa: _apExpediente.eeffEmpresa,
+    .then(()=>FirebaseDB.update(`audit_pro/${cod}`,{
+      eeffKey:_apExpediente.eeffKey,
+      eeffYear:_apExpediente.eeffYear,
+      eeffEmpresa:_apExpediente.eeffEmpresa,
     }))
-    .then(() => toast(`EEFF "${eeffGuardar.nombreEmpresa||eeffGuardar.year}" guardado ✓`, 'success'))
-    .catch(err => { console.error('EEFF save error:', err); toast('EEFF en memoria — error Firebase: '+err.message, 'warning'); });
+    .then(()=>toast(`EEFF "${eeffGuardar.nombreEmpresa||eeffGuardar.year}" guardado en expediente ✓`,'success'))
+    .catch(err=>{ console.error('EEFF save error:',err); toast('Error Firebase: '+err.message,'warning'); });
 
-  try { generarSumariasDesdeEEFF(); } catch(e) { console.warn(e); }
+  try { generarSumariasDesdeEEFF(); } catch(e){ console.warn(e); }
 }
 function cargarEjemploAuditoria() {
   _apTransacciones = [
@@ -16789,7 +16814,7 @@ function renderEEFFenAuditoria(tab) {
   const el = document.getElementById('ap-eeff-audit-contenido');
   if (!el) return;
 
-  // Resolver fuente
+  // 1. Resolver fuente de datos
   let data = window._apEEFFSeleccionado;
   if (!data || !data.raw || Object.keys(data.raw).length === 0) {
     if (_apExpediente?.eeffData?.raw && Object.keys(_apExpediente.eeffData.raw).length > 0) {
@@ -16798,34 +16823,32 @@ function renderEEFFenAuditoria(tab) {
     }
   }
   if (!data || !data.raw || Object.keys(data.raw).length === 0) {
-    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted)">
-      <p style="margin-bottom:12px">⚠️ No hay EEFF vinculado a este expediente.</p>
+    el.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted)">
+      <div style="font-size:2rem;margin-bottom:12px">📂</div>
+      <p style="margin-bottom:14px">No hay EEFF vinculado a este expediente.</p>
       <button class="btn-calc" onclick="usarDatosEstadosFinancieros()">🔗 Vincular Estado Financiero</button>
     </div>`;
     return;
   }
 
-  // raw = nombres originales F101 · rawNorm = claves estándar para cálculos
-  const rawOrig = data.raw;
-  // Si hay rawNorm guardado usarlo; si no calcularlo
-  const rawNorm = (data.rawNorm && Object.keys(data.rawNorm).length > 0)
+  const rawOrig   = data.raw;      // { "Nombre cuenta F101": valor }
+  const rawGrupos = data.rawGrupos || {};  // { "Nombre cuenta F101": "ACTIVO CORRIENTE" }
+  const rawNorm   = data.rawNorm && Object.keys(data.rawNorm).length > 0
     ? data.rawNorm
     : normalizarRaw(rawOrig);
 
-  const año  = data.year || _apExpediente?.eeffYear || '—';
-  const emp  = data.nombreEmpresa || data.ruc || _apExpediente?.eeffEmpresa || '—';
+  const año = data.year || _apExpediente?.eeffYear || '—';
+  const emp = data.nombreEmpresa || data.ruc || _apExpediente?.eeffEmpresa || '—';
+  const N   = Object.keys(rawOrig).filter(k => Math.abs(parseFloat(rawOrig[k])||0) > 0).length;
+
   const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const cel  = (v, bold) => {
-    const n = parseFloat(v)||0;
-    const t = n < 0 ? `(${fmtN(n)})` : fmtN(n);
-    return `<td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;color:${n<0?'#ef4444':'inherit'}">${bold?`<strong>${t}</strong>`:t}</td>`;
-  };
+  const fmtV = v => { const n=parseFloat(v)||0; return n<0?`(${fmtN(n)})`:fmtN(n); };
 
   const btnRow = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
       <button onclick="renderEEFFenAuditoria('balance')"    class="btn-secondary" style="font-size:.75rem">📋 Balance</button>
       <button onclick="renderEEFFenAuditoria('resultados')" class="btn-secondary" style="font-size:.75rem">📈 Resultados</button>
-      <button onclick="renderEEFFenAuditoria('completo')"   class="btn-secondary" style="font-size:.75rem">📄 Todas las cuentas</button>
+      <button onclick="renderEEFFenAuditoria('hv')"         class="btn-secondary" style="font-size:.75rem">📊 Horiz/Vert</button>
       <button onclick="renderEEFFenAuditoria('indices')"    class="btn-secondary" style="font-size:.75rem">📐 Índices</button>
       <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:4px 10px;
         background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);
@@ -16833,55 +16856,134 @@ function renderEEFFenAuditoria(tab) {
     </div>
     <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:14px;padding:7px 12px;
       background:var(--bg-card2);border-radius:7px">
-      <strong style="color:var(--text-primary)">${emp}</strong> · Período ${año} · ${Object.keys(rawOrig).length} cuentas del F101
+      <strong style="color:var(--text-primary)">${emp}</strong>
+      &nbsp;·&nbsp; Período fiscal ${año}
+      &nbsp;·&nbsp; ${N} cuentas con saldo
     </div>`;
 
-  // Construir sección: muestra TODAS las líneas del rawOrig que pertenecen a esa sección
-  // usando rawNorm como índice inverso para clasificar
-  const buildSection = (titulo, clavesNorm, colorTotal) => {
-    // Para cada clave estándar, buscar en rawOrig las líneas que produjeron ese valor
-    const filas = [];
-    const vistasOrig = new Set();
+  // ── Agrupar cuentas del raw usando rawGrupos ──────────────────────────
+  // Si no hay rawGrupos (EEFF cargado antes de esta versión), usar normalizarRaw
+  const tieneGrupos = Object.keys(rawGrupos).length > 0;
 
-    clavesNorm.forEach(claveStd => {
-      const valNorm = parseFloat(rawNorm[claveStd])||0;
-      if (Math.abs(valNorm) === 0) return;
+  // Mapeo de grupo F101 → sección del balance/ERI
+  const GRUPO_SECCION = {
+    'ACTIVO CORRIENTE':    { seccion:'ACTIVOS CORRIENTES',        tipo:'activo' },
+    'INVENTARIOS':         { seccion:'ACTIVOS CORRIENTES',        tipo:'activo' },
+    'PROP PLANTA EQUIPO':  { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'PROP INVERSION':      { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'ACTIVOS INTANGIBLES': { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'INVERSIONES NC':      { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'OTROS ACTIVOS NC':    { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'DEPRECIACION':        { seccion:'ACTIVOS NO CORRIENTES',     tipo:'activo' },
+    'PASIVO CORRIENTE':    { seccion:'PASIVOS CORRIENTES',        tipo:'pasivo' },
+    'PASIVO NO CORRIENTE': { seccion:'PASIVOS NO CORRIENTES',     tipo:'pasivo' },
+    'PATRIMONIO':          { seccion:'PATRIMONIO',                tipo:'patrimonio' },
+    'OTROS RESULT INT':    { seccion:'PATRIMONIO',                tipo:'patrimonio' },
+    'INGRESOS ORD':        { seccion:'INGRESOS',                  tipo:'ingreso' },
+    'INGRESOS FINANCIEROS':{ seccion:'OTROS INGRESOS',            tipo:'ingreso' },
+    'OTROS INGRESOS':      { seccion:'OTROS INGRESOS',            tipo:'ingreso' },
+    'COSTO VENTAS':        { seccion:'COSTO DE VENTAS',           tipo:'gasto' },
+    'GASTO PERSONAL':      { seccion:'GASTOS DE PERSONAL',        tipo:'gasto' },
+    'OTROS GASTOS OPER':   { seccion:'GASTOS ADMINISTRATIVOS',    tipo:'gasto' },
+    'GASTO DETERIORO':     { seccion:'GASTOS ADMINISTRATIVOS',    tipo:'gasto' },
+    'GASTO PROVISIONES':   { seccion:'GASTOS ADMINISTRATIVOS',    tipo:'gasto' },
+    'DEPRECIACION':        { seccion:'DEPRECIACIÓN Y AMORTIZACIÓN',tipo:'gasto' },
+    'GASTO FINANCIERO':    { seccion:'GASTOS FINANCIEROS',        tipo:'gasto' },
+    'CONC TRIBUTARIA':     { seccion:'CONCILIACIÓN TRIBUTARIA',   tipo:'calc' },
+    'LIQUIDACION IR':      { seccion:'LIQUIDACIÓN IR',            tipo:'calc' },
+    'TOTALES ESF':         { seccion:'TOTALES BALANCE',           tipo:'total' },
+    'TOTALES ERI':         { seccion:'TOTALES RESULTADOS',        tipo:'total' },
+  };
 
-      // Buscar en rawOrig cuentas que mapeen a esta clave estándar
-      const encontradas = Object.entries(rawOrig).filter(([k, v]) => {
-        if (vistasOrig.has(k)) return false;
-        if (Math.abs(parseFloat(v)||0) === 0) return false;
-        const t = {}; t[k] = v;
-        const n = normalizarRaw(t);
-        return Math.abs(parseFloat(n[claveStd])||0) > 0;
-      });
+  // Construir estructura agrupada desde rawOrig + rawGrupos
+  const buildGrouped = () => {
+    const secciones = {};
+    Object.entries(rawOrig).forEach(([nombre, valor]) => {
+      const v = parseFloat(valor)||0;
+      if (Math.abs(v) === 0) return;
+      const grupo = rawGrupos[nombre] || '';
+      const info = GRUPO_SECCION[grupo] || { seccion: grupo || 'SIN CLASIFICAR', tipo: 'otro' };
+      if (!secciones[info.seccion]) secciones[info.seccion] = { filas:[], tipo:info.tipo };
+      secciones[info.seccion].filas.push({ nombre, valor:v });
+    });
+    return secciones;
+  };
 
-      if (encontradas.length > 0) {
-        encontradas.forEach(([k,v]) => {
-          vistasOrig.add(k);
-          filas.push({ nombre: k, valor: parseFloat(v)||0 });
-        });
-      } else {
-        // No encontramos la fuente en rawOrig → mostrar clave estándar con valor del rawNorm
-        if (!vistasOrig.has(claveStd)) {
-          vistasOrig.add(claveStd);
-          filas.push({ nombre: claveStd, valor: valNorm });
+  // Si no hay rawGrupos, usar normalizarRaw para clasificar (fallback)
+  const buildGroupedFallback = () => {
+    const CLAVES_BALANCE = {
+      'ACTIVOS CORRIENTES':    ['EFECTIVO','BANCO PICHINCHA','BANCO GUAYAQUIL','CUENTAS POR COBRAR','PROVISION CTAS INCOBRABLES','DOCUMENTOS POR COBRAR','CXC EMPLEADOS','INVENTARIOS','INVENTARIOS_SMIN','IVA EN COMPRAS','ANTICIPO IR','ANTICIPOS PROVEEDORES','ANTICIPOS EMPLEADOS','GASTOS PAGADOS POR ANTICIPADO','OTROS ACTIVOS CORRIENTES'],
+      'ACTIVOS NO CORRIENTES': ['PROPIEDAD PLANTA EQUIPO','DEPRECIACION ACUMULADA','ACTIVOS INTANGIBLES','AMORTIZACION INTANGIBLES','INVERSIONES LP','IMPUESTO DIFERIDO ACTIVO','ACTIVOS POR DERECHO DE USO','DEPOSITOS EN GARANTIA','OTROS ACTIVOS NO CORRIENTES'],
+      'PASIVOS CORRIENTES':    ['CUENTAS POR PAGAR','DOCUMENTOS POR PAGAR','OBLIGACIONES BANCARIAS CP','IMPUESTO RENTA POR PAGAR','PARTICIPACION TRABAJADORES','IVA POR PAGAR','IESS POR PAGAR','ANTICIPOS CLIENTES','SUELDOS POR PAGAR','DECIMO TERCERO POR PAGAR','DECIMO CUARTO POR PAGAR','VACACIONES POR PAGAR','FONDOS DE RESERVA POR PAGAR','RETENCIONES POR PAGAR','OTROS PASIVOS CORRIENTES'],
+      'PASIVOS NO CORRIENTES': ['OBLIGACIONES BANCARIAS LP','PRESTAMOS ACCIONISTAS','PROVISION JUBILACION PATRONAL','PROVISION DESAHUCIO','IMPUESTO DIFERIDO PASIVO','PASIVOS POR ARRENDAMIENTO','OTROS PASIVOS NO CORRIENTES'],
+      'PATRIMONIO':            ['CAPITAL SOCIAL','APORTES FUTURA CAPITALIZACION','RESERVA LEGAL','RESERVAS FACULTATIVAS','SUPERAVIT POR REVALUACION','UTILIDADES RETENIDAS','PERDIDA ACUMULADA','UTILIDAD EJERCICIO','PERDIDA EJERCICIO'],
+    };
+    const CLAVES_ERI = {
+      'INGRESOS':                  ['VENTAS NETAS'],
+      'OTROS INGRESOS':            ['OTROS INGRESOS'],
+      'COSTO DE VENTAS':           ['COSTO DE VENTAS'],
+      'GASTOS DE PERSONAL':        ['GASTO PERSONAL'],
+      'GASTOS ADMINISTRATIVOS':    ['GASTO ADMINISTRATIVO','OTROS GASTOS'],
+      'DEPRECIACIÓN Y AMORTIZACIÓN':['GASTO DEPRECIACION'],
+      'GASTOS FINANCIEROS':        ['GASTO FINANCIERO'],
+      'CONCILIACIÓN TRIBUTARIA':   ['PARTICIPACION TRABAJADORES GASTO','GASTOS NO DEDUCIBLES','UTILIDAD GRAVABLE','IMPUESTO RENTA GASTO'],
+    };
+    const norm = rawNorm;
+    const result = {};
+    const usadas = new Set();
+    const todasClaves = [...Object.values(CLAVES_BALANCE),...Object.values(CLAVES_ERI)].flat();
+    todasClaves.forEach(clvStd => {
+      const vNorm = parseFloat(norm[clvStd])||0;
+      if (Math.abs(vNorm)===0) return;
+      // Buscar en rawOrig cuentas que mapeen a esta clave
+      let encontrada = false;
+      Object.entries(rawOrig).forEach(([nombre, valor]) => {
+        if (usadas.has(nombre)||Math.abs(parseFloat(valor)||0)===0) return;
+        const t={}; t[nombre]=valor; const n=normalizarRaw(t);
+        if (Math.abs(parseFloat(n[clvStd])||0)>0) {
+          const sec = Object.keys(CLAVES_BALANCE).find(s=>CLAVES_BALANCE[s].includes(clvStd))
+            || Object.keys(CLAVES_ERI).find(s=>CLAVES_ERI[s].includes(clvStd)) || 'OTRAS';
+          if (!result[sec]) result[sec]={filas:[],tipo:CLAVES_BALANCE[sec]?'balance':'eri'};
+          result[sec].filas.push({nombre,valor:parseFloat(valor)||0});
+          usadas.add(nombre); encontrada=true;
         }
+      });
+      if (!encontrada && !usadas.has(clvStd)) {
+        const sec = Object.keys(CLAVES_BALANCE).find(s=>CLAVES_BALANCE[s].includes(clvStd))
+          || Object.keys(CLAVES_ERI).find(s=>CLAVES_ERI[s].includes(clvStd)) || 'OTRAS';
+        if (!result[sec]) result[sec]={filas:[],tipo:'balance'};
+        result[sec].filas.push({nombre:clvStd,valor:vNorm});
+        usadas.add(clvStd);
       }
     });
+    // Sin clasificar
+    Object.entries(rawOrig).forEach(([nombre,valor])=>{
+      if (usadas.has(nombre)||Math.abs(parseFloat(valor)||0)===0) return;
+      if (!result['SIN CLASIFICAR']) result['SIN CLASIFICAR']={filas:[],tipo:'otro'};
+      result['SIN CLASIFICAR'].filas.push({nombre,valor:parseFloat(valor)||0});
+    });
+    return result;
+  };
 
-    if (filas.length === 0) return '';
-    const total = filas.reduce((s,f)=>s+f.valor, 0);
+  const grouped = tieneGrupos ? buildGrouped() : buildGroupedFallback();
 
+  // ── Render genérico de sección ────────────────────────────────────────
+  const renderSeccion = (titulo, filas, colorTotal, indent=20) => {
+    if (!filas || filas.length===0) return '';
+    // Separar cuentas padre (TOTAL...) de las hijas
+    const hijas  = filas.filter(f => !/^TOTAL/i.test(f.nombre));
+    const totales = filas.filter(f => /^TOTAL/i.test(f.nombre));
+    const total = hijas.reduce((s,f)=>s+f.valor, 0);
     return `
       <tr><td class="section-header" colspan="2" style="font-size:.76rem">${titulo}</td></tr>
-      ${filas.map(f=>`<tr>
-        <td class="account" style="padding-left:20px;font-size:.78rem">${f.nombre}</td>
-        ${cel(f.valor,false)}
+      ${hijas.map(f=>`<tr>
+        <td class="account" style="padding-left:${indent}px;font-size:.78rem">${f.nombre}</td>
+        <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;
+          color:${f.valor<0?'#ef4444':'inherit'}">${f.valor<0?'('+fmtN(f.valor)+')':fmtN(f.valor)}</td>
       </tr>`).join('')}
       <tr class="subtotal">
-        <td style="font-size:.78rem;color:${colorTotal}"><strong>TOTAL ${titulo}</strong></td>
-        <td style="text-align:right;font-family:var(--font-mono);font-size:.78rem;color:${colorTotal}">
+        <td style="color:${colorTotal};font-size:.78rem"><strong>TOTAL ${titulo}</strong></td>
+        <td style="text-align:right;font-family:var(--font-mono);color:${colorTotal};font-size:.78rem">
           <strong>${total<0?'('+fmtN(total)+')':fmtN(total)}</strong>
         </td>
       </tr>`;
@@ -16890,97 +16992,70 @@ function renderEEFFenAuditoria(tab) {
   const g = k => parseFloat(rawNorm[k])||0;
 
   if (tab === 'balance') {
-    const ta  = g('TOTAL ACTIVO'), tp = g('TOTAL PASIVO'), pat = g('TOTAL PATRIMONIO');
-    const dif = Math.abs(ta-(tp+pat));
+    const seccBalance = ['ACTIVOS CORRIENTES','ACTIVOS NO CORRIENTES','PASIVOS CORRIENTES','PASIVOS NO CORRIENTES','PATRIMONIO'];
+    const colores = {'ACTIVOS CORRIENTES':'var(--gold)','ACTIVOS NO CORRIENTES':'var(--gold)',
+      'PASIVOS CORRIENTES':'#ef4444','PASIVOS NO CORRIENTES':'#ef4444','PATRIMONIO':'var(--emerald)'};
+    const ta=g('TOTAL ACTIVO'), tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO');
+    const dif=Math.abs(ta-(tp+pat));
 
-    // Cuentas no clasificadas en balance
-    const todasClavesBalance = Object.values(ESTRUCTURA_BALANCE).flatMap(s=>s.cuentas);
-    const clavesResultados = new Set(['VENTAS NETAS','OTROS INGRESOS','COSTO DE VENTAS',
-      'GASTO PERSONAL','GASTO ADMINISTRATIVO','GASTO VENTAS','GASTO DEPRECIACION',
-      'GASTO FINANCIERO','OTROS GASTOS','UTILIDAD BRUTA','UTILIDAD GRAVABLE',
-      'IMPUESTO RENTA GASTO','PARTICIPACION TRABAJADORES GASTO','GASTOS NO DEDUCIBLES',
-      'TOTAL INGRESOS','TOTAL GASTOS','TOTAL COSTOS Y GASTOS','IR A PAGAR','GASTO VENTAS']);
-    const usadas = new Set();
-    todasClavesBalance.forEach(clv => {
-      Object.entries(rawOrig).forEach(([k,v]) => {
-        if (Math.abs(parseFloat(v)||0)===0) return;
-        const t={}; t[k]=v; const n=normalizarRaw(t);
-        if (Math.abs(parseFloat(n[clv])||0)>0) usadas.add(k);
-      });
-    });
-    const noClasificadas = Object.entries(rawOrig).filter(([k,v])=>{
-      if (Math.abs(parseFloat(v)||0)===0||usadas.has(k)) return false;
-      const t={}; t[k]=v; const n=normalizarRaw(t);
-      const clvNorm = Object.keys(n).find(c=>Math.abs(parseFloat(n[c])||0)>0);
-      return !clvNorm||!clavesResultados.has(clvNorm);
-    });
+    let html = seccBalance.map(sec => {
+      const d = grouped[sec] || {filas:[]};
+      return renderSeccion(sec, d.filas, colores[sec]||'var(--gold)');
+    }).join('');
+
+    // Sin clasificar del balance
+    const scBal = grouped['SIN CLASIFICAR'];
+    if (scBal?.filas?.length) {
+      html += renderSeccion('⚠️ PENDIENTE DE CLASIFICAR', scBal.filas, '#f59e0b');
+    }
 
     el.innerHTML = btnRow + `<div style="overflow-x:auto"><table class="ef-table">
       <thead><tr><th class="left">Cuenta</th><th style="text-align:right">USD ${año}</th></tr></thead>
       <tbody>
-        ${buildSection('ACTIVOS CORRIENTES',    ESTRUCTURA_BALANCE['ACTIVOS CORRIENTES'].cuentas,    'var(--gold)')}
-        ${buildSection('ACTIVOS NO CORRIENTES', ESTRUCTURA_BALANCE['ACTIVOS NO CORRIENTES'].cuentas, 'var(--gold)')}
+        ${html}
         <tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td>
           <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtN(ta)}</td></tr>
-        ${buildSection('PASIVOS CORRIENTES',    ESTRUCTURA_BALANCE['PASIVOS CORRIENTES'].cuentas,    '#ef4444')}
-        ${buildSection('PASIVOS NO CORRIENTES', ESTRUCTURA_BALANCE['PASIVOS NO CORRIENTES'].cuentas, '#ef4444')}
-        <tr class="subtotal"><td style="color:#ef4444"><strong>TOTAL PASIVO</strong></td>
-          <td style="text-align:right;font-family:var(--font-mono);color:#ef4444"><strong>${fmtN(tp)}</strong></td></tr>
-        ${buildSection('PATRIMONIO', ESTRUCTURA_BALANCE['PATRIMONIO'].cuentas, 'var(--emerald)')}
-        <tr class="subtotal"><td style="color:var(--emerald)"><strong>TOTAL PASIVO + PATRIMONIO</strong></td>
-          <td style="text-align:right;font-family:var(--font-mono);color:var(--emerald)"><strong>${fmtN(tp+pat)}</strong></td></tr>
-        ${noClasificadas.length?`
-          <tr><td class="section-header" colspan="2" style="color:#f59e0b">⚠️ CUENTAS SIN CLASIFICAR</td></tr>
-          ${noClasificadas.map(([k,v])=>`<tr><td class="account" style="padding-left:20px;font-size:.78rem;color:#f59e0b">${k}</td>${cel(v,false)}</tr>`).join('')}`:''}
-        <tr><td colspan="2" style="text-align:center;font-size:.73rem;padding:7px;
+        <tr class="total-row"><td><strong>TOTAL PASIVO + PATRIMONIO</strong></td>
+          <td style="text-align:right;font-family:var(--font-mono);font-weight:700;
+            color:${dif<1?'var(--emerald)':'#ef4444'}">${fmtN(tp+pat)}</td></tr>
+        <tr><td colspan="2" style="text-align:center;font-size:.73rem;padding:6px;
           color:${dif<1?'var(--emerald)':'#ef4444'}">
-          ${dif<1?'✅ Balance cuadra':'⚠️ Diferencia de cuadre: $'+fmtN(dif)}
+          ${dif<1?'✅ Balance cuadra':'⚠️ Diferencia: $'+fmtN(dif)+' — verificar clasificación'}
         </td></tr>
       </tbody></table></div>`;
 
   } else if (tab === 'resultados') {
+    const seccERI = ['INGRESOS','OTROS INGRESOS','COSTO DE VENTAS','GASTOS DE PERSONAL',
+      'GASTOS ADMINISTRATIVOS','DEPRECIACIÓN Y AMORTIZACIÓN','GASTOS FINANCIEROS','CONCILIACIÓN TRIBUTARIA'];
+    const coloresERI = {'INGRESOS':'var(--emerald)','OTROS INGRESOS':'var(--emerald)',
+      'COSTO DE VENTAS':'#ef4444','GASTOS DE PERSONAL':'#f59e0b','GASTOS ADMINISTRATIVOS':'#f59e0b',
+      'DEPRECIACIÓN Y AMORTIZACIÓN':'#f59e0b','GASTOS FINANCIEROS':'#f59e0b','CONCILIACIÓN TRIBUTARIA':'#6366f1'};
+
     const vtas=g('VENTAS NETAS'), otrosIng=g('OTROS INGRESOS'), cv=g('COSTO DE VENTAS');
     const ub=vtas+otrosIng-cv;
-    const gPer=g('GASTO PERSONAL'), gAdm=g('GASTO ADMINISTRATIVO');
-    const gVta=g('GASTO VENTAS'), gDep=g('GASTO DEPRECIACION');
-    const gFin=g('GASTO FINANCIERO'), gOtro=g('OTROS GASTOS');
-    const ebitda=ub-gPer-gAdm-gVta;
-    const ebit=ebitda-gDep;
-    const util=g('UTILIDAD EJERCICIO');
+    const gPer=g('GASTO PERSONAL'),gAdm=g('GASTO ADMINISTRATIVO'),gVta=g('GASTO VENTAS');
+    const gDep=g('GASTO DEPRECIACION'),gFin=g('GASTO FINANCIERO'),gOtro=g('OTROS GASTOS');
+    const ebitda=ub-gPer-gAdm-gVta, ebit=ebitda-gDep, util=g('UTILIDAD EJERCICIO');
+
+    let html = seccERI.map(sec => {
+      const d = grouped[sec] || {filas:[]};
+      return renderSeccion(sec, d.filas, coloresERI[sec]||'var(--text-muted)');
+    }).join('');
 
     el.innerHTML = btnRow + `<div style="overflow-x:auto"><table class="ef-table">
       <thead><tr><th class="left">Concepto</th><th style="text-align:right">USD ${año}</th></tr></thead>
       <tbody>
-        <tr><td class="section-header" colspan="2">INGRESOS</td></tr>
-        ${buildSection('Ventas e Ingresos Operacionales', ['VENTAS NETAS','OTROS INGRESOS'], 'var(--emerald)')}
-
-        <tr><td class="section-header" colspan="2">COSTOS</td></tr>
-        ${buildSection('Costo de Ventas / Costo de Servicios', ['COSTO DE VENTAS'], '#ef4444')}
+        ${html}
         <tr class="subtotal"><td><strong>= UTILIDAD BRUTA</strong></td>
           <td style="text-align:right;font-family:var(--font-mono);color:${ub>=0?'var(--emerald)':'#ef4444'}">
-            <strong>${ub<0?'('+fmtN(ub)+')':fmtN(ub)}</strong></td></tr>
-
-        <tr><td class="section-header" colspan="2">GASTOS OPERACIONALES</td></tr>
-        ${buildSection('Gastos de Personal',              ['GASTO PERSONAL'],      '#f59e0b')}
-        ${buildSection('Gastos Administrativos',          ['GASTO ADMINISTRATIVO'],'#f59e0b')}
-        ${buildSection('Gastos de Ventas y Comercializ.', ['GASTO VENTAS'],        '#f59e0b')}
-        ${buildSection('Depreciación y Amortización',     ['GASTO DEPRECIACION'],  '#f59e0b')}
-        ${buildSection('Otros Gastos',                    ['OTROS GASTOS'],        '#f59e0b')}
-        <tr class="subtotal"><td><strong>= EBITDA</strong></td>${cel(ebitda,true)}</tr>
-        <tr class="subtotal"><td><strong>= Utilidad Operacional (EBIT)</strong></td>${cel(ebit,true)}</tr>
-
-        <tr><td class="section-header" colspan="2">GASTOS FINANCIEROS</td></tr>
-        ${buildSection('Gastos Financieros e Intereses', ['GASTO FINANCIERO'], '#f59e0b')}
-
-        <tr><td class="section-header" colspan="2">CONCILIACIÓN TRIBUTARIA</td></tr>
-        ${g('PARTICIPACION TRABAJADORES GASTO')?`<tr><td class="account" style="padding-left:20px;font-size:.78rem">(-) Participación Trabajadores 15%</td>${cel(g('PARTICIPACION TRABAJADORES GASTO'),false)}</tr>`:''}
-        ${g('GASTOS NO DEDUCIBLES')?`<tr><td class="account" style="padding-left:20px;font-size:.78rem">(+) Gastos No Deducibles</td>${cel(g('GASTOS NO DEDUCIBLES'),false)}</tr>`:''}
-        ${g('UTILIDAD GRAVABLE')?`<tr class="subtotal"><td><strong>= Utilidad Gravable / Base Imponible</strong></td>${cel(g('UTILIDAD GRAVABLE'),true)}</tr>`:''}
-        ${g('IMPUESTO RENTA GASTO')?`<tr><td class="account" style="padding-left:20px;font-size:.78rem">(-) Impuesto a la Renta Causado</td>${cel(g('IMPUESTO RENTA GASTO'),false)}</tr>`:''}
-
+            <strong>${fmtV(ub)}</strong></td></tr>
+        <tr class="subtotal"><td><strong>= EBITDA</strong></td>
+          <td style="text-align:right;font-family:var(--font-mono)"><strong>${fmtV(ebitda)}</strong></td></tr>
+        <tr class="subtotal"><td><strong>= Utilidad Operacional (EBIT)</strong></td>
+          <td style="text-align:right;font-family:var(--font-mono)"><strong>${fmtV(ebit)}</strong></td></tr>
         <tr class="total-row"><td><strong>= UTILIDAD NETA DEL EJERCICIO</strong></td>
           <td style="text-align:right;font-family:var(--font-mono);font-size:.85rem;
-            color:${util>=0?'var(--emerald)':'#ef4444'}"><strong>${util<0?'('+fmtN(util)+')':fmtN(util)}</strong></td></tr>
+            color:${util>=0?'var(--emerald)':'#ef4444'}"><strong>${fmtV(util)}</strong></td></tr>
         <tr><td colspan="2" style="font-size:.73rem;padding:7px 10px;color:var(--text-muted)">
           Margen bruto: <strong>${vtas?(ub/vtas*100).toFixed(1):'0'}%</strong> &nbsp;·&nbsp;
           EBITDA: <strong>$${fmtN(ebitda)}</strong> &nbsp;·&nbsp;
@@ -16988,40 +17063,56 @@ function renderEEFFenAuditoria(tab) {
         </td></tr>
       </tbody></table></div>`;
 
-  } else if (tab === 'completo') {
+  } else if (tab === 'hv') {
+    // Análisis horizontal y vertical — todas las cuentas del rawOrig
     const taTotal = g('TOTAL ACTIVO')||1;
-    const lista = Object.entries(rawOrig)
+    const vtas    = g('VENTAS NETAS')||1;
+    const lista   = Object.entries(rawOrig)
       .filter(([,v])=>Math.abs(parseFloat(v)||0)>0)
       .sort(([a],[b])=>a.localeCompare(b));
+
     el.innerHTML = btnRow + `
       <p style="font-size:.73rem;color:var(--text-muted);margin-bottom:10px">
-        ${lista.length} cuentas del F101 original · ★ ≥5% = Material · ● ≥1% = Significativa
+        ${lista.length} cuentas · Análisis vertical sobre Total Activo · ★ ≥5% = Material · ● ≥1% = Significativa
       </p>
       <div style="overflow-x:auto"><table class="ef-table">
         <thead><tr>
           <th class="left">Cuenta (F101)</th>
+          <th class="left" style="font-size:.72rem;color:var(--text-muted)">Grupo</th>
           <th style="text-align:right">Saldo USD</th>
           <th style="text-align:right">% Activo</th>
+          <th style="text-align:right">% Ventas</th>
           <th style="text-align:center">Nivel</th>
         </tr></thead>
         <tbody>${lista.map(([k,v])=>{
-          const n=parseFloat(v)||0,pct=(Math.abs(n)/taTotal*100).toFixed(1),esT=/^TOTAL/i.test(k);
-          const niv=Math.abs(n)>=taTotal*0.05?'<span style="color:#ef4444;font-size:.68rem;font-weight:700">★ MAT.</span>'
-            :Math.abs(n)>=taTotal*0.01?'<span style="color:#f59e0b;font-size:.68rem;font-weight:600">● SIG.</span>'
+          const n=parseFloat(v)||0, esT=/^TOTAL/i.test(k);
+          const pctA=(Math.abs(n)/taTotal*100).toFixed(1);
+          const pctV=(Math.abs(n)/vtas*100).toFixed(1);
+          const grupo = rawGrupos[k]||'';
+          const niv=Math.abs(n)>=taTotal*0.05
+            ?'<span style="color:#ef4444;font-size:.68rem;font-weight:700">★ MAT.</span>'
+            :Math.abs(n)>=taTotal*0.01
+            ?'<span style="color:#f59e0b;font-size:.68rem;font-weight:600">● SIG.</span>'
             :'<span style="color:var(--text-muted);font-size:.67rem">—</span>';
-          return `<tr ${esT?'class="subtotal"':''}><td class="account" style="font-size:.77rem;padding-left:${esT?8:16}px">${k}</td>
-            <td style="text-align:right;font-family:var(--font-mono);font-size:.77rem;color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(n)+')':fmtN(n)}</td>
-            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pct}%</td>
-            <td style="text-align:center">${niv}</td></tr>`;
+          return `<tr ${esT?'class="subtotal"':''}>
+            <td class="account" style="font-size:.77rem;padding-left:${esT?8:16}px">${k}</td>
+            <td style="font-size:.7rem;color:var(--text-muted)">${grupo}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-size:.77rem;
+              color:${n<0?'#ef4444':'inherit'}">${n<0?'('+fmtN(n)+')':fmtN(n)}</td>
+            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctA}%</td>
+            <td style="text-align:right;font-size:.72rem;color:var(--text-muted)">${pctV}%</td>
+            <td style="text-align:center">${niv}</td>
+          </tr>`;
         }).join('')}</tbody>
       </table></div>`;
 
   } else if (tab === 'indices') {
     generarIndicesAudit();
     const idxEl=document.getElementById('ap-indices-audit-contenido');
-    el.innerHTML = btnRow+(idxEl?idxEl.innerHTML:'<p style="color:var(--text-muted)">Sin datos.</p>');
+    el.innerHTML=btnRow+(idxEl?idxEl.innerHTML:'<p style="color:var(--text-muted)">Sin datos.</p>');
   }
 }
+
 
 function nuevaCedulaSumaria() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
