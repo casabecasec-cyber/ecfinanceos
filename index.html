@@ -949,6 +949,18 @@ html[data-theme="claro"] #gea-native-root{
   </div>
 </div>
 
+<!-- Selector de empresa — aparece después de iniciar sesión, antes de mostrar la app -->
+<div id="empresa-contexto-overlay" style="display:none;position:fixed;inset:0;z-index:100000;background:rgba(10,14,20,.92);align-items:center;justify-content:center;padding:24px">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto">
+    <h2 style="margin:0 0 4px;color:var(--gold)">¿Con qué empresa deseas trabajar?</h2>
+    <p style="font-size:.82rem;color:var(--text-muted);margin:0 0 18px">Esto define qué información verás en Trámites, Área Bancaria, Activos Fijos, Actas de Junta, Cesiones y Dividendos durante esta sesión.</p>
+    <div id="empresa-contexto-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+      <p style="color:var(--text-muted);font-size:.82rem">⏳ Cargando empresas...</p>
+    </div>
+    <button class="btn-calc" id="empresa-contexto-todas-btn" onclick="elegirEmpresaContexto(null)" style="width:100%;background:linear-gradient(135deg,var(--emerald),#0a9468)">🌐 Todas las empresas</button>
+  </div>
+</div>
+
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
@@ -1107,6 +1119,10 @@ html[data-theme="claro"] #gea-native-root{
         <a href="#" class="nav-item" data-module="gea" data-geaview="dividendos"><span>💰 Dividendos</span></a>
       </div>
     </div>
+    <a href="#" class="nav-item" id="nav-permisos-invitado" onclick="event.preventDefault();configurarPermisosInvitado()">
+      <span class="nav-icon">🔑</span>
+      <span>Permisos por Empresa (Invitado)</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -3549,6 +3565,7 @@ async function doLogin() {
     if (ur) ur.textContent = cuenta.role === 'admin' ? 'Administrador' : 'Invitado';
     aplicarRestriccionesPorRol(cuenta.role);
     setTimeout(() => toast('Bienvenido, ' + cuenta.display + ' ✓', 'success'), 420);
+    mostrarSelectorEmpresaContexto(cuenta.role);
   } catch (e) {
     _intentosFallidos++;
     const pi = document.getElementById('login-pass');
@@ -3606,6 +3623,9 @@ function esInvitado() {
 }
 
 function aplicarRestriccionesPorRol(role) {
+  const navPermisos = document.getElementById('nav-permisos-invitado');
+  if (navPermisos) navPermisos.style.display = role === 'guest' ? 'none' : '';
+
   if (role !== 'guest') {
     // Si es administrador, asegurarse de que nada quede deshabilitado de una sesión anterior
     document.querySelectorAll('button[data-restringido-invitado]').forEach(btn => {
@@ -10306,8 +10326,17 @@ function initNavegacion() {
     activar(item.dataset.module);
     const geaView = item.dataset.geaview;
     if (geaView && item.dataset.module === 'gea') {
-      if (window.geaInitNative) await geaInitNative();
-      if (window.goTo) goTo(geaView);
+      try {
+        if (window.geaInitNative) await geaInitNative();
+        if (window.goTo) goTo(geaView);
+      } catch (err) {
+        console.error('Error abriendo sección de GEA:', err);
+        const cont = document.getElementById('gea-native-root');
+        if (cont) cont.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto;text-align:center;">
+          <p>⚠️ Ocurrió un error al abrir esta sección: ${(err.message||String(err)).replace(/</g,'&lt;')}</p>
+        </div>`;
+        if (window.toast) toast('Error al abrir la sección de GEA — revisa la consola', 'error');
+      }
     }
   }));
 
@@ -21843,6 +21872,96 @@ function logout(){ auth.signOut(); }
 // Esta función se ejecuta una sola vez, la primera vez que el usuario entra
 // a cualquier sección proveniente de GEA, reutilizando la sesión ya iniciada.
 window._geaNativeInited = false;
+// ── Selector de empresa al iniciar sesión (contexto de trabajo de toda la sesión) ──
+// window._empresaContextoId: null = "todas las empresas" (o admin sin restricción);
+// un id = sesión limitada a esa única empresa en los módulos de GEA.
+window._empresaContextoId = null;
+window._empresaContextoRole = null;
+
+async function obtenerPermisosEmpresaPorRol(role){
+  // Devuelve un array de empresaId permitidos para ese rol, o null si no hay restricción (ve todas).
+  if(role === 'admin' || role === 'administrador') return null; // guest/invitado sí se restringe
+  try{
+    const snap = await db.ref(`gea_permisos_por_rol/${role}`).once('value');
+    const val = snap.val();
+    return Array.isArray(val) ? val : null;
+  }catch(e){ return null; }
+}
+
+async function mostrarSelectorEmpresaContexto(role){
+  window._empresaContextoRole = role;
+  const overlay = document.getElementById('empresa-contexto-overlay');
+  const lista = document.getElementById('empresa-contexto-lista');
+  const btnTodas = document.getElementById('empresa-contexto-todas-btn');
+  if(!overlay || !lista) return;
+  overlay.style.display = 'flex';
+
+  let empresas = [];
+  try{
+    const snap = await db.ref(`gea_empresas/${DATOS_UID}`).once('value');
+    const val = snap.val() || {};
+    empresas = Object.keys(val).map(id => ({ id, ...val[id] }));
+  }catch(e){
+    lista.innerHTML = `<p style="color:#ef4444;font-size:.82rem">No se pudieron cargar las empresas: ${(e.message||e).toString().replace(/</g,'&lt;')}</p>`;
+    return;
+  }
+
+  const permitidas = await obtenerPermisosEmpresaPorRol(role);
+  if(permitidas) empresas = empresas.filter(e => permitidas.includes(e.id));
+
+  // Un rol restringido a una sola empresa no necesita ver la opción "Todas"
+  if(btnTodas) btnTodas.style.display = permitidas && permitidas.length <= 1 ? 'none' : 'block';
+
+  if(!empresas.length){
+    lista.innerHTML = `<p style="color:#f59e0b;font-size:.82rem">Tu perfil no tiene empresas asignadas. Contacta al administrador.</p>`;
+    return;
+  }
+
+  lista.innerHTML = empresas.map(e => `
+    <button class="btn-secondary" onclick="elegirEmpresaContexto('${e.id}')" style="width:100%;text-align:left;padding:12px 16px;font-size:.85rem">
+      🏢 ${(e.nombre||'—').replace(/</g,'&lt;')} ${e.ruc ? `<span style="color:var(--text-muted);font-size:.75rem">— RUC ${e.ruc}</span>` : ''}
+    </button>`).join('');
+
+  // Si el rol solo tiene una empresa permitida, se la asigna automáticamente sin pedir clic
+  if(permitidas && permitidas.length === 1){
+    elegirEmpresaContexto(permitidas[0]);
+  }
+}
+
+function elegirEmpresaContexto(empresaId){
+  window._empresaContextoId = empresaId || null;
+  const overlay = document.getElementById('empresa-contexto-overlay');
+  if(overlay) overlay.style.display = 'none';
+  // Si GEA ya estaba inicializado en esta sesión, refrescar sus datos con el nuevo contexto
+  if(window._geaNativeInited){
+    window._geaNativeInited = false;
+    cargarEmpresas().then(() => { if(window.goTo && typeof currentView !== 'undefined') goTo(currentView); });
+  }
+}
+
+// Herramienta rápida para que el Administrador defina qué empresas puede ver el rol "Invitado"
+async function configurarPermisosInvitado(){
+  let empresas = [];
+  try{
+    const snap = await db.ref(`gea_empresas/${DATOS_UID}`).once('value');
+    const val = snap.val() || {};
+    empresas = Object.keys(val).map(id => ({ id, ...val[id] }));
+  }catch(e){ toast('No se pudieron cargar las empresas', 'error'); return; }
+  if(!empresas.length){ toast('No hay empresas registradas todavía', 'warning'); return; }
+
+  const actuales = await obtenerPermisosEmpresaPorRol('guest') || [];
+  const listado = empresas.map((e,i) => `${i+1}. ${e.nombre}${actuales.includes(e.id)?' ✓':''}`).join('\n');
+  const resp = prompt(
+    `Empresas visibles para el rol INVITADO (marca ✓ = ya tiene acceso).\n\n${listado}\n\n` +
+    `Escribe los números separados por coma de las empresas que el Invitado SÍ puede ver (ej: 1,3). Deja vacío para que vea TODAS.`
+  );
+  if(resp === null) return;
+  const nums = resp.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n) && n>=1 && n<=empresas.length);
+  const permitidas = nums.length ? nums.map(n => empresas[n-1].id) : null;
+  await db.ref('gea_permisos_por_rol/guest').set(permitidas);
+  toast(permitidas ? `Invitado ahora ve ${permitidas.length} empresa(s)` : 'Invitado ahora ve todas las empresas', 'success');
+}
+
 async function geaInitNative(){
   if(window._geaNativeInited) return;
   window._geaNativeInited = true;
@@ -21851,22 +21970,27 @@ async function geaInitNative(){
   if(currentUser.uid === DATOS_UID){
     usuarioRol = "admin";
   } else {
+    // Ya no bloqueamos el acceso si no hay un rol asignado en la tabla vieja de
+    // GEA — la app principal ya controla quién puede iniciar sesión. Si existe
+    // un rol específico (ej. "lectura") asignado ahí, se respeta; si no, admin.
     try{
       const snap = await db.ref(`gea_roles_control_documental/${currentUser.uid}`).once("value");
-      usuarioRol = snap.val() || null;
-    }catch(e){ usuarioRol = null; }
-    if(!usuarioRol){
-      const cont = document.getElementById("gea-native-root");
-      if(cont) cont.innerHTML = `<div class="card" style="max-width:520px;margin:40px auto;text-align:center;">
-        <p>Tu usuario no tiene un rol asignado en esta sección. Pide a un administrador que te lo asigne desde "Administración de Usuarios".</p>
-      </div>`;
-      return;
-    }
+      usuarioRol = snap.val() || "admin";
+    }catch(e){ usuarioRol = "admin"; }
   }
   const footEl = document.getElementById("userEmailFoot");
   if(footEl) footEl.textContent = currentUser.email + (usuarioRol==="lectura" ? " (solo lectura)" : "");
   document.body.classList.toggle("modo-lectura", usuarioRol==="lectura");
-  await cargarEmpresas();
+  try{
+    await cargarEmpresas();
+  }catch(e){
+    console.error("Error cargando empresas de GEA:", e);
+    const cont = document.getElementById("gea-native-root");
+    if(cont) cont.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto;text-align:center;">
+      <p>⚠️ No se pudieron cargar las empresas. Error: ${escapeHtml(e.message||String(e))}</p>
+      <p style="font-size:12px;color:var(--muted)">Si el error menciona "permission_denied", revisa las reglas de Firebase Realtime Database para las rutas "gea_*".</p>
+    </div>`;
+  }
 }
 
 // Bloqueo de acciones de escritura para usuarios con rol "lectura": intercepta
@@ -22206,7 +22330,14 @@ function limpiarClave(s){
 async function cargarEmpresas(){
   const snap = await db.ref(`gea_empresas/${DATOS_UID}`).once("value");
   const val = snap.val() || {};
-  empresasCache = Object.keys(val).map(id => ({id, ...val[id]}));
+  let todas = Object.keys(val).map(id => ({id, ...val[id]}));
+  // Restringir por rol (Invitado) y por la empresa elegida al iniciar sesión, si aplica.
+  // Al filtrar aquí, TODOS los selectores de empresa de la app (Activos, Bancaria,
+  // Societario, etc.) quedan automáticamente limitados, ya que todos derivan de empresasCache.
+  const permitidas = await obtenerPermisosEmpresaPorRol(window._empresaContextoRole || (window._userRole==='admin'?'admin':'guest'));
+  if(permitidas) todas = todas.filter(e => permitidas.includes(e.id));
+  if(window._empresaContextoId) todas = todas.filter(e => e.id === window._empresaContextoId);
+  empresasCache = todas;
   if(!empresaSeleccionadaId && empresasCache.length) empresaSeleccionadaId = empresasCache[0].id;
 }
 
@@ -22257,6 +22388,7 @@ async function cargarTramites(tipo){
   return Object.keys(val)
     .map(id => ({id, ...val[id]}))
     .filter(t => t.tipo===tipo)
+    .filter(t => !window._empresaContextoId || t.empresaId === window._empresaContextoId)
     .sort((a,b) => (b.creado||0)-(a.creado||0));
 }
 
