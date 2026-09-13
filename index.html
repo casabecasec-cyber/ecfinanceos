@@ -2057,7 +2057,7 @@ details[id^="ced-card-"] summary { outline:none; }
       </div>
 
       <!-- TIPOS DE AUDITORÍA — CADA UNO INDEPENDIENTE -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
         <div class="ap-tipo-card activo" id="tipo-card-financiera" onclick="cambiarTipoAudit('financiera',this)">
           <div class="ap-tipo-icon">📊</div>
           <div class="ap-tipo-nombre">Financiera</div>
@@ -2077,6 +2077,11 @@ details[id^="ced-card-"] summary { outline:none; }
           <div class="ap-tipo-icon">⚙️</div>
           <div class="ap-tipo-nombre">Gestión</div>
           <div class="ap-tipo-desc">Eficiencia · Control interno · 3E</div>
+        </div>
+        <div class="ap-tipo-card" id="tipo-card-niif" onclick="cambiarTipoAudit('niif',this)">
+          <div class="ap-tipo-icon">📚</div>
+          <div class="ap-tipo-nombre">NIIF</div>
+          <div class="ap-tipo-desc">VNR · Interés Implícito · Impuestos e Ingresos Diferidos</div>
         </div>
       </div>
 
@@ -2105,6 +2110,8 @@ details[id^="ced-card-"] summary { outline:none; }
           <button class="bib-tab" onclick="showApTab('benchmarks')">📈 Benchmarks Sector</button>
           <button class="bib-tab" onclick="showApTab('variaciones')">🔎 Variaciones >10%</button>
           <button class="bib-tab" onclick="showApTab('indices-audit')">📐 Índices Financieros</button>
+          <button class="bib-tab" id="ap-tab-btn-gestion-3e" onclick="showApTab('gestion-3e')" style="display:none">🎯 Auditoría de Gestión (3E)</button>
+          <button class="bib-tab" id="ap-tab-btn-niif" onclick="showApTab('niif-cumplimiento')" style="display:none">📚 Cumplimiento NIIF</button>
           <button class="bib-tab" onclick="showApTab('papeles')">🗂️ Papeles de Trabajo</button>
           <button class="bib-tab" onclick="showApTab('hallazgos')">⚠️ Hallazgos</button>
           <button class="bib-tab" onclick="showApTab('benford')">📐 Analítica</button>
@@ -2230,6 +2237,24 @@ details[id^="ced-card-"] summary { outline:none; }
           </div>
         </div>
 
+        <!-- CUMPLIMIENTO NIIF (Auditoría NIIF) -->
+        <div class="bib-content" id="ap-niif-cumplimiento">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">📚 Auditoría de Cumplimiento NIIF</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-secondary" onclick="guardarNiifCumplimiento(true)">💾 Guardar</button>
+                <button class="btn-calc" onclick="generarInformeNiifCumplimiento()" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">🖨 Informe de Cumplimiento</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">
+              Checklist de cumplimiento normativo NIC/NIIF por rubro (VNR, interés implícito, impuestos e ingresos diferidos, deterioro, arrendamientos, provisiones, beneficios a empleados, entre otros). Para cada concepto se indica el <strong>principio contable</strong>, la <strong>norma aplicable</strong> y el <strong>procedimiento de auditoría</strong> sugerido. Marque el estado de cumplimiento y registre su observación; use 📄/📗 para dejar evidencia de que revisó el rubro.
+            </p>
+            <div id="niif-cumplimiento-resumen" style="margin-bottom:10px"></div>
+            <div id="niif-cumplimiento-contenido"></div>
+          </div>
+        </div>
+
         <!-- PAPELES DE TRABAJO POR CICLO -->
         <div class="bib-content" id="ap-papeles">
           <div class="card">
@@ -2266,9 +2291,13 @@ details[id^="ced-card-"] summary { outline:none; }
             <div id="ap-benford-datos-status" style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px"></div>
             <div class="doc-btn-row">
               <button class="btn-calc" onclick="analizarLeyBenford()">📐 Ley de Benford</button>
+              <button class="btn-calc" onclick="analizarBenfordSegundoDigito()">📐 Benford (2° Dígito)</button>
               <button class="btn-calc" onclick="detectarDuplicados()">🔁 Detectar Duplicados</button>
               <button class="btn-calc" onclick="analizarSecuencias()">🔢 Analizar Secuencias</button>
               <button class="btn-secondary" onclick="analizarValoresAtipicos()">📈 Valores Atípicos</button>
+              <button class="btn-secondary" onclick="analizarNumerosRedondos()">🔵 Números Redondos</button>
+              <button class="btn-secondary" onclick="analizarFinDeSemana()">📅 Fin de Semana</button>
+              <button class="btn-secondary" onclick="analizarConcentracionCuentas()">🎯 Concentración por Cuenta</button>
             </div>
             <div id="ap-benford-resultado" style="margin-top:16px"></div>
           </div>
@@ -2496,6 +2525,21 @@ details[id^="ced-card-"] summary { outline:none; }
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Cálculo completo de índices de liquidez, solvencia, rentabilidad, actividad y endeudamiento con interpretación para auditoría. Alertas automáticas cuando los ratios están fuera de rangos normales.</p>
             <div id="ap-indices-audit-contenido"><p style="color:var(--text-muted)">Use "Calcular desde EEFF" para generar los índices.</p></div>
+          </div>
+        </div>
+
+        <!-- AUDITORÍA DE GESTIÓN — 3E (Economía, Eficiencia, Eficacia) -->
+        <div class="bib-content" id="ap-gestion-3e">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🎯 Auditoría de Gestión — Indicadores 3E</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn-calc" onclick="generarIndicadores3E()">🔗 Calcular desde EEFF</button>
+                <button class="btn-secondary" onclick="menuExportar('gestion-3e','Auditoría de Gestión — 3E')">📤 Exportar ▾</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Indicadores de <strong>Economía</strong> (costo de los recursos), <strong>Eficiencia</strong> (relación insumo-producto) y <strong>Eficacia</strong> (grado de cumplimiento de resultados), calculados a partir del EEFF vinculado al expediente, con interpretación para el papel de trabajo.</p>
+            <div id="ap-gestion-3e-contenido"><p style="color:var(--text-muted)">Use "Calcular desde EEFF" para generar los indicadores.</p></div>
           </div>
         </div>
 
@@ -13334,6 +13378,41 @@ const AP_FASES = {
       'Establecer indicadores de seguimiento',
     ]},
   ],
+  niif: [
+    { id:'reconocimiento-medicion', nombre:'Reconocimiento y Medición', desc:'Verificar que las partidas de los EEFF estén reconocidas y medidas de acuerdo con las NIC/NIIF aplicables (VNR, deterioro, PPE, intangibles, propiedades de inversión).', procedimientos:[
+      'Revisar Valor Neto de Realización (VNR) de inventarios — NIC 2',
+      'Evaluar indicios de deterioro de activos — NIC 36',
+      'Verificar vida útil, valor residual y método de depreciación de PPE — NIC 16',
+      'Revisar reconocimiento y amortización de intangibles — NIC 38',
+      'Verificar medición de propiedades de inversión — NIC 40',
+    ]},
+    { id:'instrumentos-financieros', nombre:'Instrumentos Financieros y Valor Presente', desc:'Verificar la correcta clasificación, medición y descuento a valor presente de partidas financieras.', procedimientos:[
+      'Calcular interés implícito en cuentas por cobrar/pagar a largo plazo sin tasa de mercado — NIIF 9',
+      'Verificar clasificación de instrumentos financieros (costo amortizado, VR con cambios en resultados u ORI) — NIIF 9',
+      'Evaluar pérdida crediticia esperada (deterioro) de cuentas por cobrar — NIIF 9',
+      'Revisar activo por derecho de uso y pasivo por arrendamiento — NIIF 16',
+    ]},
+    { id:'impuestos-ingresos-diferidos', nombre:'Impuestos e Ingresos Diferidos', desc:'Verificar el reconocimiento de diferencias temporarias y el reconocimiento de ingresos conforme al modelo de 5 pasos.', procedimientos:[
+      'Identificar diferencias temporarias y calcular impuesto diferido — NIC 12',
+      'Verificar recuperabilidad del activo por impuesto diferido — NIC 12',
+      'Revisar ingresos diferidos y momento de reconocimiento — NIIF 15',
+      'Aplicar el modelo de 5 pasos de reconocimiento de ingresos — NIIF 15',
+    ]},
+    { id:'otras-normas', nombre:'Provisiones, Beneficios, Moneda y Presentación', desc:'Verificar cumplimiento de normas adicionales que afectan la presentación razonable de los EEFF.', procedimientos:[
+      'Revisar provisiones, pasivos y activos contingentes — NIC 37',
+      'Verificar cálculo de beneficios a empleados / jubilación patronal — NIC 19',
+      'Revisar diferencia en cambio de partidas en moneda extranjera — NIC 21',
+      'Evaluar hechos posteriores al cierre — NIC 10',
+      'Verificar revelación de partes relacionadas — NIC 24',
+      'Revisar presentación general de los EEFF — NIC 1',
+    ]},
+    { id:'informe-niif', nombre:'Informe de Cumplimiento NIIF', desc:'Consolidar los hallazgos de incumplimiento normativo y su efecto cuantitativo en los EEFF.', procedimientos:[
+      'Cuantificar el efecto de los ajustes NIIF identificados',
+      'Clasificar hallazgos por norma y materialidad',
+      'Formular recomendaciones de ajuste y revelación',
+      'Elaborar informe de cumplimiento NIIF',
+    ]},
+  ],
 };
 
 // ── Inicio de expediente ─────────────────────────────────────────
@@ -13347,6 +13426,7 @@ const AUDIT_TIPOS = {
   tributaria: { icon:'🧾', nombre:'Auditoría Tributaria',   color:'#6366f1' },
   forense:    { icon:'🔍', nombre:'Auditoría Forense',       color:'#ef4444' },
   gestion:    { icon:'⚙️', nombre:'Auditoría de Gestión',   color:'var(--emerald)' },
+  niif:       { icon:'📚', nombre:'Auditoría NIIF',          color:'#a855f7' },
 };
 
 // Estado por tipo — cada tipo mantiene su propio expediente activo
@@ -13405,6 +13485,7 @@ function cambiarTipoAudit(tipo, btnEl) {
   // Datos de Hoja de Trabajo IVA/F103 son exclusivos de Auditoría Tributaria — nunca deben persistir al cambiar de tipo
   window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null;
   window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
+  window._apNiifCumplimiento = null;
 
   // Volver siempre a la pestaña "Fases" — evita dejar visible el contenido de un tab exclusivo de otro tipo (ej. Hoja de Trabajo IVA en Forense)
   const modTipo = document.getElementById('mod-audit-pro');
@@ -13420,12 +13501,16 @@ function cambiarTipoAudit(tipo, btnEl) {
   actualizarTabHojaIVA();
 }
 
-// Muestra/oculta el tab "Hoja de Trabajo IVA" y "Hoja de Trabajo Retenciones (F103)" — solo aplica a Auditoría Tributaria
+// Muestra/oculta el tab "Hoja de Trabajo IVA", "Hoja de Trabajo Retenciones (F103)" y "Auditoría de Gestión (3E)" — cada uno exclusivo de su tipo
 function actualizarTabHojaIVA() {
   const btn = document.getElementById('ap-tab-btn-hoja-iva');
   if (btn) btn.style.display = (window._tipoActivo === 'tributaria') ? '' : 'none';
   const btn2 = document.getElementById('ap-tab-btn-hoja-fuente');
   if (btn2) btn2.style.display = (window._tipoActivo === 'tributaria') ? '' : 'none';
+  const btn3 = document.getElementById('ap-tab-btn-gestion-3e');
+  if (btn3) btn3.style.display = (window._tipoActivo === 'gestion') ? '' : 'none';
+  const btn4 = document.getElementById('ap-tab-btn-niif');
+  if (btn4) btn4.style.display = (window._tipoActivo === 'niif') ? '' : 'none';
 }
 
 async function renderPanelTipo(tipo) {
@@ -13547,6 +13632,7 @@ function iniciarExpedienteAuditoria() {
   window._apCedulas = {}; // Reset cédulas para nuevo expediente
   window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null;
   window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
+  window._apNiifCumplimiento = null;
   cargarHistorialExpedientes(); // Actualizar historial
   actualizarTabHojaIVA();
   toast(`Expediente ${codigo} iniciado`, 'success');
@@ -13615,6 +13701,8 @@ function showApTab(tab) {
   if (tab === 'benchmarks') generarBenchmarks();
   if (tab === 'variaciones') analizarVariaciones();
   if (tab === 'indices-audit') generarIndicesAudit();
+  if (tab === 'gestion-3e') generarIndicadores3E();
+  if (tab === 'niif-cumplimiento') cargarNiifCumplimiento();
   if (tab === 'carta-rep') generarCartaRepresentacion();
 }
 
@@ -14649,6 +14737,248 @@ function generarInformeEjecutivoFuente() {
 }
 
 
+// ══════════════════════════════════════════════════════════════════════════
+// AUDITORÍA DE CUMPLIMIENTO NIIF — checklist por concepto con NIC/NIIF aplicable
+// ══════════════════════════════════════════════════════════════════════════
+const NIIF_CHECKLIST = [
+  { id:'vnr', categoria:'Inventarios y Activos No Financieros', concepto:'Valor Neto de Realización (VNR)', norma:'NIC 2 — Inventarios',
+    principio:'Los inventarios se miden al menor valor entre el costo y el valor neto de realización (precio de venta estimado menos costos de terminación y de venta).',
+    procedimiento:'Comparar el costo en libros de cada línea de inventario contra su precio de venta esperado menos costos para completar y vender; verificar castigos por obsolescencia o lento movimiento.' },
+  { id:'deterioro', categoria:'Inventarios y Activos No Financieros', concepto:'Deterioro del Valor de Activos', norma:'NIC 36 — Deterioro del Valor de los Activos',
+    principio:'Un activo no debe reconocerse por encima de su importe recuperable (el mayor entre el valor razonable menos costos de venta y el valor en uso).',
+    procedimiento:'Identificar indicios de deterioro (obsolescencia, daño físico, cambios tecnológicos o de mercado) y calcular el importe recuperable cuando existan.' },
+  { id:'ppe', categoria:'Inventarios y Activos No Financieros', concepto:'Propiedad, Planta y Equipo', norma:'NIC 16 — Propiedades, Planta y Equipo',
+    principio:'Los activos fijos se deprecian sistemáticamente según su vida útil y valor residual; el modelo de revaluación exige tasaciones periódicas.',
+    procedimiento:'Verificar razonabilidad de vidas útiles y valores residuales, recalcular la depreciación del período y confirmar revaluaciones si la política lo exige.' },
+  { id:'intangibles', categoria:'Inventarios y Activos No Financieros', concepto:'Activos Intangibles', norma:'NIC 38 — Activos Intangibles',
+    principio:'Solo se reconocen intangibles identificables, controlados por la entidad y que generen beneficios económicos futuros; el goodwill generado internamente no se capitaliza.',
+    procedimiento:'Verificar que los intangibles reconocidos cumplan los criterios de reconocimiento y revisar su amortización o vida útil indefinida.' },
+  { id:'prop-inversion', categoria:'Inventarios y Activos No Financieros', concepto:'Propiedades de Inversión', norma:'NIC 40 — Propiedades de Inversión',
+    principio:'Los inmuebles mantenidos para obtener renta o plusvalía se miden a costo o a valor razonable, según la política contable adoptada.',
+    procedimiento:'Verificar la clasificación correcta (uso propio vs. inversión) y la consistencia del modelo de medición aplicado.' },
+  { id:'interes-implicito', categoria:'Instrumentos Financieros', concepto:'Interés Implícito / Valor Presente', norma:'NIIF 9 — Instrumentos Financieros',
+    principio:'Las cuentas por cobrar o pagar a largo plazo sin tasa de interés de mercado deben descontarse a valor presente, reconociendo el componente financiero por separado.',
+    procedimiento:'Identificar operaciones con plazos superiores a 12 meses sin tasa pactada de mercado, calcular la tasa de interés implícita y ajustar a valor presente.' },
+  { id:'clasif-if', categoria:'Instrumentos Financieros', concepto:'Clasificación y Medición de Instrumentos Financieros', norma:'NIIF 9 — Instrumentos Financieros',
+    principio:'Los activos financieros se clasifican según el modelo de negocio de la entidad y las características de sus flujos de caja contractuales (costo amortizado, valor razonable con cambios en ORI o en resultados).',
+    procedimiento:'Revisar la clasificación y medición de inversiones, cuentas por cobrar y demás instrumentos financieros.' },
+  { id:'pce', categoria:'Instrumentos Financieros', concepto:'Pérdida Crediticia Esperada (Deterioro de CxC)', norma:'NIIF 9 — Instrumentos Financieros',
+    principio:'Se reconoce una provisión por pérdida crediticia esperada desde el reconocimiento inicial del activo financiero, no solo cuando el deterioro ya ha ocurrido.',
+    procedimiento:'Verificar la metodología de estimación de pérdida esperada (matriz de provisión, histórico de incobrabilidad) y su razonabilidad.' },
+  { id:'arrendamientos', categoria:'Instrumentos Financieros', concepto:'Arrendamientos', norma:'NIIF 16 — Arrendamientos',
+    principio:'El arrendatario reconoce un activo por derecho de uso y un pasivo por arrendamiento para prácticamente todos los contratos de arrendamiento.',
+    procedimiento:'Identificar los contratos de arrendamiento vigentes y verificar el registro del activo por derecho de uso y su pasivo correspondiente.' },
+  { id:'imp-diferido', categoria:'Impuestos e Ingresos', concepto:'Impuestos Diferidos', norma:'NIC 12 — Impuesto a las Ganancias',
+    principio:'Se reconocen activos y pasivos por impuestos diferidos sobre las diferencias temporarias entre la base contable y la base fiscal de activos y pasivos.',
+    procedimiento:'Identificar diferencias temporarias (depreciación, provisiones, pérdidas fiscales) y calcular el impuesto diferido correspondiente; evaluar recuperabilidad del activo.' },
+  { id:'ing-diferido', categoria:'Impuestos e Ingresos', concepto:'Ingresos Diferidos / Reconocimiento de Ingresos', norma:'NIIF 15 — Ingresos de Actividades Ordinarias procedentes de Contratos con Clientes',
+    principio:'El ingreso se reconoce cuando (o a medida que) se transfiere el control del bien o servicio al cliente, siguiendo el modelo de cinco pasos.',
+    procedimiento:'Verificar la identificación de obligaciones de desempeño y el momento/monto de reconocimiento de ingresos; revisar anticipos de clientes registrados como ingreso diferido.' },
+  { id:'provisiones', categoria:'Otras Áreas de Cumplimiento', concepto:'Provisiones, Pasivos y Activos Contingentes', norma:'NIC 37 — Provisiones, Pasivos Contingentes y Activos Contingentes',
+    principio:'Una provisión se reconoce cuando existe una obligación presente, es probable una salida de recursos y el monto puede estimarse con fiabilidad; los pasivos contingentes solo se revelan.',
+    procedimiento:'Revisar litigios, garantías y otras obligaciones potenciales; verificar la clasificación entre provisión y contingencia.' },
+  { id:'beneficios-empleados', categoria:'Otras Áreas de Cumplimiento', concepto:'Beneficios a Empleados', norma:'NIC 19 — Beneficios a los Empleados',
+    principio:'Los beneficios post-empleo de beneficio definido (jubilación patronal, desahucio) requieren cálculo actuarial.',
+    procedimiento:'Verificar la existencia y razonabilidad del estudio actuarial de jubilación patronal y desahucio.' },
+  { id:'moneda-extranjera', categoria:'Otras Áreas de Cumplimiento', concepto:'Moneda Extranjera', norma:'NIC 21 — Efectos de las Variaciones en las Tasas de Cambio de la Moneda Extranjera',
+    principio:'Las partidas monetarias en moneda extranjera se reexpresan al tipo de cambio de cierre; las diferencias se reconocen en resultados.',
+    procedimiento:'Verificar la reexpresión de saldos en moneda extranjera y el cálculo de la diferencia en cambio del período.' },
+  { id:'hechos-posteriores', categoria:'Otras Áreas de Cumplimiento', concepto:'Hechos Posteriores al Cierre', norma:'NIC 10 — Hechos Ocurridos Después del Periodo sobre el que se Informa',
+    principio:'Los hechos posteriores al cierre pueden requerir ajuste (si confirman condiciones existentes al cierre) o solo revelación (si son indicativos de condiciones surgidas después).',
+    procedimiento:'Indagar sobre eventos relevantes ocurridos después del cierre y evaluar si requieren ajuste o revelación.' },
+  { id:'partes-relacionadas', categoria:'Otras Áreas de Cumplimiento', concepto:'Partes Relacionadas', norma:'NIC 24 — Información a Revelar sobre Partes Relacionadas',
+    principio:'Deben revelarse las transacciones y saldos significativos con partes relacionadas (accionistas, administradores, empresas del grupo).',
+    procedimiento:'Identificar partes relacionadas y verificar la revelación completa de transacciones y saldos con las mismas.' },
+  { id:'presentacion-eeff', categoria:'Otras Áreas de Cumplimiento', concepto:'Presentación de Estados Financieros', norma:'NIC 1 — Presentación de Estados Financieros',
+    principio:'Los EEFF deben presentarse de forma comparativa, clasificando activos y pasivos en corriente/no corriente, con las notas explicativas necesarias.',
+    procedimiento:'Verificar la clasificación corriente/no corriente y la completitud de las notas a los estados financieros.' },
+];
+
+const NIIF_CATEGORIAS = [...new Set(NIIF_CHECKLIST.map(it => it.categoria))];
+const NIIF_ESTADOS = ['Pendiente', 'Cumple', 'No Cumple', 'No Aplica'];
+
+function cargarNiifCumplimiento() {
+  const el = document.getElementById('niif-cumplimiento-contenido');
+  if (!el || !_apExpediente) return;
+  if (window._apNiifCumplimiento) { renderNiifCumplimiento(); return; }
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">⏳ Cargando checklist NIIF...</p>';
+  FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/niif_cumplimiento`).then(d => {
+    window._apNiifCumplimiento = d || {};
+    renderNiifCumplimiento();
+  }).catch(() => {
+    window._apNiifCumplimiento = {};
+    renderNiifCumplimiento();
+  });
+}
+
+function renderNiifCumplimiento() {
+  const el = document.getElementById('niif-cumplimiento-contenido');
+  const resumenEl = document.getElementById('niif-cumplimiento-resumen');
+  if (!el) return;
+  const estado = window._apNiifCumplimiento || {};
+
+  const conteo = { Pendiente:0, Cumple:0, 'No Cumple':0, 'No Aplica':0 };
+  let revisados = 0;
+  NIIF_CHECKLIST.forEach(it => {
+    const e = estado[it.id]?.estado || 'Pendiente';
+    conteo[e] = (conteo[e]||0) + 1;
+    if (estado[it.id]?.revisado) revisados++;
+  });
+
+  if (resumenEl) {
+    resumenEl.innerHTML = `
+      <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.75rem">
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(16,185,129,.1);color:var(--emerald)">✅ Cumple: ${conteo['Cumple']}</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(239,68,68,.1);color:#ef4444">🚨 No Cumple: ${conteo['No Cumple']}</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(245,158,11,.1);color:#f59e0b">⏳ Pendiente: ${conteo['Pendiente']}</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(148,163,184,.1);color:#94a3b8">— No Aplica: ${conteo['No Aplica']}</span>
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(212,175,55,.1);color:var(--gold)">📗 Revisado: ${revisados}/${NIIF_CHECKLIST.length}</span>
+      </div>`;
+  }
+
+  el.innerHTML = NIIF_CATEGORIAS.map(cat => {
+    const items = NIIF_CHECKLIST.filter(it => it.categoria === cat);
+    return `
+    <div style="margin-bottom:16px">
+      <h5 style="color:#a855f7;margin-bottom:8px;border-left:3px solid #a855f7;padding-left:10px">${cat}</h5>
+      ${items.map(it => {
+        const d = estado[it.id] || {};
+        const est = d.estado || 'Pendiente';
+        const revChecked = !!d.revisado;
+        const colorEst = est==='Cumple' ? 'var(--emerald)' : est==='No Cumple' ? '#ef4444' : est==='No Aplica' ? '#94a3b8' : '#f59e0b';
+        return `
+        <div class="card" style="margin-bottom:10px;border-left:3px solid ${colorEst}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+            <div style="flex:1;min-width:240px">
+              <strong style="color:var(--text-primary)">${it.concepto}</strong>
+              <span style="margin-left:8px;font-size:.68rem;color:var(--gold);font-weight:700">${it.norma}</span>
+              <span onclick="toggleRevisadoNiif('${it.id}')" title="${revChecked?'Revisado ✓ (clic para quitar)':'Marcar como revisado'}" style="cursor:pointer;margin-left:6px;font-size:.72rem;opacity:${revChecked?1:.35}">${revChecked?'📗':'📄'}</span>
+              <p style="font-size:.75rem;color:var(--text-secondary);margin:6px 0 4px"><strong>Principio contable:</strong> ${it.principio}</p>
+              <p style="font-size:.75rem;color:var(--text-muted);margin:0"><strong>Procedimiento sugerido:</strong> ${it.procedimiento}</p>
+            </div>
+            <div style="min-width:160px">
+              <label style="font-size:.68rem;color:var(--text-muted)">Estado</label>
+              <select onchange="actualizarEstadoNiif('${it.id}',this.value)" style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:${colorEst};font-size:.76rem;font-weight:600">
+                ${NIIF_ESTADOS.map(e => `<option value="${e}" ${e===est?'selected':''}>${e}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <label style="font-size:.68rem;color:var(--text-muted)">Observación del auditor</label>
+            <textarea rows="2" placeholder="Detalle de la revisión, evidencia obtenida o motivo de incumplimiento..."
+              onchange="actualizarObservacionNiif('${it.id}',this.value)"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.76rem;resize:vertical">${d.observacion || ''}</textarea>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+let _niifSaveTimer = null;
+function actualizarEstadoNiif(id, valor) {
+  window._apNiifCumplimiento = window._apNiifCumplimiento || {};
+  window._apNiifCumplimiento[id] = window._apNiifCumplimiento[id] || {};
+  window._apNiifCumplimiento[id].estado = valor;
+  renderNiifCumplimiento();
+  clearTimeout(_niifSaveTimer);
+  _niifSaveTimer = setTimeout(() => guardarNiifCumplimiento(), 900);
+}
+
+function actualizarObservacionNiif(id, valor) {
+  window._apNiifCumplimiento = window._apNiifCumplimiento || {};
+  window._apNiifCumplimiento[id] = window._apNiifCumplimiento[id] || {};
+  window._apNiifCumplimiento[id].observacion = valor;
+  clearTimeout(_niifSaveTimer);
+  _niifSaveTimer = setTimeout(() => guardarNiifCumplimiento(), 900);
+}
+
+function toggleRevisadoNiif(id) {
+  window._apNiifCumplimiento = window._apNiifCumplimiento || {};
+  window._apNiifCumplimiento[id] = window._apNiifCumplimiento[id] || {};
+  window._apNiifCumplimiento[id].revisado = !window._apNiifCumplimiento[id].revisado;
+  renderNiifCumplimiento();
+  guardarNiifCumplimiento();
+}
+
+async function guardarNiifCumplimiento(manual) {
+  if (!_apExpediente) return;
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/niif_cumplimiento`, window._apNiifCumplimiento || {});
+  if (manual) toast('Checklist de cumplimiento NIIF guardado ✓', 'success');
+}
+
+// ── Informe de Cumplimiento NIIF ─────────────────────────────────────
+function generarInformeNiifCumplimiento() {
+  if (!_apExpediente) { toast('Abra un expediente primero', 'warning'); return; }
+  const estado = window._apNiifCumplimiento || {};
+  const exp = _apExpediente;
+
+  const noCumple = NIIF_CHECKLIST.filter(it => estado[it.id]?.estado === 'No Cumple');
+  const pendientes = NIIF_CHECKLIST.filter(it => !estado[it.id]?.estado || estado[it.id]?.estado === 'Pendiente');
+  const cumple = NIIF_CHECKLIST.filter(it => estado[it.id]?.estado === 'Cumple');
+  const noAplica = NIIF_CHECKLIST.filter(it => estado[it.id]?.estado === 'No Aplica');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Informe de Cumplimiento NIIF — ${exp.empresa||''}</title>
+    <style>${PRINT_CSS}
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10pt; margin:14pt 0; }
+    .kpi { border:0.5pt solid #CBD5E1; border-radius:6pt; padding:8pt 10pt; text-align:center; }
+    .kpi .num { font-size:14pt; font-weight:700; color:#0F172A; }
+    .kpi .lbl { font-size:7.5pt; color:#64748B; text-transform:uppercase; letter-spacing:.03em; }
+    </style></head><body>`);
+
+  win.document.write(`
+    <div class="encabezado">
+      <div class="empresa">${exp.empresa||'—'}</div>
+      <div class="meta">RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}</div>
+    </div>
+    <h1>Informe de Cumplimiento NIIF</h1>
+    <p style="font-size:8.5pt;color:#475569">Emitido: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+
+    <h2>Resumen General</h2>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num emerald">${cumple.length}</div><div class="lbl">Conceptos que Cumplen</div></div>
+      <div class="kpi"><div class="num red">${noCumple.length}</div><div class="lbl">Conceptos que No Cumplen</div></div>
+      <div class="kpi"><div class="num">${pendientes.length}</div><div class="lbl">Pendientes de Revisión</div></div>
+      <div class="kpi"><div class="num muted">${noAplica.length}</div><div class="lbl">No Aplica</div></div>
+    </div>
+
+    <h2>Incumplimientos Identificados</h2>
+    ${noCumple.length ? `
+    <table>
+      <thead><tr><th>Concepto</th><th>Norma</th><th>Observación del Auditor</th></tr></thead>
+      <tbody>${noCumple.map(it => `<tr>
+          <td class="gold" style="font-weight:700">${it.concepto}</td>
+          <td>${it.norma}</td>
+          <td>${estado[it.id]?.observacion || '<span class="muted">Sin observación registrada</span>'}</td>
+        </tr>`).join('')}</tbody>
+    </table>` : `<p class="muted" style="font-size:8.5pt">No se registraron incumplimientos.</p>`}
+
+    <h2>Detalle Completo por Concepto</h2>
+    <table>
+      <thead><tr><th>Concepto</th><th>Norma</th><th>Estado</th><th>Observación</th></tr></thead>
+      <tbody>${NIIF_CHECKLIST.map(it => {
+        const e = estado[it.id]?.estado || 'Pendiente';
+        const cls = e==='Cumple'?'emerald':e==='No Cumple'?'red':e==='No Aplica'?'muted':'';
+        return `<tr>
+          <td>${it.concepto}</td>
+          <td style="font-size:7.5pt">${it.norma}</td>
+          <td class="${cls}" style="font-weight:700">${e}</td>
+          <td style="font-size:7.5pt">${estado[it.id]?.observacion || '—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+
+    <div class="firma-grid">
+      <div class="firma">Elaborado por: ${exp.auditor||'—'}</div>
+      <div class="firma">Revisado por / Fecha</div>
+    </div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 400);
+}
+
+
 
 // ── Fases del trabajo ────────────────────────────────────────────
 function renderFasesAuditoria() {
@@ -15374,6 +15704,157 @@ function analizarValoresAtipicos() {
   `;
 }
 
+// ── Prueba de Números Redondos ──────────────────────────────────────
+function analizarNumerosRedondos() {
+  const el = document.getElementById('ap-benford-resultado');
+  if (!el) return;
+  if (_apTransacciones.length === 0) { toast('Cargue datos primero', 'warning'); return; }
+
+  const montos = _apTransacciones.map(r => parseFloat(Object.values(r).find(v => typeof v==='number' && v>0))).filter(v => !isNaN(v) && v > 0);
+  if (montos.length < 5) { toast('Insuficientes registros', 'warning'); return; }
+
+  const redondos1000 = montos.filter(v => v % 1000 === 0);
+  const redondos100 = montos.filter(v => v % 100 === 0);
+  const pct1000 = redondos1000.length / montos.length * 100;
+  const pct100 = redondos100.length / montos.length * 100;
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-top:0">Prueba de Números Redondos</h4>
+    <p style="font-size:.78rem">De ${montos.length} transacciones: <strong>${redondos100.length} (${pct100.toFixed(1)}%)</strong> son múltiplos de $100, y <strong>${redondos1000.length} (${pct1000.toFixed(1)}%)</strong> son múltiplos de $1,000.</p>
+    ${pct100 > 15
+      ? `<div class="ap-hallazgo moderado">⚠️ El porcentaje de montos redondos (${pct100.toFixed(1)}%) supera lo esperado en datos transaccionales reales (~10-15%) — posible indicio de estimaciones, provisiones sin soporte o montos fabricados. Revise especialmente los múltiplos de $1,000.</div>`
+      : `<div class="ap-hallazgo ok">✅ La proporción de montos redondos está dentro de un rango esperado.</div>`}
+  `;
+}
+
+// ── Prueba de Transacciones en Fin de Semana ────────────────────────
+function analizarFinDeSemana() {
+  const el = document.getElementById('ap-benford-resultado');
+  if (!el) return;
+  if (_apTransacciones.length === 0) { toast('Cargue datos primero', 'warning'); return; }
+
+  const keys = Object.keys(_apTransacciones[0] || {});
+  const colFecha = keys.find(k => /fecha|date/i.test(k))
+    || keys.find(k => _apTransacciones.some(r => typeof r[k] === 'string' && /\d{1,2}\/\d{1,2}\/\d{4}/.test(r[k])));
+  if (!colFecha) {
+    el.innerHTML = `<div class="ap-hallazgo moderado">⚠️ No se encontró columna de fecha reconocible. Asegúrese de que su archivo tenga una columna "Fecha" en formato DD/MM/AAAA.</div>`;
+    return;
+  }
+
+  const parseFecha = s => {
+    const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (!m) return null;
+    return new Date(+m[3], +m[2]-1, +m[1]);
+  };
+
+  const finde = [];
+  let validos = 0;
+  _apTransacciones.forEach(r => {
+    const f = parseFecha(r[colFecha]);
+    if (!f || isNaN(f.getTime())) return;
+    validos++;
+    const dia = f.getDay(); // 0 = domingo, 6 = sábado
+    if (dia === 0 || dia === 6) finde.push(r[colFecha]);
+  });
+
+  if (validos === 0) {
+    el.innerHTML = `<div class="ap-hallazgo moderado">⚠️ No se pudieron interpretar las fechas de la columna "${colFecha}" (formato esperado DD/MM/AAAA).</div>`;
+    return;
+  }
+  const pct = finde.length / validos * 100;
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-top:0">Prueba de Transacciones en Fin de Semana — Columna: "${colFecha}"</h4>
+    <p style="font-size:.78rem">${validos} fecha(s) válida(s) analizadas.</p>
+    ${finde.length > 0
+      ? `<div class="ap-hallazgo ${pct>5?'critico':'moderado'}">⚠️ <strong>${finde.length} transacción(es) (${pct.toFixed(1)}%)</strong> registradas en sábado o domingo — inusual para operación normal, verificar autorización y respaldo documental:<br>${finde.slice(0,15).join(', ')}${finde.length>15?` ... y ${finde.length-15} más`:''}</div>`
+      : `<div class="ap-hallazgo ok">✅ No se detectaron transacciones registradas en fin de semana.</div>`}
+  `;
+}
+
+// ── Concentración por Cuenta ─────────────────────────────────────────
+function analizarConcentracionCuentas() {
+  const el = document.getElementById('ap-benford-resultado');
+  if (!el) return;
+  if (_apTransacciones.length === 0) { toast('Cargue datos primero', 'warning'); return; }
+
+  const keys = Object.keys(_apTransacciones[0] || {});
+  const colCuenta = keys.find(k => /cuenta|account|cod/i.test(k));
+  if (!colCuenta) {
+    el.innerHTML = `<div class="ap-hallazgo moderado">⚠️ No se encontró columna de cuenta reconocible. Asegúrese de que su archivo tenga una columna "Cuenta".</div>`;
+    return;
+  }
+
+  const grupos = {};
+  let totalGeneral = 0;
+  _apTransacciones.forEach(r => {
+    const cuenta = r[colCuenta] != null ? String(r[colCuenta]) : '(sin cuenta)';
+    const monto = Math.abs(parseFloat(Object.values(r).find(v => typeof v === 'number')) || 0);
+    grupos[cuenta] = grupos[cuenta] || { monto: 0, count: 0 };
+    grupos[cuenta].monto += monto;
+    grupos[cuenta].count++;
+    totalGeneral += monto;
+  });
+
+  const filas = Object.entries(grupos)
+    .map(([cuenta, g]) => ({ cuenta, ...g, pct: totalGeneral ? g.monto/totalGeneral*100 : 0 }))
+    .sort((a,b) => b.monto - a.monto);
+  const top = filas.slice(0, 10);
+  const concentrado = filas.length > 1 && filas[0].pct > 50;
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-top:0">Concentración por Cuenta — Columna: "${colCuenta}"</h4>
+    <p style="font-size:.78rem">${filas.length} cuenta(s) distinta(s) · Monto total: $${totalGeneral.toLocaleString('es-EC',{minimumFractionDigits:2})}</p>
+    <table class="ef-table" style="font-size:.75rem">
+      <thead><tr><th>Cuenta</th><th>N.º Transacciones</th><th style="text-align:right">Monto</th><th style="text-align:right">% del Total</th></tr></thead>
+      <tbody>${top.map(f => `<tr><td>${f.cuenta}</td><td>${f.count}</td><td style="text-align:right">$${f.monto.toLocaleString('es-EC',{minimumFractionDigits:2})}</td><td style="text-align:right">${f.pct.toFixed(1)}%</td></tr>`).join('')}</tbody>
+    </table>
+    ${concentrado
+      ? `<div class="ap-hallazgo moderado" style="margin-top:8px">⚠️ La cuenta "${filas[0].cuenta}" concentra el ${filas[0].pct.toFixed(1)}% del monto total — priorizar en la muestra de auditoría.</div>`
+      : `<div class="ap-hallazgo ok" style="margin-top:8px">✅ No se detecta concentración excesiva en una sola cuenta.</div>`}
+  `;
+}
+
+// ── Ley de Benford — Segundo Dígito (prueba complementaria, más sensible) ──
+function analizarBenfordSegundoDigito() {
+  const el = document.getElementById('ap-benford-resultado');
+  if (!el) return;
+  if (_apTransacciones.length === 0) { toast('Cargue datos de transacciones primero', 'warning'); return; }
+
+  const esperado = [12.0,11.4,10.9,10.4,10.0,9.7,9.3,9.0,8.8,8.5]; // dígitos 0–9
+  const frecReal = Array(10).fill(0);
+  let total = 0;
+
+  _apTransacciones.forEach(row => {
+    const monto = parseFloat(Object.values(row).find(v => typeof v === 'number' && v > 0)) || 0;
+    if (monto <= 0) return;
+    const digitos = String(Math.abs(monto)).replace('.', '').replace(/^0+/, '');
+    if (digitos.length < 2) return;
+    const segundo = parseInt(digitos[1]);
+    if (!isNaN(segundo)) { frecReal[segundo]++; total++; }
+  });
+
+  if (total < 30) {
+    el.innerHTML = '<div class="ap-hallazgo moderado">⚠️ Se necesitan al menos 30 transacciones con 2 o más dígitos para esta prueba.</div>';
+    return;
+  }
+
+  const pctReal = frecReal.map(f => total > 0 ? f/total*100 : 0);
+  const alertas = [];
+  for (let d = 0; d <= 9; d++) {
+    const diff = Math.abs(pctReal[d] - esperado[d]);
+    if (diff > 3) alertas.push(`Dígito ${d}: real ${pctReal[d].toFixed(1)}% vs esperado ${esperado[d]}% (diferencia ${diff.toFixed(1)}pp)`);
+  }
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-top:0">Ley de Benford — Segundo Dígito (${total} transacciones)</h4>
+    <p style="font-size:.78rem;color:var(--text-muted)">Prueba complementaria al primer dígito — es más sensible a manipulación deliberada de cifras.</p>
+    ${alertas.length > 0
+      ? `<div class="ap-hallazgo moderado"><strong>Desviaciones detectadas:</strong><br>${alertas.map(a=>`• ${a}`).join('<br>')}</div>`
+      : `<div class="ap-hallazgo ok">✅ Distribución del segundo dígito consistente con la Ley de Benford.</div>`}
+  `;
+}
+
 // ── Informe final ────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════
 // TEMA CLARO / OSCURO
@@ -15902,6 +16383,7 @@ async function abrirExpediente(key) {
   actualizarTabHojaIVA();
   window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null; // reset — se carga al abrir el tab
   window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
+  window._apNiifCumplimiento = null;
 
   // Volver siempre a la pestaña "Fases" al abrir un expediente — evita dejar visible un tab exclusivo de otro tipo
   const modAbrir = document.getElementById('mod-audit-pro');
@@ -19224,6 +19706,104 @@ function imprimirIndicesAudit() {
   win.document.write(`<html><head><title>Índices</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}@page{size:A4;margin:12mm}</style></head><body><h2>ÍNDICES FINANCIEROS — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
   win.document.close(); setTimeout(()=>win.print(),300);
 }
+
+// ── Auditoría de Gestión — Indicadores 3E (Economía, Eficiencia, Eficacia) ──
+function generarIndicadores3E() {
+  if (!_apExpediente) { toast('Inicie un expediente', 'warning'); return; }
+  const data = window._apEEFFSeleccionado;
+  const raw = data?.raw ? normalizarRaw(data.raw) : {};
+  const g = k => parseFloat(raw[k])||0;
+  const fmtN = v => (parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const fmtP = v => (parseFloat(v)||0).toFixed(1)+'%';
+  const fmtR = v => (parseFloat(v)||0).toFixed(2);
+
+  if (!data?.raw || Object.keys(raw).length === 0) {
+    const el = document.getElementById('ap-gestion-3e-contenido');
+    if (el) el.innerHTML = `<div class="ap-hallazgo moderado">⚠️ No hay EEFF vinculado a este expediente. Use "Vincular EEFF" en la pestaña "EEFF Vinculado" antes de calcular los indicadores de gestión.</div>`;
+    return;
+  }
+
+  const vtas=g('VENTAS NETAS')||1, cv=g('COSTO DE VENTAS'),
+    gadm=g('GASTO ADMINISTRATIVO'), gvta=g('GASTO VENTAS'), gper=g('GASTO PERSONAL'),
+    gfin=g('GASTO FINANCIERO'), util=g('UTILIDAD EJERCICIO'),
+    ta=g('TOTAL ACTIVO')||1, ppe=g('PROPIEDAD PLANTA EQUIPO')||1,
+    otrosIng=g('OTROS INGRESOS');
+
+  const gastosOperativos = gadm + gvta + gper;
+  const ingresoTotal = vtas + otrosIng || 1;
+  const utilOperativa = vtas - cv - gastosOperativos;
+
+  const grupos = [
+    { grupo:'ECONOMÍA — Costo de los Recursos Utilizados', items:[
+      { nombre:'Costo de Ventas / Ingresos', valor:cv/ingresoTotal*100, fmt:fmtP, rango:[50,80], unidad:'%', desc:'Costo de Ventas / Ingresos Totales', invertido:true },
+      { nombre:'Gasto Administrativo / Ingresos', valor:gadm/ingresoTotal*100, fmt:fmtP, rango:[3,12], unidad:'%', desc:'Gasto Administrativo / Ingresos Totales', invertido:true },
+      { nombre:'Gasto de Ventas / Ingresos', valor:gvta/ingresoTotal*100, fmt:fmtP, rango:[2,10], unidad:'%', desc:'Gasto de Ventas / Ingresos Totales', invertido:true },
+      { nombre:'Gasto de Personal / Ingresos', valor:gper/ingresoTotal*100, fmt:fmtP, rango:[10,30], unidad:'%', desc:'Gasto de Personal / Ingresos Totales', invertido:true },
+      { nombre:'Gasto Financiero / Ingresos', valor:gfin/ingresoTotal*100, fmt:fmtP, rango:[0,5], unidad:'%', desc:'Gasto Financiero / Ingresos Totales', invertido:true },
+    ]},
+    { grupo:'EFICIENCIA — Relación Insumo / Producto', items:[
+      { nombre:'Rotación de Activos Totales', valor:vtas/ta, fmt:fmtR, rango:[0.5,2.0], unidad:'x', desc:'Ventas / Activo Total — ingresos generados por cada $1 de activo' },
+      { nombre:'Productividad del Activo Fijo', valor:vtas/ppe, fmt:fmtR, rango:[1.0,4.0], unidad:'x', desc:'Ventas / Propiedad, Planta y Equipo' },
+      { nombre:'Gastos Operativos / Ingresos', valor:gastosOperativos/ingresoTotal*100, fmt:fmtP, rango:[15,35], unidad:'%', desc:'(Gasto Admin. + Ventas + Personal) / Ingresos Totales', invertido:true },
+      { nombre:'Utilidad Operativa / Gastos Operativos', valor:gastosOperativos?(utilOperativa/gastosOperativos):0, fmt:fmtR, rango:[0.3,1.5], unidad:'x', desc:'Resultado operativo generado por cada $1 de gasto operativo' },
+    ]},
+    { grupo:'EFICACIA — Grado de Cumplimiento de Resultados', items:[
+      { nombre:'Margen Neto Alcanzado', valor:util/ingresoTotal*100, fmt:fmtP, rango:[3,15], unidad:'%', desc:'Utilidad Neta / Ingresos Totales — resultado final logrado' },
+      { nombre:'Resultado del Ejercicio', valor:util, fmt:v=>'$'+fmtN(v), rango:null, unidad:'USD', desc:'Utilidad (pérdida) neta del período' },
+    ]},
+  ];
+
+  const el = document.getElementById('ap-gestion-3e-contenido');
+  if (!el) return;
+
+  el.innerHTML = grupos.map(grp => `
+    <div style="margin-bottom:18px">
+      <h5 style="color:var(--emerald);margin-bottom:8px;border-left:3px solid var(--emerald);padding-left:10px">${grp.grupo}</h5>
+      <table class="ef-table">
+        <thead><tr>
+          <th class="left">Indicador</th><th class="left">Fórmula</th>
+          <th style="text-align:right">Valor</th><th style="text-align:center">Rango de referencia</th>
+          <th style="text-align:center">Estado</th><th class="left">Implicación de Auditoría</th>
+        </tr></thead>
+        <tbody>${grp.items.map(it => {
+          const v = parseFloat(it.valor)||0;
+          let estado='', color='var(--text-muted)', implicacion='Indicador informativo — no aplica rango de referencia.';
+          if (it.rango) {
+            const enRango = v>=it.rango[0] && v<=it.rango[1];
+            const alto = v>it.rango[1];
+            color = enRango?'var(--emerald)':alto?(it.invertido?'#ef4444':'#f59e0b'):'#ef4444';
+            estado = enRango?'✅':alto?(it.invertido?'🔴 Elevado':'🟡 Alto'):'🔴 Bajo';
+            implicacion = enRango?'Dentro del rango de referencia — sin señal de alerta':
+              alto&&it.invertido?'Por encima del rango — revisar si el costo/gasto es razonable o hay ineficiencia en el uso de recursos':
+              alto?'Por encima del rango — verificar si refleja una gestión más eficiente o una excepción a investigar':
+              'Por debajo del rango de referencia — evaluar si el resultado obedece a una gestión deficiente o a un factor externo';
+          }
+          return `<tr>
+            <td class="account">${it.nombre}</td>
+            <td style="font-size:.72rem;color:var(--text-muted)">${it.desc}</td>
+            <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:${color}">${it.fmt(v)}</td>
+            <td style="text-align:center;font-size:.74rem">${it.rango?it.fmt(it.rango[0])+' – '+it.fmt(it.rango[1]):'—'}</td>
+            <td style="text-align:center">${estado||'—'}</td>
+            <td style="font-size:.74rem;color:${estado==='✅'?'var(--text-muted)':'var(--text-primary)'}">${implicacion}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`).join('') +
+    `<div class="ap-hallazgo moderado" style="margin-top:6px">
+      ℹ️ <strong>Nota metodológica:</strong> la Eficacia se mide comparando resultados obtenidos contra metas u objetivos institucionales (POA, presupuesto, metas de venta). El EEFF vinculado no contiene esas metas, por lo que aquí se muestra únicamente el resultado alcanzado (margen neto y utilidad). Para una prueba de Eficacia completa, incorpore las metas del período en el papel de trabajo.
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn-secondary" onclick="imprimirIndicadores3E()">🖨 Imprimir</button>
+    </div>`;
+}
+
+function imprimirIndicadores3E() {
+  const el=document.getElementById('ap-gestion-3e-contenido'); if(!el) return;
+  const win=window.open('','_blank');
+  win.document.write(`<html><head><title>Indicadores 3E</title><style>body{font-family:Arial;padding:25px;font-size:8.5pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 7px}th{background:#e8e8e8}@page{size:A4;margin:12mm}</style></head><body><h2>AUDITORÍA DE GESTIÓN — INDICADORES 3E — ${_apExpediente?.empresa||''}</h2>${el.innerHTML}</body></html>`);
+  win.document.close(); setTimeout(()=>win.print(),300);
+}
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CARTA DE REPRESENTACIÓN DE LA GERENCIA (NIA 580)
