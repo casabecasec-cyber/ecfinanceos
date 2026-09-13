@@ -2033,9 +2033,16 @@ details[id^="ced-card-"] summary { outline:none; }
 
     <!-- ═══════════════════════════════════ AUDITORÍA PROFESIONAL ═══════════════════════════════════ -->
     <section class="module" id="mod-audit-pro">
-      <div class="module-hero">
-        <h1>🏛️ Auditoría Profesional</h1>
-        <p>Auditoría Financiera · Tributaria · Forense · Gestión · Fichas Analíticas · Ley de Benford · Papeles de Trabajo</p>
+      <div class="module-hero" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+        <div>
+          <h1>🏛️ Auditoría Profesional</h1>
+          <p>Auditoría Financiera · Tributaria · Forense · Gestión · Fichas Analíticas · Ley de Benford · Papeles de Trabajo</p>
+        </div>
+        <button onclick="abrirSelectorImpresion()"
+          style="padding:8px 16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);
+          border-radius:8px;cursor:pointer;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+          🖨 Imprimir Expediente
+        </button>
       </div>
 
       <!-- SELECCIÓN DE TIPO DE AUDITORÍA -->
@@ -2182,6 +2189,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="generarCedulasDesdeEEFF()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
                 <button class="btn-calc" onclick="nuevaCedulaAnalitica()">+ Nueva cédula manual</button>
+                <button class="btn-secondary" onclick="imprimirCedulasSeleccion()">🖨 Imprimir</button><button class="btn-secondary" onclick="exportarCedulasExcel()">📊 Excel</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted)">Las cédulas analíticas documentan el análisis de cada cuenta. Genérelas automáticamente desde el EEFF vinculado o créelas manualmente. Incluyen: saldo según libros, ajustes propuestos, saldo auditado, marcas y conclusión del auditor.</p>
@@ -2249,7 +2257,7 @@ details[id^="ced-card-"] summary { outline:none; }
                 <button class="btn-calc" onclick="generarInformeAuditoria('ejecutivo')">📋 Informe Ejecutivo</button>
                 <button class="btn-calc" onclick="generarInformeAuditoria('detallado')" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">📄 Informe Detallado</button>
                 <button class="btn-secondary" onclick="exportarInformeWord()">📄 Word</button>
-                <button class="btn-secondary" onclick="imprimirInformeAuditoria()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('informe','Informe de Auditoría','imprimirInformeAuditoria()',null,'exportarAuditoriaWord()')">📤 Exportar ▾</button>
                 <button class="btn-calc" onclick="guardarExpedienteCompleto()" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">✅ Guardar</button>
               </div>
             </div>
@@ -2306,7 +2314,7 @@ details[id^="ced-card-"] summary { outline:none; }
                 <button class="btn-calc" onclick="generarProgramaAuditoria()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
                 <button class="btn-secondary" onclick="agregarProcedimientoPrograma()">+ Procedimiento</button>
                 <button class="btn-secondary" onclick="guardarPrograma()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirPrograma()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('programa','Programa de Auditoría')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Plan de procedimientos de auditoría por área. Se genera automáticamente desde el EEFF vinculado con procedimientos adaptados al tamaño y riesgo de cada cuenta.</p>
@@ -2323,7 +2331,7 @@ details[id^="ced-card-"] summary { outline:none; }
                 <button class="btn-calc" onclick="generarPruebasSustantivas()" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">🔗 Generar desde EEFF</button>
                 <button class="btn-secondary" onclick="agregarPruebaSustantiva()">+ Prueba manual</button>
                 <button class="btn-secondary" onclick="guardarPruebasSustantivas()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirPruebasSustantivas()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('pruebas-sust','Pruebas Sustantivas')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Pruebas de detalle y procedimientos analíticos sustantivos por cuenta. Cada prueba incluye objetivo, muestra, resultado y conclusión.</p>
@@ -2338,7 +2346,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <h3 style="margin:0">🛡️ Sistema COSO — Control Interno</h3>
               <div style="display:flex;gap:8px">
                 <button class="btn-secondary" onclick="guardarCoso()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirCoso()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('coso','Control Interno COSO 2013')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Evaluación del control interno bajo el marco COSO 2013. Califique cada componente y principio del 1 (deficiente) al 5 (excelente).</p>
@@ -2354,7 +2362,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <div style="display:flex;gap:8px">
                 <button class="btn-calc" onclick="analizarAltoRiesgo()" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🔍 Analizar desde EEFF</button>
                 <button class="btn-secondary" onclick="guardarAltoRiesgo()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirAltoRiesgo()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('alto-riesgo','Cuentas de Alto Riesgo')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación automática de cuentas susceptibles a error material basada en criterios cuantitativos (materialidad, variación) y cualitativos (naturaleza de la cuenta, historial de errores).</p>
@@ -2370,7 +2378,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="generarPruebasCorte()">🔗 Generar</button>
                 <button class="btn-secondary" onclick="guardarCorte()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirCorte()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('corte','Pruebas de Corte')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Verificación del reconocimiento de ingresos y gastos en el período correcto (cutoff). Incluye revisión de facturas de los últimos 15 días del ejercicio y primeros 15 días del siguiente.</p>
@@ -2385,7 +2393,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <h3 style="margin:0">📊 Análisis Horizontal y Vertical</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="renderHVAudit()">🔗 Cargar desde EEFF</button>
-                <button class="btn-secondary" onclick="imprimirHVAudit()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('hv-audit','Análisis H/V')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Análisis completo de todas las cuentas del balance y estado de resultados con variaciones horizontales y participación vertical. Las variaciones >10% se destacan para revisión adicional.</p>
@@ -2401,7 +2409,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="generarBenchmarks()">🔗 Generar desde EEFF</button>
                 <button class="btn-secondary" onclick="guardarBenchmarks()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirBenchmarks()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('benchmarks','Benchmarks del Sector')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Comparación de los índices financieros de la empresa contra rangos de referencia del sector. Las desviaciones significativas son señales de alerta de auditoría.</p>
@@ -2442,7 +2450,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="analizarVariaciones()">🔗 Analizar desde EEFF</button>
                 <button class="btn-secondary" onclick="guardarVariaciones()">💾 Guardar</button>
-                <button class="btn-secondary" onclick="imprimirVariaciones()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('variaciones','Variaciones >10%')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Identificación y documentación de todas las variaciones horizontales mayores al 10% que requieren explicación del cliente o procedimientos adicionales de auditoría.</p>
@@ -2457,7 +2465,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <h3 style="margin:0">📐 Índices Financieros de Auditoría</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="generarIndicesAudit()">🔗 Calcular desde EEFF</button>
-                <button class="btn-secondary" onclick="imprimirIndicesAudit()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('indices-audit','Índices Financieros')">📤 Exportar ▾</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Cálculo completo de índices de liquidez, solvencia, rentabilidad, actividad y endeudamiento con interpretación para auditoría. Alertas automáticas cuando los ratios están fuera de rangos normales.</p>
@@ -2472,7 +2480,7 @@ details[id^="ced-card-"] summary { outline:none; }
               <h3 style="margin:0">✉️ Carta de Representación de la Gerencia</h3>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn-calc" onclick="generarCartaRepresentacion()">🔗 Generar</button>
-                <button class="btn-secondary" onclick="imprimirCartaRep()">🖨 Imprimir</button>
+                <button class="btn-secondary" onclick="menuExportar('carta-rep','Carta de Representación')">📤 Exportar ▾</button>
                 <button class="btn-secondary" onclick="exportarCartaRepWord()">📄 Word</button>
               </div>
             </div>
@@ -14167,413 +14175,7 @@ function toggleTheme() {
 // ══════════════════════════════════════════════════════
 // INFORME DE AUDITORÍA — PROFESIONAL Y COMPLETO
 // ══════════════════════════════════════════════════════
-function generarInformeAuditoria(tipo) {
-  if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
-  tipo = tipo || 'detallado';
 
-  const data  = window._apEEFFSeleccionado;
-  const raw   = data?.raw ? normalizarRaw(data.raw) : {};
-  const g     = k => parseFloat(raw[k])||0;
-  const fmtN  = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const fmtP  = v => (parseFloat(v)||0).toFixed(1)+'%';
-
-  const exp     = _apExpediente;
-  const empresa = exp.empresa || '_______________';
-  const ruc     = exp.ruc || '_______________';
-  const auditor = exp.auditor || '_______________';
-  const periodo = exp.periodo || '____';
-  const opinion = document.getElementById('ap-opinion')?.value || 'limpia';
-  const marco   = document.getElementById('ap-marco')?.value || 'niif';
-  const numInf  = document.getElementById('ap-num-informe')?.value || `AUD-INF-${Date.now().toString().slice(-4)}`;
-  const enfasis = document.getElementById('ap-enfasis')?.value || '';
-  const salvedades = document.getElementById('ap-salvedades')?.value || '';
-  const fechaInf = document.getElementById('ap-fecha-informe')?.value
-    ? new Date(document.getElementById('ap-fecha-informe').value+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
-    : new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Indicadores clave del EEFF
-  const ta  = g('TOTAL ACTIVO')||1, tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO')||1;
-  const ac  = g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE')||1;
-  const vtas= g('VENTAS NETAS'), cv=g('COSTO DE VENTAS'), util=g('UTILIDAD EJERCICIO');
-  const ef  = g('EFECTIVO'), cxc=g('CUENTAS POR COBRAR'), inv=g('INVENTARIOS');
-  const ir  = g('IMPUESTO RENTA GASTO'), gfin=g('GASTO FINANCIERO'), gdep=g('GASTO DEPRECIACION');
-  const ebit= util+ir+gfin, ebitda=ebit+gdep;
-  const corriente = (ac/pc).toFixed(2);
-  const endeud    = (tp/ta*100).toFixed(1);
-  const margenNeto= vtas?(util/vtas*100).toFixed(1):'N/A';
-  const roe       = (util/pat*100).toFixed(1);
-  const MATERIAL  = ta*0.05;
-
-  const marcoLabel = marco==='niif'?'Normas Internacionales de Información Financiera (NIIF)':
-    marco==='niif-pymes'?'NIIF para las PYMES':'Normas Ecuatorianas de Contabilidad (NEC)';
-
-  // Párrafos de opinión por tipo
-  const OPINIONES = {
-    'limpia': {
-      titulo: 'OPINIÓN NO MODIFICADA',
-      color: '#059669',
-      parrafo: `En nuestra opinión, los estados financieros adjuntos presentan razonablemente, en todos sus aspectos materiales, la situación financiera de ${empresa} al 31 de diciembre de ${periodo}, así como su desempeño financiero y sus flujos de efectivo por el año terminado en dicha fecha, de conformidad con las ${marcoLabel}.`
-    },
-    'salvedad-alcance': {
-      titulo: 'OPINIÓN CON SALVEDAD — LIMITACIÓN AL ALCANCE',
-      color: '#D97706',
-      parrafo: `En nuestra opinión, excepto por los posibles efectos del asunto descrito en el párrafo de Fundamento de la Opinión con Salvedad, los estados financieros adjuntos presentan razonablemente, en todos sus aspectos materiales, la situación financiera de ${empresa} al 31 de diciembre de ${periodo}, de conformidad con las ${marcoLabel}. ${salvedades}`
-    },
-    'salvedad-desacuerdo': {
-      titulo: 'OPINIÓN CON SALVEDAD — DESACUERDO',
-      color: '#D97706',
-      parrafo: `En nuestra opinión, excepto por los efectos del asunto descrito en el párrafo de Fundamento de la Opinión con Salvedad, los estados financieros adjuntos presentan razonablemente la situación financiera de ${empresa} al 31 de diciembre de ${periodo}, de conformidad con las ${marcoLabel}. ${salvedades}`
-    },
-    'adversa': {
-      titulo: 'OPINIÓN ADVERSA (NEGATIVA)',
-      color: '#DC2626',
-      parrafo: `En nuestra opinión, debido a la importancia de los asuntos descritos en el párrafo de Fundamento de la Opinión Adversa, los estados financieros adjuntos NO presentan razonablemente la situación financiera de ${empresa} al 31 de diciembre de ${periodo}, de conformidad con las ${marcoLabel}. ${salvedades}`
-    },
-    'abstencion': {
-      titulo: 'ABSTENCIÓN DE OPINIÓN',
-      color: '#7C3AED',
-      parrafo: `Debido a la importancia de los asuntos descritos en el párrafo de Fundamento para la Abstención de Opinión, no hemos podido obtener evidencia de auditoría suficiente y adecuada para proporcionar una base para la expresión de una opinión de auditoría; en consecuencia, no expresamos ninguna opinión sobre los estados financieros de ${empresa}. ${salvedades}`
-    },
-  };
-
-  const op = OPINIONES[opinion] || OPINIONES['limpia'];
-
-  // Resumen ejecutivo de hallazgos
-  const hallazgos = _apExpediente?.hallazgos || [];
-  const hCriticos  = hallazgos.filter(h=>h.severidad==='critico').length;
-  const hAltos     = hallazgos.filter(h=>h.severidad==='alto').length;
-  const hMedios    = hallazgos.filter(h=>h.severidad==='medio').length;
-  const hBajos     = hallazgos.filter(h=>h.severidad==='bajo').length;
-
-  // ── SECCIÓN EJECUTIVA (siempre presente) ─────────────────────────────────
-  const seccionEjecutiva = `
-    <div style="break-before:auto">
-      <!-- Encabezado institucional -->
-      <div style="border-bottom:3px solid #B8930A;padding-bottom:20px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
-        <div>
-          <div style="font-size:.72rem;letter-spacing:.1em;color:#6B7280;text-transform:uppercase;margin-bottom:6px">Informe de Auditoría ${tipo==='ejecutivo'?'— Resumen Ejecutivo':'— Completo y Detallado'}</div>
-          <h1 style="font-size:1.6rem;font-weight:700;color:#0F172A;margin:0;line-height:1.2">${empresa}</h1>
-          <div style="color:#475569;font-size:.88rem;margin-top:6px">RUC: ${ruc} &nbsp;·&nbsp; Ejercicio económico ${periodo}</div>
-        </div>
-        <div style="text-align:right;font-size:.78rem;color:#6B7280">
-          <div>Ref.: <strong>${numInf}</strong></div>
-          <div>Fecha: <strong>${fechaInf}</strong></div>
-          <div>Auditor: <strong>${auditor}</strong></div>
-        </div>
-      </div>
-
-      <!-- Opinión destacada -->
-      <div style="background:${op.color}12;border-left:5px solid ${op.color};border-radius:0 8px 8px 0;padding:18px 22px;margin-bottom:28px">
-        <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;color:${op.color};text-transform:uppercase;margin-bottom:8px">
-          📋 ${op.titulo}
-        </div>
-        <p style="font-size:.88rem;line-height:1.8;color:#1E293B;margin:0">${op.parrafo}</p>
-      </div>
-
-      <!-- KPIs financieros clave -->
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;margin:0 0 14px;padding-bottom:6px;border-bottom:1px solid #E2E8F0">
-        📊 Indicadores Financieros Clave — ${periodo}
-      </h2>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px">
-        ${[
-          {l:'Total Activo',v:fmtN(ta),i:'🏢'},
-          {l:'Total Patrimonio',v:fmtN(pat),i:'🏦'},
-          {l:'Ventas Netas',v:vtas?fmtN(vtas):'N/A',i:'💰'},
-          {l:'Utilidad del Ejercicio',v:fmtN(util),c:util>=0?'#059669':'#DC2626',i:'📈'},
-          {l:'Razón Corriente',v:corriente+'x',c:parseFloat(corriente)>=1.2?'#059669':'#DC2626',i:'💧'},
-          {l:'Endeudamiento',v:endeud+'%',c:parseFloat(endeud)<=60?'#059669':'#DC2626',i:'⚖️'},
-          {l:'Margen Neto',v:margenNeto!=='N/A'?margenNeto+'%':'N/A',i:'📉'},
-          {l:'ROE',v:roe+'%',c:parseFloat(roe)>=10?'#059669':'#DC2626',i:'🎯'},
-        ].map(k=>`
-          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:14px;text-align:center">
-            <div style="font-size:1.1rem;margin-bottom:4px">${k.i}</div>
-            <div style="font-size:1.1rem;font-weight:700;color:${k.c||'#0F172A'};font-family:monospace">${k.v}</div>
-            <div style="font-size:.68rem;color:#94A3B8;margin-top:4px">${k.l}</div>
-          </div>`).join('')}
-      </div>
-
-      <!-- Resumen de hallazgos -->
-      ${hallazgos.length?`
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;margin:0 0 14px;padding-bottom:6px;border-bottom:1px solid #E2E8F0">
-        ⚠️ Resumen de Hallazgos de Auditoría
-      </h2>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-        <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.6rem;font-weight:700;color:#DC2626">${hCriticos}</div>
-          <div style="font-size:.72rem;color:#DC2626;font-weight:600">CRÍTICOS</div>
-        </div>
-        <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.6rem;font-weight:700;color:#D97706">${hAltos}</div>
-          <div style="font-size:.72rem;color:#D97706;font-weight:600">ALTOS</div>
-        </div>
-        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.6rem;font-weight:700;color:#B45309">${hMedios}</div>
-          <div style="font-size:.72rem;color:#B45309;font-weight:600">MEDIOS</div>
-        </div>
-        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.6rem;font-weight:700;color:#059669">${hBajos}</div>
-          <div style="font-size:.72rem;color:#059669;font-weight:600">BAJOS</div>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:24px">
-        <thead><tr style="background:#F1F5F9">
-          <th style="padding:8px 10px;text-align:left;border:1px solid #E2E8F0">Hallazgo</th>
-          <th style="padding:8px 10px;border:1px solid #E2E8F0;width:100px">Severidad</th>
-          <th style="padding:8px 10px;text-align:left;border:1px solid #E2E8F0">Recomendación</th>
-        </tr></thead>
-        <tbody>${hallazgos.slice(0,8).map(h=>`
-          <tr>
-            <td style="padding:7px 10px;border:1px solid #E2E8F0">${h.titulo||h.descripcion||'—'}</td>
-            <td style="padding:7px 10px;border:1px solid #E2E8F0;text-align:center">
-              <span style="padding:2px 8px;border-radius:8px;font-size:.68rem;font-weight:600;
-                background:${h.severidad==='critico'?'#FEE2E2':h.severidad==='alto'?'#FEF3C7':h.severidad==='medio'?'#FFFBEB':'#F0FDF4'};
-                color:${h.severidad==='critico'?'#DC2626':h.severidad==='alto'?'#D97706':h.severidad==='medio'?'#B45309':'#059669'}">
-                ${(h.severidad||'bajo').toUpperCase()}
-              </span>
-            </td>
-            <td style="padding:7px 10px;border:1px solid #E2E8F0;color:#475569">${h.recomendacion||h.condicion||'—'}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`:''}
-
-      <!-- Párrafo de énfasis si existe -->
-      ${enfasis?`
-      <div style="background:#EFF6FF;border-left:4px solid #3B82F6;border-radius:0 6px 6px 0;padding:14px 18px;margin-bottom:20px">
-        <div style="font-size:.7rem;font-weight:700;color:#1D4ED8;text-transform:uppercase;margin-bottom:6px">📌 Párrafo de Énfasis</div>
-        <p style="font-size:.85rem;line-height:1.7;color:#1E293B;margin:0">${enfasis}</p>
-      </div>`:''}
-    </div>`;
-
-  // ── SECCIÓN DETALLADA (solo en informe completo) ──────────────────────────
-  const seccionDetallada = tipo==='detallado' ? `
-
-    <!-- I. DESTINATARIOS Y BASE DEL ENCARGO -->
-    <div style="margin-top:36px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        I. DESTINATARIOS Y BASE DEL ENCARGO
-      </h2>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151">
-        A los Accionistas y al Directorio de <strong>${empresa}</strong>:
-      </p>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151;margin-top:10px">
-        Hemos auditado los estados financieros de <strong>${empresa}</strong> (RUC: ${ruc}), que comprenden el estado de situación financiera al 31 de diciembre de ${periodo}, el estado de resultados integrales, el estado de cambios en el patrimonio neto y el estado de flujos de efectivo por el año terminado en esa fecha, así como las notas explicativas a los estados financieros, que incluyen un resumen de las políticas contables significativas.
-      </p>
-    </div>
-
-    <!-- II. OPINIÓN -->
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        II. OPINIÓN
-      </h2>
-      <div style="background:${op.color}10;border:1px solid ${op.color}40;border-radius:8px;padding:16px 20px">
-        <p style="font-size:.85rem;line-height:1.8;color:#1E293B;margin:0">${op.parrafo}</p>
-      </div>
-    </div>
-
-    <!-- III. FUNDAMENTO DE LA OPINIÓN -->
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        III. FUNDAMENTO DE LA OPINIÓN
-      </h2>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151">
-        Hemos llevado a cabo nuestra auditoría de conformidad con las Normas Internacionales de Auditoría (NIAs). Nuestras responsabilidades de acuerdo con dichas normas se describen más adelante en la sección "Responsabilidades del Auditor". Somos independientes de la entidad de conformidad con los requerimientos de ética aplicables a nuestra auditoría de estados financieros en Ecuador, y hemos cumplido las demás responsabilidades de ética de conformidad con esos requerimientos.
-      </p>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151;margin-top:10px">
-        Consideramos que la evidencia de auditoría que hemos obtenido proporciona una base suficiente y adecuada para nuestra opinión de auditoría.
-      </p>
-      ${salvedades?`
-      <div style="background:#FFF7ED;border-left:4px solid #D97706;border-radius:0 6px 6px 0;padding:14px 18px;margin-top:14px">
-        <div style="font-size:.7rem;font-weight:700;color:#B45309;text-transform:uppercase;margin-bottom:6px">⚠️ Fundamento de Salvedad</div>
-        <p style="font-size:.85rem;line-height:1.7;color:#1E293B;margin:0">${salvedades}</p>
-      </div>`:''}
-    </div>
-
-    <!-- IV. RESPONSABILIDADES DE LA ADMINISTRACIÓN -->
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        IV. RESPONSABILIDADES DE LA ADMINISTRACIÓN RESPECTO A LOS ESTADOS FINANCIEROS
-      </h2>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151">
-        La administración es responsable de la preparación y presentación razonable de los estados financieros de conformidad con las ${marcoLabel}, y del control interno que la administración considere necesario para permitir la preparación de estados financieros libres de incorrección material, debida a fraude o error.
-      </p>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151;margin-top:10px">
-        En la preparación de los estados financieros, la administración es responsable de la valoración de la capacidad de la entidad de continuar como empresa en funcionamiento, revelando, según corresponda, los asuntos relacionados con la empresa en funcionamiento y utilizando el principio contable de empresa en funcionamiento, excepto si la administración tiene la intención de liquidar la entidad o cesar sus operaciones, o bien no exista otra alternativa realista.
-      </p>
-    </div>
-
-    <!-- V. RESPONSABILIDADES DEL AUDITOR -->
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        V. RESPONSABILIDADES DEL AUDITOR EN RELACIÓN CON LA AUDITORÍA DE LOS ESTADOS FINANCIEROS
-      </h2>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151">
-        Nuestros objetivos son obtener una seguridad razonable de que los estados financieros en su conjunto están libres de incorrecciones materiales, debidas a fraude o error, y emitir un informe de auditoría que contiene nuestra opinión. Seguridad razonable es un alto grado de seguridad, pero no garantiza que una auditoría realizada de conformidad con las NIAs siempre detecte una incorrección material cuando existe.
-      </p>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151;margin-top:10px">
-        Como parte de una auditoría de conformidad con las NIAs, aplicamos nuestro juicio profesional y mantenemos una actitud de escepticismo profesional durante toda la auditoría. Asimismo:
-      </p>
-      <ul style="font-size:.85rem;line-height:1.8;color:#374151;margin-top:10px;padding-left:20px">
-        <li>Identificamos y valoramos los riesgos de incorrección material en los estados financieros, debida a fraude o error.</li>
-        <li>Diseñamos y aplicamos procedimientos de auditoría para responder a dichos riesgos y obtener evidencia de auditoría suficiente y adecuada.</li>
-        <li>Obtuvimos un conocimiento del control interno relevante para la auditoría con el fin de diseñar procedimientos de auditoría adecuados.</li>
-        <li>Evaluamos la adecuación de las políticas contables aplicadas y la razonabilidad de las estimaciones contables y la correspondiente información revelada por la administración.</li>
-        <li>Evaluamos la adecuación de la presentación de los estados financieros en conjunto, incluyendo las revelaciones.</li>
-      </ul>
-    </div>
-
-    <!-- VI. ANÁLISIS FINANCIERO DETALLADO -->
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        VI. ANÁLISIS FINANCIERO DE LOS ESTADOS AUDITADOS — ${periodo}
-      </h2>
-      <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:16px">
-        <thead><tr style="background:#F1F5F9">
-          <th colspan="2" style="padding:8px 12px;border:1px solid #E2E8F0;text-align:left">ESTADO DE SITUACIÓN FINANCIERA</th>
-        </tr></thead>
-        <tbody>
-          ${[
-            ['ACTIVOS',''],
-            ['Activo Corriente',fmtN(ac)],
-            ['Activo No Corriente',fmtN(ta-ac)],
-            ['TOTAL ACTIVO',fmtN(ta)],
-            ['PASIVOS',''],
-            ['Pasivo Corriente',fmtN(pc)],
-            ['Pasivo No Corriente',fmtN(tp-pc)],
-            ['Total Pasivo',fmtN(tp)],
-            ['PATRIMONIO NETO',''],
-            ['Patrimonio Total',fmtN(pat)],
-            ['TOTAL PASIVO + PATRIMONIO',fmtN(tp+pat)],
-          ].map(([k,v])=>v===''
-            ?`<tr style="background:#F8FAFC"><td colspan="2" style="padding:6px 12px;border:1px solid #E2E8F0;font-weight:700;color:#0F172A">${k}</td></tr>`
-            :`<tr><td style="padding:6px 12px;border:1px solid #E2E8F0;padding-left:24px">${k}</td>
-               <td style="padding:6px 12px;border:1px solid #E2E8F0;text-align:right;font-family:monospace;font-weight:${k.startsWith('TOTAL')?700:400}">${v}</td></tr>`
-          ).join('')}
-        </tbody>
-      </table>
-
-      <table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:24px">
-        <thead><tr style="background:#F1F5F9">
-          <th colspan="2" style="padding:8px 12px;border:1px solid #E2E8F0;text-align:left">ESTADO DE RESULTADOS INTEGRALES</th>
-        </tr></thead>
-        <tbody>
-          ${[
-            ['Ventas Netas / Ingresos',fmtN(vtas)],
-            ['(-) Costo de Ventas',fmtN(cv)],
-            ['Utilidad Bruta',fmtN(vtas-cv)],
-            ['(-) Gastos Operacionales',fmtN(g('GASTO PERSONAL')+g('GASTO ADMINISTRATIVO')+g('GASTO VENTAS'))],
-            ['(-) Depreciación y Amortización',fmtN(gdep)],
-            ['EBIT (Resultado Operacional)',fmtN(ebit)],
-            ['(-) Gastos Financieros',fmtN(gfin)],
-            ['(-) Impuesto a la Renta',fmtN(ir)],
-            ['UTILIDAD NETA DEL EJERCICIO',fmtN(util)],
-            ['EBITDA',fmtN(ebitda)],
-          ].map(([k,v])=>`
-            <tr ${k.startsWith('UTILIDAD')||k.startsWith('EBIT')?'style="background:#F0FDF4"':''}>
-              <td style="padding:6px 12px;border:1px solid #E2E8F0;padding-left:${k.startsWith('UTILIDAD')||k.startsWith('EBIT')?'12':'24'}px;
-                font-weight:${k.startsWith('UTILIDAD')||k.startsWith('EBIT')?700:400}">${k}</td>
-              <td style="padding:6px 12px;border:1px solid #E2E8F0;text-align:right;font-family:monospace;
-                font-weight:${k.startsWith('UTILIDAD')||k.startsWith('EBIT')?700:400};
-                color:${k.startsWith('UTILIDAD')?(util>=0?'#059669':'#DC2626'):'#0F172A'}">${v}</td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-
-      <!-- Índices en tabla -->
-      <h3 style="font-size:.9rem;font-weight:700;color:#0F172A;margin:16px 0 10px">Principales Indicadores Financieros</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:.81rem;margin-bottom:24px">
-        <thead><tr style="background:#F1F5F9">
-          <th style="padding:7px 10px;border:1px solid #E2E8F0;text-align:left">Indicador</th>
-          <th style="padding:7px 10px;border:1px solid #E2E8F0">Valor</th>
-          <th style="padding:7px 10px;border:1px solid #E2E8F0">Rango Normal</th>
-          <th style="padding:7px 10px;border:1px solid #E2E8F0">Observación de Auditoría</th>
-        </tr></thead>
-        <tbody>${[
-          {n:'Razón Corriente',v:corriente+'x',r:'1.2 – 2.5x',ok:parseFloat(corriente)>=1.2&&parseFloat(corriente)<=2.5,obs:`La empresa ${parseFloat(corriente)>=1.2?'mantiene':'no mantiene'} una posición de liquidez ${parseFloat(corriente)>=1.5?'adecuada':'que merece atención'}.`},
-          {n:'Prueba Ácida',v:((ac-inv)/pc).toFixed(2)+'x',r:'1.0 – 2.0x',ok:((ac-inv)/pc)>=1,obs:'Liquidez inmediata sin depender de inventarios.'},
-          {n:'Endeudamiento s/Activos',v:endeud+'%',r:'30% – 55%',ok:parseFloat(endeud)<=60,obs:`Nivel de apalancamiento ${parseFloat(endeud)<=55?'dentro de parámetros aceptables':'elevado que requiere monitoreo'}.`},
-          {n:'Margen Neto',v:margenNeto+'%',r:'3% – 15%',ok:parseFloat(margenNeto)>=3,obs:`Rentabilidad ${parseFloat(margenNeto)>=5?'satisfactoria':'que requiere análisis de estructura de costos'}.`},
-          {n:'ROE',v:roe+'%',r:'10% – 25%',ok:parseFloat(roe)>=10,obs:`Retorno ${parseFloat(roe)>=10?'competitivo':'por debajo del costo de capital referencial'} para los accionistas.`},
-        ].map(idx=>`<tr>
-          <td style="padding:6px 10px;border:1px solid #E2E8F0">${idx.n}</td>
-          <td style="padding:6px 10px;border:1px solid #E2E8F0;text-align:center;font-family:monospace;font-weight:700;color:${idx.ok?'#059669':'#DC2626'}">${idx.v}</td>
-          <td style="padding:6px 10px;border:1px solid #E2E8F0;text-align:center;color:#6B7280">${idx.r}</td>
-          <td style="padding:6px 10px;border:1px solid #E2E8F0;color:#374151">${idx.obs}</td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>
-
-    <!-- VII. HALLAZGOS DETALLADOS -->
-    ${hallazgos.length?`
-    <div style="margin-top:28px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        VII. HALLAZGOS DETALLADOS Y RECOMENDACIONES
-      </h2>
-      ${hallazgos.map((h,i)=>`
-        <div style="border:1px solid ${h.severidad==='critico'?'#FECACA':h.severidad==='alto'?'#FED7AA':'#E2E8F0'};border-radius:8px;padding:16px 20px;margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:6px">
-            <div>
-              <span style="font-size:.68rem;color:#6B7280;font-family:monospace">H-${String(i+1).padStart(2,'0')}</span>
-              <h4 style="margin:2px 0;color:#0F172A;font-size:.9rem">${h.titulo||'Hallazgo '+(i+1)}</h4>
-            </div>
-            <span style="font-size:.7rem;padding:2px 10px;border-radius:8px;font-weight:700;
-              background:${h.severidad==='critico'?'#FEE2E2':h.severidad==='alto'?'#FEF3C7':h.severidad==='medio'?'#FFFBEB':'#F0FDF4'};
-              color:${h.severidad==='critico'?'#DC2626':h.severidad==='alto'?'#D97706':h.severidad==='medio'?'#B45309':'#059669'}">
-              ${(h.severidad||'bajo').toUpperCase()}
-            </span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.82rem">
-            <div><strong style="color:#475569;font-size:.7rem;text-transform:uppercase">Condición</strong><p style="margin:4px 0;color:#1E293B">${h.condicion||h.descripcion||'—'}</p></div>
-            <div><strong style="color:#475569;font-size:.7rem;text-transform:uppercase">Criterio</strong><p style="margin:4px 0;color:#1E293B">${h.criterio||'NIIF / NIA aplicable'}</p></div>
-            <div><strong style="color:#475569;font-size:.7rem;text-transform:uppercase">Causa</strong><p style="margin:4px 0;color:#1E293B">${h.causa||'—'}</p></div>
-            <div><strong style="color:#475569;font-size:.7rem;text-transform:uppercase">Efecto</strong><p style="margin:4px 0;color:#1E293B">${h.efecto||'—'}</p></div>
-            <div style="grid-column:1/-1"><strong style="color:#059669;font-size:.7rem;text-transform:uppercase">Recomendación</strong><p style="margin:4px 0;color:#1E293B">${h.recomendacion||'—'}</p></div>
-          </div>
-        </div>`).join('')}
-    </div>`:''}
-
-    <!-- VIII. CONCLUSIÓN Y FIRMA -->
-    <div style="margin-top:36px;border-top:2px solid #E2E8F0;padding-top:24px">
-      <h2 style="font-size:1rem;font-weight:700;color:#0F172A;border-bottom:2px solid #B8930A;padding-bottom:6px;margin-bottom:16px">
-        VIII. CONCLUSIÓN
-      </h2>
-      <p style="font-size:.85rem;line-height:1.8;color:#374151">
-        ${op.titulo === 'OPINIÓN NO MODIFICADA'
-          ? `Basados en los procedimientos de auditoría aplicados, concluimos que los estados financieros de ${empresa} presentan razonablemente, en todos sus aspectos materiales, la situación financiera y el desempeño financiero de la empresa al 31 de diciembre de ${periodo}, de conformidad con las ${marcoLabel}.`
-          : `Concluimos que, excepto por los efectos de los asuntos descritos en el párrafo de Fundamento de la Opinión, los estados financieros de ${empresa} por el año terminado el 31 de diciembre de ${periodo} han sido preparados de conformidad con las ${marcoLabel}.`}
-      </p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:50px">
-        <div style="text-align:center">
-          <div style="border-top:1px solid #374151;padding-top:8px;margin-top:80px">
-            <strong>${auditor}</strong><br>
-            <span style="font-size:.78rem;color:#6B7280">Auditor Independiente — CPA</span><br>
-            <span style="font-size:.75rem;color:#94A3B8">${fechaInf}</span>
-          </div>
-        </div>
-        <div style="text-align:center">
-          <div style="border-top:1px solid #374151;padding-top:8px;margin-top:80px">
-            Representante Legal<br>
-            <span style="font-size:.78rem;color:#6B7280">${empresa}</span><br>
-            <span style="font-size:.75rem;color:#94A3B8">Sello de la empresa</span>
-          </div>
-        </div>
-      </div>
-    </div>` : '';
-
-  const contenidoFull = `
-    <div style="font-family:Georgia,'Times New Roman',serif;max-width:860px;margin:0 auto;
-      background:#FFFFFF;border:1px solid #E2E8F0;border-radius:12px;padding:40px 48px;
-      color:#1E293B;line-height:1.6" id="informe-full-content">
-      ${seccionEjecutiva}
-      ${seccionDetallada}
-    </div>`;
-
-  document.getElementById('ap-informe-preview').innerHTML = contenidoFull;
-
-  // Guardar en expediente
-  _apExpediente.informe = { tipo, opinion, fechaInf, numInf, generado: new Date().toISOString() };
-  FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/informe_meta`, _apExpediente.informe);
-  toast(`Informe ${tipo} generado ✓`, 'success');
-}
 
 function exportarInformeWord() {
   if (!_apExpediente) return;
@@ -14594,21 +14196,7 @@ function exportarInformeWord() {
   toast('Informe exportado a Word ✓','success');
 }
 
-function imprimirInformeAuditoria() {
-  const contenido = document.getElementById('informe-full-content');
-  if (!contenido) { generarInformeAuditoria('detallado'); return; }
-  const win = window.open('','_blank');
-  win.document.write(`<html><head><title>Informe de Auditoría</title>
-    <style>body{font-family:Georgia,serif;padding:30px 40px;font-size:9.5pt;color:#1E293B;line-height:1.7}
-    h1{font-size:16pt}h2{font-size:11pt;border-bottom:1.5pt solid #B8930A;padding-bottom:4pt;margin-top:20pt}
-    table{width:100%;border-collapse:collapse;font-size:8.5pt;margin:8pt 0}
-    th,td{border:0.5pt solid #CBD5E1;padding:4pt 7pt}th{background:#F1F5F9}
-    @page{size:A4;margin:20mm 15mm}
-    @media print{.no-print{display:none}}</style></head><body>
-    ${contenido.innerHTML}</body></html>`);
-  win.document.close();
-  setTimeout(()=>win.print(),400);
-}
+
 
 // ══════════════════════════════════════════════════════
 // MÓDULO AUDITORÍA NIIF
@@ -15870,6 +15458,886 @@ async function restaurarModulosExpediente(key) {
   }
 
   console.log('✅ Módulos del expediente restaurados:', codigo);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IMPRESIÓN EJECUTIVA — AUDITORÍA PROFESIONAL
+// ══════════════════════════════════════════════════════════════════════════════
+
+// CSS base para todos los informes impresos
+const PRINT_CSS = `
+  body { font-family: 'Calibri', Arial, sans-serif; color: #1E293B; margin: 0; padding: 30px 40px; font-size: 9.5pt; line-height: 1.6; }
+  h1 { font-size: 16pt; color: #1E293B; margin-bottom: 4px; }
+  h2 { font-size: 12pt; color: #0F172A; border-bottom: 2px solid #B8930A; padding-bottom: 4px; margin-top: 20pt; }
+  h3 { font-size: 10.5pt; color: #1E293B; margin-top: 14pt; }
+  h4 { font-size: 9.5pt; color: #475569; margin-top: 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0; font-size: 8.5pt; }
+  th { background: #F1F5F9; padding: 5pt 7pt; text-align: left; border: 0.5pt solid #CBD5E1; font-weight: 600; }
+  td { padding: 4pt 7pt; border: 0.5pt solid #E2E8F0; vertical-align: top; }
+  tr:nth-child(even) td { background: #FAFBFC; }
+  .total-row td { background: #F1F5F9; font-weight: 700; }
+  .section-header td { background: #1E293B; color: #FFFFFF; font-weight: 700; padding: 4pt 7pt; }
+  .gold { color: #B8930A; }
+  .emerald { color: #059669; }
+  .red { color: #DC2626; }
+  .muted { color: #94A3B8; }
+  .badge { display: inline-block; padding: 1pt 5pt; border-radius: 4pt; font-size: 7pt; font-weight: 700; }
+  .badge-mat { background: #FEE2E2; color: #DC2626; }
+  .badge-sig { background: #FEF3C7; color: #D97706; }
+  .badge-ok  { background: #D1FAE5; color: #059669; }
+  .page-break { page-break-before: always; }
+  .no-break { page-break-inside: avoid; }
+  .encabezado { border-bottom: 3pt solid #B8930A; padding-bottom: 10pt; margin-bottom: 18pt; }
+  .encabezado .empresa { font-size: 14pt; font-weight: 700; color: #0F172A; }
+  .encabezado .meta { font-size: 8pt; color: #475569; margin-top: 3pt; }
+  .firma-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60pt; margin-top: 50pt; }
+  .firma { text-align: center; border-top: 0.5pt solid #374151; padding-top: 5pt; }
+  @page { size: A4; margin: 18mm 15mm; }
+`;
+
+// ── 1. Selector de impresión global ──────────────────────────────────────────
+function abrirSelectorImpresion() {
+  if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
+  document.getElementById('audit-print-modal')?.remove();
+
+  const SECCIONES = [
+    { id:'cedulas',      label:'📄 Cédulas Analíticas',         fn:'imprimirCedulasSeleccion' },
+    { id:'sumarias',     label:'📑 Cédulas Sumarias',            fn:'imprimirSumariaCompleta' },
+    { id:'programa',     label:'📋 Programa de Auditoría',       fn:'imprimirPrograma' },
+    { id:'pruebas-sust', label:'🔍 Pruebas Sustantivas',         fn:'imprimirPruebasSustantivas' },
+    { id:'coso',         label:'🛡️ Sistema COSO',                fn:'imprimirCoso' },
+    { id:'alto-riesgo',  label:'⚠️ Cuentas Alto Riesgo',         fn:'imprimirAltoRiesgo' },
+    { id:'corte',        label:'✂️ Pruebas de Corte',            fn:'imprimirCorte' },
+    { id:'hv-audit',     label:'📊 Análisis H/V',                fn:'imprimirHVAudit' },
+    { id:'benchmarks',   label:'📈 Benchmarks del Sector',       fn:'imprimirBenchmarks' },
+    { id:'variaciones',  label:'🔎 Variaciones >10%',            fn:'imprimirVariaciones' },
+    { id:'indices-audit',label:'📐 Índices Financieros',         fn:'imprimirIndicesAudit' },
+    { id:'hallazgos',    label:'⚠️ Hallazgos',                   fn:'imprimirHallazgos' },
+    { id:'informe',      label:'📝 Informe Final',               fn:'() => generarInformeAuditoria(\"detallado\")' },
+    { id:'carta-rep',    label:'✉️ Carta de Representación',     fn:'imprimirCartaRep' },
+  ];
+
+  const modal = document.createElement('div');
+  modal.id = 'audit-print-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:14px;padding:26px;width:min(640px,100%);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <h3 style="margin:0;color:var(--gold)">🖨 Impresión Ejecutiva — ${_apExpediente.empresa||''}</h3>
+        <button onclick="document.getElementById('audit-print-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">
+        Seleccione las secciones a imprimir. Use <strong>"Imprimir Todo"</strong> para un expediente completo.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        ${SECCIONES.map(s=>`
+          <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+            background:var(--bg-card2);border-radius:7px;cursor:pointer;font-size:.8rem">
+            <input type="checkbox" class="print-sec-check" data-fn="${s.fn}" value="${s.id}"
+              checked style="accent-color:var(--gold);width:14px;height:14px">
+            ${s.label}
+          </label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button onclick="document.querySelectorAll('.print-sec-check').forEach(c=>c.checked=!c.checked)"
+          class="btn-secondary" style="font-size:.75rem">Invertir</button>
+        <button onclick="imprimirTodoExpediente()"
+          class="btn-calc" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
+          📄 Imprimir Todo el Expediente
+        </button>
+        <button onclick="imprimirSeleccionadas()"
+          class="btn-calc" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">
+          🖨 Imprimir Seleccionadas
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+}
+
+function imprimirSeleccionadas() {
+  const checks = [...document.querySelectorAll('.print-sec-check:checked')];
+  if (!checks.length) { toast('Seleccione al menos una sección', 'warning'); return; }
+  document.getElementById('audit-print-modal')?.remove();
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Expediente — ${_apExpediente?.empresa||''}</title>
+    <style>${PRINT_CSS}</style></head><body>`);
+  win.document.write(construirEncabezadoExpediente());
+  checks.forEach((chk, idx) => {
+    const secHtml = obtenerSeccionHTML(chk.value);
+    if (secHtml) {
+      if (idx > 0) win.document.write('<div class="page-break"></div>');
+      win.document.write(secHtml);
+    }
+  });
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 600);
+}
+
+function imprimirTodoExpediente() {
+  document.getElementById('audit-print-modal')?.remove();
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Expediente Completo — ${_apExpediente?.empresa||''}</title>
+    <style>${PRINT_CSS}</style></head><body>`);
+  win.document.write(construirEncabezadoExpediente());
+  const secciones = ['cedulas','sumarias','programa','pruebas-sust','coso',
+    'alto-riesgo','corte','hv-audit','benchmarks','variaciones','indices-audit','hallazgos'];
+  secciones.forEach((sec, i) => {
+    const html = obtenerSeccionHTML(sec);
+    if (html) {
+      win.document.write('<div class="page-break"></div>');
+      win.document.write(html);
+    }
+  });
+  // Agregar informe al final
+  win.document.write('<div class="page-break"></div>');
+  win.document.write(construirInformeHTML('detallado'));
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 800);
+}
+
+function construirEncabezadoExpediente() {
+  const exp = _apExpediente || {};
+  const now = new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  return `
+    <div class="encabezado no-break">
+      <div class="empresa">${exp.empresa||'—'}</div>
+      <div class="meta">
+        RUC: ${exp.ruc||'—'} &nbsp;|&nbsp; Expediente: ${exp.codigo||'—'} &nbsp;|&nbsp;
+        Período: ${exp.periodo||'—'} &nbsp;|&nbsp; Auditor: ${exp.auditor||'—'} &nbsp;|&nbsp;
+        Tipo: ${exp.tipo||'Financiera'} &nbsp;|&nbsp; Impreso: ${now}
+      </div>
+    </div>`;
+}
+
+function obtenerSeccionHTML(secId) {
+  // Para cédulas, usamos función especial
+  if (secId === 'cedulas') return construirCedulasHTML([]);
+  if (secId === 'informe') return construirInformeHTML('detallado');
+  // Para el resto, capturar contenido del DOM
+  const el = document.getElementById(`ap-${secId}-contenido`) ||
+             document.getElementById(`ap-${secId}`);
+  if (!el || !el.textContent?.trim()) return null;
+  const titulo = {
+    'sumarias':     '📑 CÉDULAS SUMARIAS',
+    'programa':     '📋 PROGRAMA DE AUDITORÍA',
+    'pruebas-sust': '🔍 PRUEBAS SUSTANTIVAS',
+    'coso':         '🛡️ SISTEMA DE CONTROL INTERNO — COSO 2013',
+    'alto-riesgo':  '⚠️ IDENTIFICACIÓN DE CUENTAS DE ALTO RIESGO',
+    'corte':        '✂️ PRUEBAS DE CORTE',
+    'hv-audit':     '📊 ANÁLISIS HORIZONTAL Y VERTICAL',
+    'benchmarks':   '📈 BENCHMARKS DEL SECTOR',
+    'variaciones':  '🔎 INDAGACIÓN DE VARIACIONES',
+    'indices-audit':'📐 ÍNDICES FINANCIEROS DE AUDITORÍA',
+    'hallazgos':    '⚠️ HALLAZGOS DE AUDITORÍA',
+  }[secId] || secId.toUpperCase();
+
+  return `<div class="no-break"><h2>${titulo}</h2>${el.innerHTML}</div>`;
+}
+
+// ── 2. Impresión de cédulas analíticas con selector ───────────────────────────
+function imprimirCedulasSeleccion(cedIdsParam) {
+  const cedulas = window._apCedulas || {};
+  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  if (!lista.length) { toast('No hay cédulas analíticas', 'warning'); return; }
+
+  // Si se pasan IDs específicos, usar esos; si no, mostrar selector
+  if (cedIdsParam && cedIdsParam.length) {
+    _imprimirCedulasLista(cedIdsParam.map(id => cedulas[id]).filter(Boolean));
+    return;
+  }
+
+  // Mostrar selector de cédulas
+  document.getElementById('ced-print-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'ced-print-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+
+  const fmtN = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  modal.innerHTML = `
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(600px,100%);border:1px solid var(--border);max-height:85vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0;color:var(--gold)">🖨 Imprimir Cédulas Analíticas</h3>
+        <button onclick="document.getElementById('ced-print-modal').remove()"
+          style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="document.querySelectorAll('.ced-print-check').forEach(c=>c.checked=true)"
+          style="font-size:.72rem;padding:3px 8px;background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid var(--emerald);border-radius:5px;cursor:pointer">
+          ✅ Todas</button>
+        <button onclick="document.querySelectorAll('.ced-print-check').forEach(c=>c.checked=false)"
+          style="font-size:.72rem;padding:3px 8px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:5px;cursor:pointer">
+          ✕ Ninguna</button>
+        <button onclick="document.querySelectorAll('.ced-print-check').forEach(c=>{const v=parseFloat(c.dataset.val)||0;c.checked=v>=(window._selectorMaterial||0)||(v>=(window._selectorSignificativa||0))})"
+          style="font-size:.72rem;padding:3px 8px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">
+          ★ Mat/Sig</button>
+      </div>
+      <div style="margin-bottom:14px;max-height:45vh;overflow-y:auto">
+        ${lista.map(ced=>`
+          <label style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--border);cursor:pointer">
+            <input type="checkbox" class="ced-print-check" data-id="${ced.id}" data-val="${ced.totalLibros||0}"
+              checked style="accent-color:var(--gold);width:14px;height:14px;flex-shrink:0">
+            <span style="font-family:var(--font-mono);font-size:.72rem;color:var(--gold);font-weight:700;min-width:28px">${ced.ref||'—'}</span>
+            <span style="flex:1;font-size:.8rem">${ced.titulo||''}</span>
+            <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--text-secondary)">${fmtN(ced.totalAuditado||ced.totalLibros)}</span>
+            <span style="font-size:.68rem;padding:1px 6px;border-radius:5px;
+              background:${ced.estado==='aprobada'?'rgba(16,185,129,.1)':'rgba(245,158,11,.1)'};
+              color:${ced.estado==='aprobada'?'var(--emerald)':'#f59e0b'}">${ced.estado||'borrador'}</span>
+          </label>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button onclick="document.getElementById('ced-print-modal').remove()" class="btn-secondary">Cancelar</button>
+        <button onclick="_ejecutarImpresionCedulas()" class="btn-calc"
+          style="background:linear-gradient(135deg,var(--emerald),#0a9468)">🖨 Imprimir seleccionadas</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+}
+
+function _ejecutarImpresionCedulas() {
+  const checks = [...document.querySelectorAll('.ced-print-check:checked')];
+  if (!checks.length) { toast('Seleccione al menos una cédula', 'warning'); return; }
+  document.getElementById('ced-print-modal')?.remove();
+  const cedulas = window._apCedulas || {};
+  const lista = checks.map(c => cedulas[c.dataset.id]).filter(Boolean);
+  _imprimirCedulasLista(lista);
+}
+
+function _imprimirCedulasLista(lista) {
+  const fmtN = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const exp = _apExpediente || {};
+
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Cédulas Analíticas — ${exp.empresa||''}</title>
+    <style>${PRINT_CSS}
+    .ced-header { background:#1E293B;color:#fff;padding:8pt 10pt;margin-top:0; }
+    .cuadrado { color:#059669;font-weight:700; }
+    .diferencia { color:#DC2626;font-weight:700; }
+    </style></head><body>`);
+
+  // Portada
+  win.document.write(`
+    <div class="encabezado">
+      <div class="empresa">${exp.empresa||'—'}</div>
+      <div class="meta">RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}</div>
+    </div>
+    <h2>CÉDULAS ANALÍTICAS DE AUDITORÍA</h2>
+    <p style="font-size:8.5pt;color:#475569">Total de cédulas: ${lista.length} | Impreso: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+    <table style="margin-bottom:20pt">
+      <thead><tr><th>Ref.</th><th>Cuenta / Título</th><th style="text-align:right">Saldo Libros</th><th style="text-align:right">Ajuste</th><th style="text-align:right">Saldo Auditado</th><th>Estado</th></tr></thead>
+      <tbody>${lista.map(ced=>{
+        const dif = (parseFloat(ced.totalAuditado)||0)-(parseFloat(ced.totalLibros)||0);
+        return `<tr>
+          <td class="gold" style="font-weight:700">${ced.ref||'—'}</td>
+          <td>${ced.titulo||''}</td>
+          <td style="text-align:right">${fmtN(ced.totalLibros)}</td>
+          <td style="text-align:right;color:${Math.abs(dif)>0.01?'#DC2626':'#94A3B8'}">${Math.abs(dif)>0.01?fmtN(Math.abs(dif)):'—'}</td>
+          <td style="text-align:right;font-weight:700">${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+          <td>${ced.estado||'borrador'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`);
+
+  // Cédulas individuales
+  lista.forEach((ced, idx) => {
+    const dif = (parseFloat(ced.totalAuditado)||0)-(parseFloat(ced.totalLibros)||0);
+    const hayDif = Math.abs(dif) > 0.01;
+    win.document.write(`
+      <div class="page-break no-break">
+        <div class="ced-header">
+          <strong>CÉDULA ANALÍTICA — Ref. ${ced.ref||'—'}</strong> | ${ced.titulo||''}
+        </div>
+        <table style="margin-bottom:0">
+          <tr><td><strong>Empresa:</strong> ${ced.empresa||'—'}</td><td><strong>Período:</strong> ${ced.periodo||'—'}</td>
+              <td><strong>Auditor:</strong> ${ced.auditor||'—'}</td><td><strong>Fecha:</strong> ${new Date(ced.fecha||Date.now()).toLocaleDateString('es-EC')}</td></tr>
+        </table>
+        <table>
+          <thead><tr>
+            <th>Subcuenta / Concepto</th><th style="text-align:right">Saldo s/Libros</th>
+            <th style="text-align:right">Ajuste</th><th style="text-align:right">Saldo Auditado</th>
+            <th style="text-align:center">Marcas</th><th>Notas</th>
+          </tr></thead>
+          <tbody>
+            ${(ced.filas||[]).map(f=>`<tr>
+              <td>${f.cuenta||''}</td>
+              <td style="text-align:right">${fmtN(f.saldoLibros)}</td>
+              <td style="text-align:right;color:${(parseFloat(f.ajuste)||0)!==0?'#DC2626':'#94A3B8'}">${(parseFloat(f.ajuste)||0)!==0?fmtN(Math.abs(f.ajuste)):'—'}</td>
+              <td style="text-align:right;font-weight:700">${fmtN(f.saldoAuditado)}</td>
+              <td style="text-align:center">${f.marcas||'✓'}</td>
+              <td>${f.notas||''}</td>
+            </tr>`).join('')}
+            <tr class="total-row">
+              <td><strong>TOTAL</strong></td>
+              <td style="text-align:right">${fmtN(ced.totalLibros)}</td>
+              <td style="text-align:right;color:${hayDif?'#DC2626':'#94A3B8'}">${hayDif?fmtN(Math.abs(dif)):'—'}</td>
+              <td style="text-align:right;color:${hayDif?'#D97706':'#059669'}">${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+              <td></td><td></td>
+            </tr>
+          </tbody>
+        </table>
+        ${hayDif?`<p style="color:#DC2626;font-size:8.5pt;margin:4pt 0"><strong>⚠️ DIFERENCIA:</strong> ${fmtN(Math.abs(dif))} — ${dif>0?'Saldo auditado mayor al de libros':'Saldo auditado menor al de libros'}</p>`:''}
+        <table style="margin-top:8pt">
+          <tr>
+            <th style="width:50%">PROCEDIMIENTOS APLICADOS</th>
+            <th style="width:50%">CONCLUSIÓN DEL AUDITOR</th>
+          </tr>
+          <tr>
+            <td>${ced.procedimiento||'—'}</td>
+            <td>${ced.conclusion||'<em>Pendiente</em>'}</td>
+          </tr>
+        </table>
+        <p style="font-size:7.5pt;color:#94A3B8;margin-top:4pt">
+          <strong>Marcas:</strong> ${ced.marcasLeyenda||'✓ Verificado; Σ Cuadrado; ◉ Confirmado; ★ Significativo; ▲ Diferencia; ✕ Baja'}
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:40pt;margin-top:30pt">
+          <div style="text-align:center;border-top:0.5pt solid #374151;padding-top:4pt">
+            Elaborado por: ${ced.auditor||'—'}
+          </div>
+          <div style="text-align:center;border-top:0.5pt solid #374151;padding-top:4pt">
+            Revisado por:
+          </div>
+        </div>
+      </div>`);
+  });
+
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 600);
+}
+
+function imprimirHallazgos() {
+  const hallazgos = _apExpediente?.hallazgos || [];
+  const exp = _apExpediente || {};
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Hallazgos</title><style>${PRINT_CSS}</style></head><body>`);
+  win.document.write(construirEncabezadoExpediente());
+  win.document.write('<h2>⚠️ HALLAZGOS DE AUDITORÍA</h2>');
+  if (!hallazgos.length) {
+    win.document.write('<p>No hay hallazgos registrados.</p>');
+  } else {
+    hallazgos.forEach((h, i) => {
+      const colores = {critico:'#DC2626',alto:'#D97706',medio:'#B45309',bajo:'#059669'};
+      const c = colores[h.severidad||'bajo'];
+      win.document.write(`
+        <div class="no-break" style="border:0.5pt solid #E2E8F0;border-radius:4pt;margin-bottom:12pt;overflow:hidden">
+          <div style="background:${c};color:#fff;padding:5pt 8pt">
+            <strong>H-${String(i+1).padStart(2,'0')} | ${(h.severidad||'bajo').toUpperCase()}</strong> — ${h.titulo||'Hallazgo '+(i+1)}
+          </div>
+          <table style="margin:0">
+            <tr><th style="width:25%">Condición</th><td>${h.condicion||h.descripcion||'—'}</td></tr>
+            <tr><th>Criterio</th><td>${h.criterio||'NIIF / NIA aplicable'}</td></tr>
+            <tr><th>Causa</th><td>${h.causa||'—'}</td></tr>
+            <tr><th>Efecto</th><td>${h.efecto||'—'}</td></tr>
+            <tr><th>Recomendación</th><td>${h.recomendacion||'—'}</td></tr>
+          </table>
+        </div>`);
+    });
+  }
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+
+// ── 3. Informe con cuentas materiales/significativas + cédulas ────────────────
+function construirInformeHTML(tipo) {
+  const exp   = _apExpediente || {};
+  const data  = window._apEEFFSeleccionado;
+  const rawN  = data?.rawNorm && Object.keys(data.rawNorm).length > 0
+    ? data.rawNorm : (data?.raw ? normalizarRaw(data.raw) : {});
+  const cedulas = window._apCedulas || {};
+  const fmtN  = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+  const g     = k => parseFloat(rawN[k])||0;
+
+  const opinion = document.getElementById('ap-opinion')?.value || 'limpia';
+  const numInf  = document.getElementById('ap-num-informe')?.value || `AUD-${new Date().getFullYear()}-001`;
+  const marco   = document.getElementById('ap-marco')?.value || 'niif';
+  const fechaEl = document.getElementById('ap-fecha-informe');
+  const fechaInf= fechaEl?.value
+    ? new Date(fechaEl.value+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
+    : new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const enfasis   = document.getElementById('ap-enfasis')?.value||'';
+  const salvedades= document.getElementById('ap-salvedades')?.value||'';
+
+  const ta=g('TOTAL ACTIVO')||1, tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO')||1;
+  const vtas=g('VENTAS NETAS'), util=g('UTILIDAD EJERCICIO');
+  const ac=g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE')||1;
+  const MATERIAL     = ta * 0.05;
+  const SIGNIFICATIVA= ta * 0.01;
+
+  const OPINIONES = {
+    'limpia':              { titulo:'OPINIÓN NO MODIFICADA', color:'#059669',
+      texto:`En nuestra opinión, los estados financieros presentan razonablemente, en todos sus aspectos materiales, la situación financiera de ${exp.empresa||'—'} al 31 de diciembre de ${exp.periodo||'—'}, de conformidad con las NIIF.` },
+    'salvedad-alcance':    { titulo:'OPINIÓN CON SALVEDAD — LIMITACIÓN AL ALCANCE', color:'#D97706',
+      texto:`Excepto por los efectos de la limitación descrita, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
+    'salvedad-desacuerdo': { titulo:'OPINIÓN CON SALVEDAD — DESACUERDO', color:'#D97706',
+      texto:`Excepto por los efectos del desacuerdo descrito, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
+    'adversa':             { titulo:'OPINIÓN ADVERSA', color:'#DC2626',
+      texto:`Los estados financieros NO presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
+    'abstencion':          { titulo:'ABSTENCIÓN DE OPINIÓN', color:'#7C3AED',
+      texto:`No expresamos ninguna opinión sobre los estados financieros de ${exp.empresa||'—'}. ${salvedades}` },
+  };
+  const op = OPINIONES[opinion] || OPINIONES['limpia'];
+
+  // Cuentas materiales y significativas con sus cédulas
+  const cuentasConCedula = [];
+  Object.entries(rawN).forEach(([k,v]) => {
+    const val = Math.abs(parseFloat(v)||0);
+    if (val < SIGNIFICATIVA) return;
+    const nivel = val >= MATERIAL ? 'MATERIAL' : 'SIGNIFICATIVA';
+    // Buscar cédula analítica que tenga esta cuenta como título
+    const ced = Object.values(cedulas).find(c =>
+      (c.titulo||'').toUpperCase().includes(k.toUpperCase()) ||
+      (c.filas||[]).some(f => (f.cuenta||'').toUpperCase().includes(k.toUpperCase()))
+    );
+    const dif = ced ? ((parseFloat(ced.totalAuditado)||0) - (parseFloat(ced.totalLibros)||0)) : 0;
+    cuentasConCedula.push({ cuenta:k, saldo:parseFloat(v)||0, nivel, ced, dif });
+  });
+  cuentasConCedula.sort((a,b) => Math.abs(b.saldo)-Math.abs(a.saldo));
+
+  const hallazgos = exp.hallazgos||[];
+  const hCrit = hallazgos.filter(h=>h.severidad==='critico').length;
+  const hAlto = hallazgos.filter(h=>h.severidad==='alto').length;
+
+  const PRINT_CSS_LOCAL = `
+    body{font-family:Calibri,Arial,sans-serif;color:#1E293B;padding:35px 45px;font-size:9.5pt;line-height:1.7}
+    h1{font-size:15pt;color:#0F172A;margin-bottom:3pt}
+    h2{font-size:11pt;color:#0F172A;border-bottom:1.5pt solid #B8930A;padding-bottom:4pt;margin-top:22pt}
+    h3{font-size:10pt;margin-top:14pt}
+    table{width:100%;border-collapse:collapse;font-size:8.5pt;margin:8pt 0}
+    th{background:#F1F5F9;padding:5pt 7pt;text-align:left;border:0.5pt solid #CBD5E1;font-weight:600}
+    td{padding:4pt 7pt;border:0.5pt solid #E2E8F0;vertical-align:top}
+    .op-box{border-left:4pt solid ${op.color};padding:10pt 14pt;background:${op.color}10;margin:12pt 0}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8pt;margin:10pt 0}
+    .kpi{border:0.5pt solid #E2E8F0;border-radius:4pt;padding:8pt;text-align:center}
+    .kpi-val{font-size:11pt;font-weight:700;color:#0F172A}
+    .kpi-lbl{font-size:7pt;color:#94A3B8;margin-top:2pt}
+    .mat{background:#FEE2E2;color:#DC2626}
+    .sig{background:#FEF3C7;color:#D97706}
+    .badge{display:inline-block;padding:1pt 5pt;border-radius:3pt;font-size:7pt;font-weight:700}
+    .dif-ok{color:#059669} .dif-mal{color:#DC2626}
+    .firma-row{display:grid;grid-template-columns:1fr 1fr;gap:60pt;margin-top:50pt}
+    .firma-box{text-align:center;border-top:0.5pt solid #374151;padding-top:5pt}
+    @page{size:A4;margin:18mm 14mm}
+    .pb{page-break-before:always}
+  `;
+
+  let html = `<html><head><title>Informe Auditoría — ${exp.empresa||''}</title>
+    <style>${PRINT_CSS_LOCAL}</style></head><body>`;
+
+  // ── PORTADA ──────────────────────────────────────────────────────────────
+  html += `
+    <div style="border-bottom:3pt solid #B8930A;padding-bottom:14pt;margin-bottom:20pt">
+      <div style="font-size:9pt;color:#94A3B8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5pt">
+        Informe de Auditoría ${tipo==='ejecutivo'?'— Resumen Ejecutivo':'— Completo y Detallado'}
+      </div>
+      <h1>${exp.empresa||'—'}</h1>
+      <div style="font-size:8.5pt;color:#475569;margin-top:4pt">
+        RUC: ${exp.ruc||'—'} &nbsp;·&nbsp; Ejercicio ${exp.periodo||'—'} &nbsp;·&nbsp;
+        Ref.: ${numInf} &nbsp;·&nbsp; Fecha: ${fechaInf} &nbsp;·&nbsp; Auditor: ${exp.auditor||'—'}
+      </div>
+    </div>
+
+    <!-- OPINIÓN -->
+    <div class="op-box">
+      <div style="font-size:8pt;font-weight:700;color:${op.color};text-transform:uppercase;margin-bottom:6pt">
+        ${op.titulo}
+      </div>
+      <p style="margin:0;font-size:9.5pt">${op.texto}</p>
+    </div>
+
+    <!-- KPIs -->
+    <h2>INDICADORES FINANCIEROS CLAVE — ${exp.periodo||'—'}</h2>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-val">${fmtN(ta)}</div><div class="kpi-lbl">Total Activo</div></div>
+      <div class="kpi"><div class="kpi-val">${fmtN(pat)}</div><div class="kpi-lbl">Patrimonio</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:${vtas>0?'#0F172A':'#DC2626'}">${fmtN(vtas)}</div><div class="kpi-lbl">Ventas Netas</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:${util>=0?'#059669':'#DC2626'}">${fmtN(util)}</div><div class="kpi-lbl">Utilidad Neta</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:${ac/pc>=1.2?'#059669':'#DC2626'}">${(ac/pc).toFixed(2)}x</div><div class="kpi-lbl">Razón Corriente</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:${tp/ta<=0.6?'#059669':'#DC2626'}">${(tp/ta*100).toFixed(1)}%</div><div class="kpi-lbl">Endeudamiento</div></div>
+      <div class="kpi"><div class="kpi-val">${vtas?(util/vtas*100).toFixed(1)+'%':'N/A'}</div><div class="kpi-lbl">Margen Neto</div></div>
+      <div class="kpi"><div class="kpi-val">${(util/pat*100).toFixed(1)}%</div><div class="kpi-lbl">ROE</div></div>
+    </div>`;
+
+  // ── CUENTAS MATERIALES Y SIGNIFICATIVAS CON CÉDULAS ─────────────────────
+  html += `
+    <h2>CUENTAS MATERIALES Y SIGNIFICATIVAS — RESULTADO DE AUDITORÍA</h2>
+    <p style="font-size:8pt;color:#475569;margin-bottom:8pt">
+      Materialidad: ≥5% del Activo Total = ${fmtN(MATERIAL)} &nbsp;|&nbsp;
+      Significativa: ≥1% del Activo Total = ${fmtN(SIGNIFICATIVA)}
+    </p>
+    <table>
+      <thead><tr>
+        <th>Cuenta</th><th>Nivel</th>
+        <th style="text-align:right">Saldo s/Libros</th>
+        <th style="text-align:right">% Activo</th>
+        <th>Ref. Cédula</th>
+        <th style="text-align:right">Saldo Auditado</th>
+        <th style="text-align:right">Diferencia</th>
+        <th>Conclusión / Estado</th>
+      </tr></thead>
+      <tbody>
+        ${cuentasConCedula.map(({cuenta,saldo,nivel,ced,dif}) => {
+          const pct = (Math.abs(saldo)/ta*100).toFixed(1);
+          const hayDif = Math.abs(dif) > 0.01;
+          return `<tr>
+            <td style="font-weight:600">${cuenta}</td>
+            <td><span class="badge ${nivel==='MATERIAL'?'mat':'sig'}">${nivel}</span></td>
+            <td style="text-align:right">${fmtN(saldo)}</td>
+            <td style="text-align:right;color:#94A3B8">${pct}%</td>
+            <td style="text-align:center;font-weight:700;color:#B8930A">${ced?ced.ref:'—'}</td>
+            <td style="text-align:right;font-weight:700">${ced?fmtN(ced.totalAuditado||ced.totalLibros):'Sin cédula'}</td>
+            <td style="text-align:right" class="${hayDif?'dif-mal':'dif-ok'}">${hayDif?fmtN(Math.abs(dif)):ced?'✓ Sin dif.':'—'}</td>
+            <td style="font-size:8pt">${ced?.conclusion||(!ced?'⚠️ Sin cédula analítica':'Pendiente de conclusión')}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${cuentasConCedula.some(x=>Math.abs(x.dif)>0.01)?`
+    <div style="border:0.5pt solid #FECACA;background:#FEF2F2;padding:8pt 10pt;border-radius:4pt;margin-top:8pt">
+      <strong style="color:#DC2626">⚠️ Diferencias detectadas:</strong>
+      ${cuentasConCedula.filter(x=>Math.abs(x.dif)>0.01).map(x=>
+        `<br>${x.cuenta}: diferencia de ${fmtN(Math.abs(x.dif))} (${x.dif>0?'saldo auditado mayor':'saldo auditado menor'} al de libros)`
+      ).join('')}
+    </div>`:''}`;
+
+  if (tipo === 'detallado') {
+    // ── HALLAZGOS ────────────────────────────────────────────────────────
+    if (hallazgos.length) {
+      html += `<h2 class="pb">HALLAZGOS DE AUDITORÍA</h2>
+        <table>
+          <thead><tr><th style="width:5%">N°</th><th>Hallazgo</th><th style="width:12%">Severidad</th><th>Recomendación</th></tr></thead>
+          <tbody>${hallazgos.map((h,i)=>{
+            const c={critico:'#DC2626',alto:'#D97706',medio:'#B45309',bajo:'#059669'}[h.severidad||'bajo'];
+            return `<tr>
+              <td style="text-align:center;font-weight:700">H-${String(i+1).padStart(2,'0')}</td>
+              <td>${h.titulo||h.descripcion||'—'}</td>
+              <td><span class="badge" style="background:${c}20;color:${c}">${(h.severidad||'bajo').toUpperCase()}</span></td>
+              <td>${h.recomendacion||'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>`;
+    }
+
+    // ── ESTADOS FINANCIEROS ─────────────────────────────────────────────
+    html += `
+      <h2 class="pb">ESTADOS FINANCIEROS AUDITADOS</h2>
+      <table>
+        <thead><tr><th>Concepto</th><th style="text-align:right">USD</th></tr></thead>
+        <tbody>
+          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">ACTIVO</td></tr>
+          <tr><td style="padding-left:16pt">Activo Corriente</td><td style="text-align:right">${fmtN(ac)}</td></tr>
+          <tr><td style="padding-left:16pt">Activo No Corriente</td><td style="text-align:right">${fmtN(ta-ac)}</td></tr>
+          <tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td><td style="text-align:right"><strong>${fmtN(ta)}</strong></td></tr>
+          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">PASIVO</td></tr>
+          <tr><td style="padding-left:16pt">Pasivo Corriente</td><td style="text-align:right">${fmtN(pc)}</td></tr>
+          <tr><td style="padding-left:16pt">Pasivo No Corriente</td><td style="text-align:right">${fmtN(tp-pc)}</td></tr>
+          <tr class="total-row"><td><strong>TOTAL PASIVO</strong></td><td style="text-align:right"><strong>${fmtN(tp)}</strong></td></tr>
+          <tr class="total-row"><td><strong>PATRIMONIO NETO</strong></td><td style="text-align:right"><strong>${fmtN(pat)}</strong></td></tr>
+          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">RESULTADOS</td></tr>
+          <tr><td style="padding-left:16pt">Ventas Netas</td><td style="text-align:right">${fmtN(vtas)}</td></tr>
+          <tr><td style="padding-left:16pt">Utilidad Bruta</td><td style="text-align:right">${fmtN(g('VENTAS NETAS')-g('COSTO DE VENTAS'))}</td></tr>
+          <tr class="total-row"><td><strong>UTILIDAD NETA</strong></td><td style="text-align:right;color:${util>=0?'#059669':'#DC2626'}"><strong>${fmtN(util)}</strong></td></tr>
+        </tbody>
+      </table>`;
+
+    // ── RESPONSABILIDADES Y FIRMA ────────────────────────────────────────
+    html += `
+      <h2 class="pb">BASE LEGAL Y RESPONSABILIDADES</h2>
+      <p>Hemos llevado a cabo nuestra auditoría de conformidad con las Normas Internacionales de Auditoría (NIAs). La administración es responsable de la preparación y presentación razonable de los estados financieros de conformidad con las ${marco==='niif-pymes'?'NIIF para PYMES':'NIIF completas'}.</p>
+      <p>Consideramos que la evidencia de auditoría que hemos obtenido proporciona una base suficiente y adecuada para nuestra opinión.</p>
+      ${enfasis?`<div style="border-left:3pt solid #3B82F6;padding:8pt 12pt;background:#EFF6FF;margin:10pt 0">
+        <strong style="color:#1D4ED8">Párrafo de Énfasis:</strong> ${enfasis}
+      </div>`:''}
+      <div class="firma-row" style="margin-top:50pt">
+        <div class="firma-box">
+          ${exp.auditor||'___________________________'}<br>
+          <span style="font-size:8pt;color:#475569">Auditor Independiente — CPA<br>${fechaInf}</span>
+        </div>
+        <div class="firma-box">
+          Representante Legal<br>
+          <span style="font-size:8pt;color:#475569">${exp.empresa||'—'}</span>
+        </div>
+      </div>`;
+  }
+
+  html += '</body></html>';
+  return html;
+}
+
+// Sobreescribir generarInformeAuditoria para también actualizar el DOM
+const _generarInformeOriginal = typeof generarInformeAuditoria === 'function' ? generarInformeAuditoria : null;
+
+function generarInformeAuditoria(tipo) {
+  tipo = tipo || 'detallado';
+  if (!_apExpediente) { toast('Inicie un expediente primero','warning'); return; }
+
+  const htmlCompleto = construirInformeHTML(tipo);
+
+  // Extraer solo el body para mostrar en el preview
+  const bodyMatch = htmlCompleto.match(/<body>([\s\S]*)<\/body>/);
+  const previewHtml = bodyMatch ? bodyMatch[1] : htmlCompleto;
+
+  const preview = document.getElementById('ap-informe-preview');
+  if (preview) {
+    preview.innerHTML = `<div style="background:#fff;border-radius:10px;padding:30px 36px;
+      color:#1E293B;font-family:Calibri,Arial,sans-serif;border:1px solid #E2E8F0;
+      font-size:.86rem;line-height:1.7" id="informe-full-content">
+      ${previewHtml}</div>`;
+  }
+
+  if (_apExpediente.codigo) {
+    FirebaseDB.update(`audit_pro/${_apExpediente.codigo}`, {
+      informe_meta: { tipo, generado: new Date().toISOString() }
+    });
+  }
+  toast(`Informe ${tipo} generado ✓`, 'success');
+}
+
+function imprimirInformeAuditoria() {
+  if (!_apExpediente) return;
+  const html = construirInformeHTML(
+    document.querySelector('#ap-informe select')?.value || 'detallado'
+  );
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EXPORTACIÓN EJECUTIVA — PDF (impresión) + EXCEL + WORD por sección
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Menú de opciones de exportación por sección
+function menuExportar(secId, titulo, fnPdf, fnExcel, fnWord) {
+  document.querySelectorAll('.export-menu-popup').forEach(m => m.remove());
+
+  const btn = event.target.closest('button');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+
+  const menu = document.createElement('div');
+  menu.className = 'export-menu-popup';
+  menu.style.cssText = `position:fixed;top:${rect.bottom+4}px;left:${rect.left}px;
+    z-index:9998;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+    box-shadow:0 8px 30px rgba(0,0,0,.35);min-width:180px;overflow:hidden`;
+
+  const opciones = [
+    { icon:'🖨', label:'Imprimir / PDF',  fn: fnPdf   || `imprimirSeccion('${secId}','${titulo}')` },
+    { icon:'📊', label:'Exportar Excel',  fn: fnExcel || `exportarSeccionExcel('${secId}','${titulo}')` },
+    { icon:'📄', label:'Exportar Word',   fn: fnWord  || `exportarSeccionWord('${secId}','${titulo}')` },
+  ];
+
+  menu.innerHTML = opciones.map(o => `
+    <button onclick="${o.fn};document.querySelectorAll('.export-menu-popup').forEach(m=>m.remove())"
+      style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;
+        background:none;border:none;color:var(--text-primary);font-size:.82rem;cursor:pointer;text-align:left"
+      onmouseover="this.style.background='var(--bg-hover)'"
+      onmouseout="this.style.background='none'">
+      <span>${o.icon}</span><span>${o.label}</span>
+    </button>`).join('<div style="height:1px;background:var(--border)"></div>');
+
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function remover(e) {
+    if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', remover); }
+  }), 10);
+}
+
+// Imprimir cualquier sección por su contenido DOM
+function imprimirSeccion(secId, titulo) {
+  const el = document.getElementById(`ap-${secId}-contenido`) ||
+             document.getElementById(`ap-${secId}`);
+  if (!el || !el.textContent?.trim()) { toast('Sin contenido para imprimir', 'warning'); return; }
+  const exp = _apExpediente || {};
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>${titulo}</title>
+    <style>${PRINT_CSS}
+    body{padding:28px 36px}
+    input,select,textarea{border:none!important;background:none!important;font-family:inherit;font-size:inherit;width:auto}
+    button{display:none!important}
+    </style></head><body>
+    <div style="border-bottom:2pt solid #B8930A;padding-bottom:10pt;margin-bottom:16pt">
+      <div style="font-size:14pt;font-weight:700;color:#0F172A">${exp.empresa||'—'}</div>
+      <div style="font-size:8pt;color:#475569">RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}</div>
+    </div>
+    <h2 style="font-size:12pt;border-bottom:1.5pt solid #B8930A;padding-bottom:4pt">${titulo}</h2>
+    ${el.innerHTML}
+    </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+// Exportar a Excel (HTML table → XLS)
+function exportarSeccionExcel(secId, titulo) {
+  const el = document.getElementById(`ap-${secId}-contenido`) ||
+             document.getElementById(`ap-${secId}`);
+  if (!el) { toast('Sin contenido para exportar', 'warning'); return; }
+  const exp = _apExpediente || {};
+
+  // Extraer tablas del contenido
+  const tablas = el.querySelectorAll('table');
+  if (!tablas.length) { toast('No hay tablas en esta sección para exportar a Excel', 'warning'); return; }
+
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8">
+    <style>
+      table{border-collapse:collapse;font-family:Calibri;font-size:10pt}
+      th{background:#1E293B;color:#FFFFFF;padding:6px 10px;font-weight:700;border:1px solid #374151}
+      td{padding:5px 10px;border:1px solid #E2E8F0}
+      .section-header td{background:#F1F5F9;font-weight:700;color:#0F172A}
+      .total-row td,.subtotal td{background:#F8FAFC;font-weight:700}
+    </style></head><body>
+    <h2 style="font-family:Calibri;color:#0F172A">${titulo}</h2>
+    <p style="font-family:Calibri;font-size:9pt;color:#475569">
+      ${exp.empresa||'—'} | RUC: ${exp.ruc||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}
+    </p>`;
+
+  tablas.forEach((t, i) => {
+    // Limpiar inputs/selects de la tabla reemplazando con valores
+    const tClone = t.cloneNode(true);
+    tClone.querySelectorAll('input').forEach(inp => {
+      const td = inp.closest('td');
+      if (td) td.textContent = inp.value;
+    });
+    tClone.querySelectorAll('select').forEach(sel => {
+      const td = sel.closest('td');
+      if (td) td.textContent = sel.options[sel.selectedIndex]?.text || sel.value;
+    });
+    tClone.querySelectorAll('button').forEach(b => b.remove());
+    if (tablas.length > 1) html += `<br><h3 style="font-family:Calibri">Tabla ${i+1}</h3>`;
+    html += tClone.outerHTML;
+  });
+
+  html += '</body></html>';
+  const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(titulo||secId).replace(/[^a-zA-Z0-9]/g,'_')}_${exp.empresa||'empresa'}_${exp.periodo||''}.xls`;
+  a.click();
+  toast(`${titulo} exportado a Excel ✓`, 'success');
+}
+
+// Exportar a Word
+function exportarSeccionWord(secId, titulo) {
+  const el = document.getElementById(`ap-${secId}-contenido`) ||
+             document.getElementById(`ap-${secId}`);
+  if (!el) { toast('Sin contenido para exportar', 'warning'); return; }
+  const exp = _apExpediente || {};
+
+  // Clonar y limpiar
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('input').forEach(inp => {
+    const span = document.createElement('span');
+    span.textContent = inp.value;
+    inp.replaceWith(span);
+  });
+  clone.querySelectorAll('select').forEach(sel => {
+    const span = document.createElement('span');
+    span.textContent = sel.options[sel.selectedIndex]?.text || sel.value;
+    sel.replaceWith(span);
+  });
+  clone.querySelectorAll('button,.btn-calc,.btn-secondary').forEach(b => b.remove());
+
+  const html = `<html><head><meta charset="utf-8">
+    <style>
+      body{font-family:Calibri;font-size:11pt;color:#1E293B;padding:36pt}
+      h1{font-size:16pt;color:#0F172A}
+      h2{font-size:13pt;color:#0F172A;border-bottom:1.5pt solid #B8930A;padding-bottom:4pt;margin-top:18pt}
+      h3{font-size:11pt}
+      table{width:100%;border-collapse:collapse;font-size:9pt;margin:8pt 0}
+      th{background:#F1F5F9;padding:5pt 8pt;border:0.5pt solid #CBD5E1;font-weight:700;text-align:left}
+      td{padding:4pt 8pt;border:0.5pt solid #E2E8F0}
+      .section-header td{background:#1E293B;color:#fff;font-weight:700}
+      .total-row td,.subtotal{font-weight:700;background:#F8FAFC}
+      @page{size:A4;margin:20mm 15mm}
+    </style></head><body>
+    <h1>${titulo}</h1>
+    <p style="font-size:9pt;color:#475569;margin-bottom:20pt">
+      <strong>${exp.empresa||'—'}</strong> | RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}
+    </p>
+    ${clone.innerHTML}
+    </body></html>`;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(titulo||secId).replace(/[^a-zA-Z0-9]/g,'_')}_${exp.empresa||'empresa'}_${exp.periodo||''}.doc`;
+  a.click();
+  toast(`${titulo} exportado a Word ✓`, 'success');
+}
+
+// Exportar cédulas analíticas a Excel
+function exportarCedulasExcel() {
+  const cedulas = window._apCedulas || {};
+  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  if (!lista.length) { toast('No hay cédulas analíticas', 'warning'); return; }
+  const exp = _apExpediente || {};
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toFixed(2);
+
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+    xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8"><style>
+      body{font-family:Calibri;font-size:10pt}
+      th{background:#1E293B;color:#fff;padding:5px 8px;border:1px solid #374151}
+      td{padding:4px 8px;border:1px solid #E2E8F0}
+      h2{color:#0F172A}h3{color:#B8930A;margin-top:20px}
+    </style></head><body>
+    <h2>CÉDULAS ANALÍTICAS — ${exp.empresa||'—'} | ${exp.periodo||'—'}</h2>
+    <h3>Resumen</h3>
+    <table>
+      <thead><tr><th>Ref.</th><th>Cuenta / Título</th><th>Saldo s/Libros</th><th>Ajuste</th><th>Saldo Auditado</th><th>Estado</th><th>Conclusión</th></tr></thead>
+      <tbody>${lista.map(ced=>{
+        const dif=(parseFloat(ced.totalAuditado)||0)-(parseFloat(ced.totalLibros)||0);
+        return `<tr>
+          <td>${ced.ref||'—'}</td><td>${ced.titulo||''}</td>
+          <td style="text-align:right">${fmtN(ced.totalLibros)}</td>
+          <td style="text-align:right">${Math.abs(dif)>0.01?fmtN(Math.abs(dif)):'0.00'}</td>
+          <td style="text-align:right">${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+          <td>${ced.estado||'borrador'}</td>
+          <td>${ced.conclusion||''}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+
+  lista.forEach(ced => {
+    html += `<h3>Cédula ${ced.ref||'—'} — ${ced.titulo||''}</h3>
+      <table>
+        <thead><tr><th>Subcuenta</th><th>Saldo s/Libros</th><th>Ajuste</th><th>Saldo Auditado</th><th>Marcas</th><th>Notas</th></tr></thead>
+        <tbody>${(ced.filas||[]).map(f=>`<tr>
+          <td>${f.cuenta||''}</td>
+          <td style="text-align:right">${fmtN(f.saldoLibros)}</td>
+          <td style="text-align:right">${fmtN(f.ajuste||0)}</td>
+          <td style="text-align:right">${fmtN(f.saldoAuditado)}</td>
+          <td>${f.marcas||'✓'}</td>
+          <td>${f.notas||''}</td>
+        </tr>`).join('')}
+        <tr style="font-weight:700;background:#F8FAFC">
+          <td>TOTAL</td>
+          <td style="text-align:right">${fmtN(ced.totalLibros)}</td>
+          <td></td>
+          <td style="text-align:right">${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+          <td></td><td></td>
+        </tr></tbody>
+      </table>`;
+  });
+
+  html += '</body></html>';
+  const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Cedulas_Analiticas_${exp.empresa||'empresa'}_${exp.periodo||''}.xls`;
+  a.click();
+  toast('Cédulas exportadas a Excel ✓', 'success');
 }
 
 
