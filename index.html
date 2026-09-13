@@ -134,19 +134,29 @@ body { font-family: var(--font-main); background: var(--bg-deep); color: var(--t
 .logo-name { display: block; font-size: 1rem; font-weight: 700; color: var(--gold); letter-spacing: .5px; }
 .logo-sub { display: block; font-size: .7rem; color: var(--text-muted); }
 
-.sidebar-nav { flex: 1; padding: 16px 10px; overflow-y: auto; }
-.nav-section-label { font-size: .65rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1.5px; padding: 0 8px 10px; margin-top: 30px; border-top: 1px solid var(--border); padding-top: 18px; }
-.nav-section-label:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+.sidebar-nav { flex: 1; padding: 18px 10px; overflow-y: auto; }
+.nav-section { margin-bottom: 8px; }
+.nav-section-label {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .68rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1.5px;
+  padding: 14px 10px 14px; margin-top: 14px; border-top: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.nav-section:first-child .nav-section-label { margin-top: 0; border-top: none; }
+.nav-section-arrow { font-size: .65rem; transition: transform .15s; color: var(--text-muted); }
+.nav-section.collapsed .nav-section-arrow { transform: rotate(-90deg); }
+.nav-section.collapsed .nav-section-items { display: none; }
+.nav-section-items { display: flex; flex-direction: column; gap: 10px; }
 
 .nav-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; border-radius: var(--radius-sm);
+  padding: 14px 16px; border-radius: var(--radius-sm);
   color: var(--text-secondary); font-size: .875rem; font-weight: 500;
-  text-decoration: none; transition: all .2s; margin-bottom: 7px;
+  text-decoration: none; transition: all .2s;
   cursor: pointer;
 }
 .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-.nav-item.active { background: linear-gradient(90deg, rgba(212,175,55,.15), transparent); color: var(--gold); border-left: 2px solid var(--gold); padding-left: 12px; }
+.nav-item.active { background: linear-gradient(90deg, rgba(212,175,55,.15), transparent); color: var(--gold); border-left: 2px solid var(--gold); padding-left: 14px; }
 .nav-icon { font-size: 1rem; min-width: 20px; }
 
 .nav-group { margin-bottom: 2px; }
@@ -976,158 +986,192 @@ html[data-theme="claro"] #gea-native-root{
   </div>
 
   <nav class="sidebar-nav">
-    <div class="nav-section-label">MÓDULOS</div>
-    <a href="#" class="nav-item active" data-module="biblioteca">
-      <span class="nav-icon">📚</span>
-      <span>Biblioteca</span>
-    </a>
-    <a href="#" class="nav-item" data-module="pizarra">
-      <span class="nav-icon">🧮</span>
-      <span>Pizarra Práctica</span>
-    </a>
-    <a href="#" class="nav-item" data-module="inversiones">
-      <span class="nav-icon">📈</span>
-      <span>Inversiones</span>
-    </a>
-    <div class="nav-section-label">CONTABILIDAD Y FINANZAS</div>
-    <a href="#" class="nav-item" data-module="documentos">
-      <span class="nav-icon">📄</span>
-      <span>Documentos</span>
-    </a>
-    <a href="#" class="nav-item" data-module="tributacion">
-      <span class="nav-icon">🧾</span>
-      <span>Tributación</span>
-    </a>
-    <a href="#" class="nav-item" data-module="estados">
-      <span class="nav-icon">📊</span>
-      <span>Estados Financieros</span>
-    </a>
-    <a href="#" class="nav-item" data-module="presupuestos">
-      <span class="nav-icon">💰</span>
-      <span>Presupuestos</span>
-    </a>
-    <a href="#" class="nav-item" data-module="roles">
-      <span class="nav-icon">👔</span>
-      <span>Roles de Pago</span>
-    </a>
-    <a href="#" class="nav-item" data-module="bancos">
-      <span class="nav-icon">🏦</span>
-      <span>Bancos</span>
-    </a>
-    <a href="#" class="nav-item" data-module="deudas">
-      <span class="nav-icon">⚖️</span>
-      <span>Análisis de Deudas</span>
-    </a>
-    <div class="nav-section-label">AUDITORÍA Y CUMPLIMIENTO</div>
-    <a href="#" class="nav-item" data-module="audit-pro">
-      <span class="nav-icon">🏛️</span>
-      <span>Auditoría Profesional</span>
-    </a>
-    <a href="#" class="nav-item" data-module="auditoria">
-      <span class="nav-icon">🔎</span>
-      <span>Auditoría</span>
-    </a>
-    <a href="#" class="nav-item" data-module="niif">
-      <span class="nav-icon">📘</span>
-      <span>NIIF</span>
-    </a>
-    <div class="nav-section-label">HERRAMIENTAS</div>
-    <a href="#" class="nav-item" data-module="inventarios">
-      <span class="nav-icon">📦</span>
-      <span>Inventarios</span>
-    </a>
-    <a href="#" class="nav-item" data-module="memos">
-      <span class="nav-icon">📝</span>
-      <span>Análisis de Memos</span>
-    </a>
-    <a href="#" class="nav-item" data-module="noticias">
-      <span class="nav-icon">📰</span>
-      <span>Noticias Financieras</span>
-    </a>
-    <a href="#" class="nav-item" data-module="seguimiento">
-      <span class="nav-icon">🔍</span>
-      <span>Seguimiento</span>
-    </a>
-    <div class="nav-section-label">GEA — GESTIÓN EMPRESARIAL</div>
-    <a href="#" class="nav-item" data-module="gea" data-geaview="dashboard">
-      <span class="nav-icon">📊</span>
-      <span>Dashboard (GEA)</span>
-    </a>
-    <a href="#" class="nav-item" data-module="gea" data-geaview="empresas">
-      <span class="nav-icon">🏢</span>
-      <span>Empresas y Cumplimiento</span>
-    </a>
-    <a href="#" class="nav-item" data-module="gea" data-geaview="revision">
-      <span class="nav-icon">🧾</span>
-      <span>Revisión de Documentos</span>
-    </a>
-
-    <div class="nav-group" id="navgroup-gea-tramites">
-      <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-tramites')">
-        <span class="nav-icon">📨</span><span>Trámites</span><span class="nav-group-arrow">▾</span>
+    <div class="nav-section" id="navsection-modulos">
+      <div class="nav-section-label" onclick="toggleFinanceSection('modulos')">
+        <span>MÓDULOS</span><span class="nav-section-arrow">▾</span>
       </div>
-      <div class="nav-group-items">
-        <a href="#" class="nav-item" data-module="gea" data-geaview="publicos"><span>📨 Trámites Públicos</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="privados"><span>🔒 Trámites Privados</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="elaboracion"><span>📝 Memos y Oficios</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="actas"><span>🗒️ Actas de Reunión</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="actasjunta"><span>🏛️ Actas de Junta</span></a>
+      <div class="nav-section-items">
+        <a href="#" class="nav-item active" data-module="biblioteca">
+          <span class="nav-icon">📚</span>
+          <span>Biblioteca</span>
+        </a>
+        <a href="#" class="nav-item" data-module="pizarra">
+          <span class="nav-icon">🧮</span>
+          <span>Pizarra Práctica</span>
+        </a>
+        <a href="#" class="nav-item" data-module="inversiones">
+          <span class="nav-icon">📈</span>
+          <span>Inversiones</span>
+        </a>
       </div>
     </div>
 
-    <a href="#" class="nav-item" data-module="gea" data-geaview="equipos">
-      <span class="nav-icon">👥</span>
-      <span>Equipo de Trabajo</span>
-    </a>
-
-    <div class="nav-group" id="navgroup-gea-auditoria">
-      <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-auditoria')">
-        <span class="nav-icon">🔎</span><span>Auditoría (GEA)</span><span class="nav-group-arrow">▾</span>
+    <div class="nav-section" id="navsection-contabilidad">
+      <div class="nav-section-label" onclick="toggleFinanceSection('contabilidad')">
+        <span>CONTABILIDAD Y FINANZAS</span><span class="nav-section-arrow">▾</span>
       </div>
-      <div class="nav-group-items">
-        <a href="#" class="nav-item" data-module="gea" data-geaview="auditoria"><span>📋 Hallazgos de Auditoría</span></a>
+      <div class="nav-section-items">
+        <a href="#" class="nav-item" data-module="documentos">
+          <span class="nav-icon">📄</span>
+          <span>Documentos</span>
+        </a>
+        <a href="#" class="nav-item" data-module="tributacion">
+          <span class="nav-icon">🧾</span>
+          <span>Tributación</span>
+        </a>
+        <a href="#" class="nav-item" data-module="estados">
+          <span class="nav-icon">📊</span>
+          <span>Estados Financieros</span>
+        </a>
+        <a href="#" class="nav-item" data-module="presupuestos">
+          <span class="nav-icon">💰</span>
+          <span>Presupuestos</span>
+        </a>
+        <a href="#" class="nav-item" data-module="roles">
+          <span class="nav-icon">👔</span>
+          <span>Roles de Pago</span>
+        </a>
+        <a href="#" class="nav-item" data-module="bancos">
+          <span class="nav-icon">🏦</span>
+          <span>Bancos</span>
+        </a>
+        <a href="#" class="nav-item" data-module="deudas">
+          <span class="nav-icon">⚖️</span>
+          <span>Análisis de Deudas</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="nav-section collapsed" id="navsection-auditoria">
+      <div class="nav-section-label" onclick="toggleFinanceSection('auditoria')">
+        <span>AUDITORÍA Y CUMPLIMIENTO</span><span class="nav-section-arrow">▾</span>
+      </div>
+      <div class="nav-section-items">
+        <a href="#" class="nav-item" data-module="audit-pro">
+          <span class="nav-icon">🏛️</span>
+          <span>Auditoría Profesional</span>
+        </a>
+        <a href="#" class="nav-item" data-module="auditoria">
+          <span class="nav-icon">🔎</span>
+          <span>Auditoría</span>
+        </a>
+        <a href="#" class="nav-item" data-module="niif">
+          <span class="nav-icon">📘</span>
+          <span>NIIF</span>
+        </a>
       </div>
     </div>
 
-    <div class="nav-group" id="navgroup-gea-bancario">
-      <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-bancario')">
-        <span class="nav-icon">🏦</span><span>Área Bancaria</span><span class="nav-group-arrow">▾</span>
+    <div class="nav-section collapsed" id="navsection-herramientas">
+      <div class="nav-section-label" onclick="toggleFinanceSection('herramientas')">
+        <span>HERRAMIENTAS</span><span class="nav-section-arrow">▾</span>
       </div>
-      <div class="nav-group-items">
-        <a href="#" class="nav-item" data-module="gea" data-geaview="bancario"><span>🏦 Bancos y Flujo de Caja</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="bancario-atraso"><span>⏰ Atraso</span></a>
+      <div class="nav-section-items">
+        <a href="#" class="nav-item" data-module="inventarios">
+          <span class="nav-icon">📦</span>
+          <span>Inventarios</span>
+        </a>
+        <a href="#" class="nav-item" data-module="memos">
+          <span class="nav-icon">📝</span>
+          <span>Análisis de Memos</span>
+        </a>
+        <a href="#" class="nav-item" data-module="noticias">
+          <span class="nav-icon">📰</span>
+          <span>Noticias Financieras</span>
+        </a>
+        <a href="#" class="nav-item" data-module="seguimiento">
+          <span class="nav-icon">🔍</span>
+          <span>Seguimiento</span>
+        </a>
       </div>
     </div>
 
-    <div class="nav-group" id="navgroup-gea-rolespago">
-      <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-rolespago')">
-        <span class="nav-icon">💼</span><span>Roles de Pago</span><span class="nav-group-arrow">▾</span>
+    <div class="nav-section collapsed" id="navsection-gea">
+      <div class="nav-section-label" onclick="toggleFinanceSection('gea')">
+        <span>GEA — GESTIÓN EMPRESARIAL</span><span class="nav-section-arrow">▾</span>
       </div>
-      <div class="nav-group-items">
-        <a href="#" class="nav-item" data-module="gea" data-geaview="cumpleanos"><span>🎂 Cumpleaños</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="rolespago"><span>💵 Roles de Pago</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="vacaciones"><span>🏖️ Vacaciones</span></a>
+      <div class="nav-section-items">
+        <a href="#" class="nav-item" data-module="gea" data-geaview="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard (GEA)</span>
+        </a>
+        <a href="#" class="nav-item" data-module="gea" data-geaview="empresas">
+          <span class="nav-icon">🏢</span>
+          <span>Empresas y Cumplimiento</span>
+        </a>
+        <a href="#" class="nav-item" data-module="gea" data-geaview="revision">
+          <span class="nav-icon">🧾</span>
+          <span>Revisión de Documentos</span>
+        </a>
+
+        <div class="nav-group" id="navgroup-gea-tramites">
+          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-tramites')">
+            <span class="nav-icon">📨</span><span>Trámites</span><span class="nav-group-arrow">▾</span>
+          </div>
+          <div class="nav-group-items">
+            <a href="#" class="nav-item" data-module="gea" data-geaview="publicos"><span>📨 Trámites Públicos</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="privados"><span>🔒 Trámites Privados</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="elaboracion"><span>📝 Memos y Oficios</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="actas"><span>🗒️ Actas de Reunión</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="actasjunta"><span>🏛️ Actas de Junta</span></a>
+          </div>
+        </div>
+
+        <a href="#" class="nav-item" data-module="gea" data-geaview="equipos">
+          <span class="nav-icon">👥</span>
+          <span>Equipo de Trabajo</span>
+        </a>
+
+        <div class="nav-group" id="navgroup-gea-auditoria">
+          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-auditoria')">
+            <span class="nav-icon">🔎</span><span>Auditoría (GEA)</span><span class="nav-group-arrow">▾</span>
+          </div>
+          <div class="nav-group-items">
+            <a href="#" class="nav-item" data-module="gea" data-geaview="auditoria"><span>📋 Hallazgos de Auditoría</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group" id="navgroup-gea-bancario">
+          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-bancario')">
+            <span class="nav-icon">🏦</span><span>Área Bancaria</span><span class="nav-group-arrow">▾</span>
+          </div>
+          <div class="nav-group-items">
+            <a href="#" class="nav-item" data-module="gea" data-geaview="bancario"><span>🏦 Bancos y Flujo de Caja</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="bancario-atraso"><span>⏰ Atraso</span></a>
+          </div>
+        </div>
+
+        <div class="nav-group" id="navgroup-gea-rolespago">
+          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-rolespago')">
+            <span class="nav-icon">💼</span><span>Roles de Pago</span><span class="nav-group-arrow">▾</span>
+          </div>
+          <div class="nav-group-items">
+            <a href="#" class="nav-item" data-module="gea" data-geaview="cumpleanos"><span>🎂 Cumpleaños</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="rolespago"><span>💵 Roles de Pago</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="vacaciones"><span>🏖️ Vacaciones</span></a>
+          </div>
+        </div>
+
+        <a href="#" class="nav-item" data-module="gea" data-geaview="activos">
+          <span class="nav-icon">🏷️</span>
+          <span>Activos Fijos</span>
+        </a>
+
+        <div class="nav-group" id="navgroup-gea-societario">
+          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-societario')">
+            <span class="nav-icon">📜</span><span>Societario</span><span class="nav-group-arrow">▾</span>
+          </div>
+          <div class="nav-group-items">
+            <a href="#" class="nav-item" data-module="gea" data-geaview="cesiones"><span>📜 Cesión de Acciones</span></a>
+            <a href="#" class="nav-item" data-module="gea" data-geaview="dividendos"><span>💰 Dividendos</span></a>
+          </div>
+        </div>
+        <a href="#" class="nav-item" id="nav-permisos-invitado" onclick="event.preventDefault();configurarPermisosInvitado()">
+          <span class="nav-icon">🔑</span>
+          <span>Permisos por Empresa (Invitado)</span>
+        </a>
       </div>
     </div>
-
-    <a href="#" class="nav-item" data-module="gea" data-geaview="activos">
-      <span class="nav-icon">🏷️</span>
-      <span>Activos Fijos</span>
-    </a>
-
-    <div class="nav-group" id="navgroup-gea-societario">
-      <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-societario')">
-        <span class="nav-icon">📜</span><span>Societario</span><span class="nav-group-arrow">▾</span>
-      </div>
-      <div class="nav-group-items">
-        <a href="#" class="nav-item" data-module="gea" data-geaview="cesiones"><span>📜 Cesión de Acciones</span></a>
-        <a href="#" class="nav-item" data-module="gea" data-geaview="dividendos"><span>💰 Dividendos</span></a>
-      </div>
-    </div>
-    <a href="#" class="nav-item" id="nav-permisos-invitado" onclick="event.preventDefault();configurarPermisosInvitado()">
-      <span class="nav-icon">🔑</span>
-      <span>Permisos por Empresa (Invitado)</span>
-    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -2246,7 +2290,9 @@ html[data-theme="claro"] #gea-native-root{
         <button class="ef-tab" onclick="showEfTab('notas')">Notas a los EEFF</button>
         <button class="ef-tab" onclick="showEfTab('h-v')">Análisis H/V</button>
         <button class="ef-tab" onclick="showEfTab('indices')">Índices Financieros</button>
+        <button class="ef-tab" onclick="showEfTab('kpis')">KPIs</button>
         <button class="ef-tab" onclick="showEfTab('graficos')">Gráficos</button>
+        <button class="ef-tab" onclick="showEfTab('recomendaciones')">Recomendaciones</button>
       </div>
 
       <div class="ef-content active" id="ef-balance">
@@ -2258,7 +2304,9 @@ html[data-theme="claro"] #gea-native-root{
       <div class="ef-content" id="ef-notas"></div>
       <div class="ef-content" id="ef-h-v"></div>
       <div class="ef-content" id="ef-indices"></div>
+      <div class="ef-content" id="ef-kpis"></div>
       <div class="ef-content" id="ef-graficos"></div>
+      <div class="ef-content" id="ef-recomendaciones"></div>
 
       <div id="ef-acciones-finales" class="card" style="margin-top:20px;display:none">
         <h3 style="margin-top:0">📁 Exportar, Imprimir y Guardar</h3>
@@ -8332,7 +8380,9 @@ function renderEfTab(tab) {
   else if (tab === 'notas') renderNotasEEFF();
   else if (tab === 'h-v') renderAnalisisHV();
   else if (tab === 'indices') renderIndicesEF();
+  else if (tab === 'kpis') renderKPIsEF();
   else if (tab === 'graficos') renderGraficosEF();
+  else if (tab === 'recomendaciones') renderRecomendacionesEF();
   const accionesFinales = document.getElementById('ef-acciones-finales');
   if (accionesFinales) accionesFinales.style.display = periodos.length > 0 ? 'block' : 'none';
 }
@@ -8648,7 +8698,7 @@ function renderNotasEEFF() {
   const cxp       = g('CUENTAS POR PAGAR');
   const ppe       = g('PROPIEDAD PLANTA EQUIPO');
   const dep       = g('DEPRECIACION ACUMULADA');
-  const ppNeto    = ppe + dep; // dep es negativa en rawNorm
+  const ppNeto    = ppe - Math.abs(dep); // resta el valor absoluto — independiente de si la fuente guarda la depreciación en positivo o negativo
   const deuda     = g('OBLIGACIONES BANCARIAS CP') + g('OBLIGACIONES BANCARIAS LP');
   const capital   = g('CAPITAL SOCIAL');
 
@@ -8717,18 +8767,28 @@ function renderNotasEEFF() {
     <!-- NOTA 6 -->
     <div class="card" style="margin-bottom:16px">
       <h5 style="color:var(--gold);margin-top:0">Nota 6 — Propiedad, Planta y Equipo</h5>
-      <table class="ef-table" style="margin-bottom:10px">
-        <thead><tr><th class="left">Categoría</th><th>Costo</th><th>Dep. Acumulada</th><th>Valor Neto</th></tr></thead>
-        <tbody>
-          <tr><td class="account">Terrenos</td><td>${fmtN(g('TERRENOS COSTO'))}</td><td>—</td><td>${fmtN(g('TERRENOS COSTO'))}</td></tr>
-          <tr><td class="account">Edificios e inmuebles</td><td>${fmtN(g('EDIFICIOS COSTO'))}</td><td>—</td><td>—</td></tr>
-          <tr><td class="account">Maquinaria y equipo</td><td>${fmtN(g('MAQUINARIA COSTO'))}</td><td>—</td><td>—</td></tr>
-          <tr><td class="account">Vehículos</td><td>${fmtN(g('VEHICULOS'))}</td><td>—</td><td>—</td></tr>
-          <tr><td class="account">Equipo de cómputo</td><td>${fmtN(g('EQUIPO COMPUTACION'))}</td><td>—</td><td>—</td></tr>
-          <tr><td class="account">Muebles y enseres</td><td>${fmtN(g('MUEBLES ENSERES'))}</td><td>—</td><td>—</td></tr>
-          <tr class="subtotal"><td><strong>Total PPE</strong></td><td><strong>${fmtN(ppe)}</strong></td><td><strong>(${fmtN(Math.abs(dep))})</strong></td><td><strong>${fmtN(ppNeto)}</strong></td></tr>
-        </tbody>
-      </table>
+      ${(() => {
+        const categorias = [
+          { nombre:'Terrenos', costo: g('TERRENOS COSTO') },
+          { nombre:'Edificios e inmuebles', costo: g('EDIFICIOS COSTO') },
+          { nombre:'Maquinaria y equipo', costo: g('MAQUINARIA COSTO') },
+          { nombre:'Vehículos', costo: g('VEHICULOS') },
+          { nombre:'Equipo de cómputo', costo: g('EQUIPO COMPUTACION') },
+          { nombre:'Muebles y enseres', costo: g('MUEBLES ENSERES') },
+        ].filter(c => Math.abs(c.costo) > 0.01);
+        const filasCategorias = categorias.map(c => `<tr><td class="account">${c.nombre}</td><td>${fmtN(c.costo)}</td><td>—</td><td>${fmtN(c.costo)}</td></tr>`).join('');
+        const notaSinDesglose = !categorias.length
+          ? `<p style="font-size:.78rem;color:var(--text-muted);margin:0 0 10px">La fuente de datos cargada no trae el desglose de PPE por categoría (terrenos, edificios, maquinaria, etc.), solo el valor consolidado que se muestra a continuación.</p>`
+          : '';
+        return `${notaSinDesglose}
+        <table class="ef-table" style="margin-bottom:10px">
+          <thead><tr><th class="left">Categoría</th><th>Costo</th><th>Dep. Acumulada</th><th>Valor Neto</th></tr></thead>
+          <tbody>
+            ${filasCategorias}
+            <tr class="subtotal"><td><strong>Total PPE</strong></td><td><strong>${fmtN(ppe)}</strong></td><td><strong>(${fmtN(Math.abs(dep))})</strong></td><td><strong>${fmtN(ppNeto)}</strong></td></tr>
+          </tbody>
+        </table>`;
+      })()}
       <p style="font-size:.82rem;line-height:1.7">El gasto por depreciación del ejercicio ${año} fue de <strong>$${fmtN(g('GASTO DEPRECIACION'))}</strong>, reconocido en el estado de resultados.</p>
     </div>
 
@@ -9095,7 +9155,7 @@ function renderIndicesEF() {
     const cxp   = g('CUENTAS POR PAGAR');
     const ppe   = g('PROPIEDAD PLANTA EQUIPO');
     const dep   = g('DEPRECIACION ACUMULADA');
-    const ppNeto = ppe + dep;
+    const ppNeto = ppe - Math.abs(dep); // resta el valor absoluto, sin depender del signo con que llegue del origen
     const deudaT = g('OBLIGACIONES BANCARIAS CP')+g('OBLIGACIONES BANCARIAS LP');
     const vtas  = g('VENTAS NETAS');
     const costo = g('COSTO DE VENTAS');
@@ -9145,7 +9205,12 @@ function renderIndicesEF() {
       roa:           ta ? utNeta/ta*100 : 0,
       roe:           pat ? utNeta/pat*100 : 0,
       roi:           (tp+pat) ? ebit*(1-0.22)/(tp+pat)*100 : 0,
-      // CRECIMIENTO (si hay 2 períodos se calcula en la tabla)
+      // DUPONT Y EFICIENCIA ADICIONAL
+      multiplicadorApalancamiento: pat ? ta/pat : 0,
+      gastoAdminVentas: vtas ? gAdmin/vtas*100 : 0,
+      gastoVentaVentas: vtas ? g('GASTO VENTAS')/vtas*100 : 0,
+      capitalTrabajoVentas: vtas ? ctn/vtas*100 : 0,
+      coberturaDeudaEbitda: deudaT ? ebitda/deudaT : 0,
       ebit, ebitda, vtas, utNeta, ta, pat, tp,
     };
   };
@@ -9230,6 +9295,38 @@ function renderIndicesEF() {
       fila('EBIT (USD)', d=>d.ebit, fmtN, 'rent', 'Utilidad antes de intereses e impuestos'),
       fila('EBITDA (USD)', d=>d.ebitda, fmtN, 'rent', 'EBIT + Depreciación/Amortización'),
     ]),
+    seccion('DUPONT Y EFICIENCIA',[
+      fila('Margen neto (Dupont)', d=>d.margenNeto, fmtP, 'rent', 'Utilidad Neta / Ventas — 1er factor del ROE'),
+      fila('Rotación de activos (Dupont)', d=>d.rotActivos, fmtR, 'rot', 'Ventas / Total Activos — 2do factor del ROE'),
+      fila('Multiplicador de apalancamiento', d=>d.multiplicadorApalancamiento, fmtR, 'end', 'Activo Total / Patrimonio — 3er factor del ROE (óptimo: 1.5x–2.5x)'),
+      fila('ROE verificado (Margen × Rotación × Apalanc.)', d=>d.margenNeto/100*d.rotActivos*d.multiplicadorApalancamiento*100, fmtP, 'rent', 'Debe coincidir con el ROE de Rentabilidad — confirma la descomposición Dupont'),
+      fila('Gasto Administrativo / Ventas', d=>d.gastoAdminVentas, fmtP, 'end', 'Menor es más eficiente — óptimo: <12%'),
+      fila('Gasto de Ventas / Ventas', d=>d.gastoVentaVentas, fmtP, 'end', 'Menor es más eficiente — óptimo: <10%'),
+      fila('Capital de trabajo / Ventas', d=>d.capitalTrabajoVentas, fmtP, 'liquidez', 'Capital de Trabajo Neto / Ventas — recursos inmovilizados por cada $100 vendidos'),
+      fila('Cobertura de deuda con EBITDA (veces)', d=>d.coberturaDeudaEbitda, fmtR, 'liquidez', 'EBITDA / Deuda Financiera Total — óptimo: >0.33x (deuda pagable en <3 años)'),
+    ]),
+    seccion('CRECIMIENTO (vs. período anterior)',
+      periodos.length > 1 ? [
+        (() => {
+          const filaCrecimiento = (label, vals, desc) => {
+            const celdas = vals.map((v,i) => {
+              if (i===0) return `<td style="text-align:right;font-family:var(--font-mono);color:var(--text-muted)">—</td>`;
+              const prev = vals[i-1];
+              const crec = prev ? (v-prev)/Math.abs(prev)*100 : (v>0?100:0);
+              const color = crec>=0 ? 'var(--emerald)' : '#ef4444';
+              return `<td style="text-align:right;font-family:var(--font-mono);color:${color}">${crec>=0?'+':''}${crec.toFixed(1)}%</td>`;
+            }).join('');
+            return `<tr><td class="account" title="${desc}">${label}<span style="font-size:.65rem;color:var(--text-muted);display:block;line-height:1.3">${desc}</span></td>${celdas}</tr>`;
+          };
+          return [
+            filaCrecimiento('Crecimiento en Ventas', indices.map(d=>d.vtas), 'Variación % de Ventas Netas respecto al período anterior'),
+            filaCrecimiento('Crecimiento en Utilidad Neta', indices.map(d=>d.utNeta), 'Variación % de Utilidad Neta respecto al período anterior'),
+            filaCrecimiento('Crecimiento en EBITDA', indices.map(d=>d.ebitda), 'Variación % de EBITDA respecto al período anterior'),
+            filaCrecimiento('Crecimiento en Activo Total', indices.map(d=>d.ta), 'Variación % de Activo Total respecto al período anterior'),
+          ].join('');
+        })()
+      ] : []
+    ),
   ].filter(Boolean).join('');
 
   el.innerHTML = `
@@ -9247,6 +9344,179 @@ function renderIndicesEF() {
 }
 
 
+
+// ── KPIs — tablero de indicadores clave (formato tarjetas) ──────────────────
+// ── Recomendaciones financieras y de control — generadas según los índices calculados ──
+function renderRecomendacionesEF() {
+  const el = document.getElementById('ef-recomendaciones');
+  if (!el) return;
+  if (!periodos.length) { el.innerHTML = '<p style="color:var(--text-muted);padding:20px">Cargue al menos 1 período.</p>'; return; }
+
+  const ultimo = periodos[periodos.length - 1];
+  const anterior = periodos.length > 1 ? periodos[periodos.length - 2] : null;
+  const g = k => parseFloat((ultimo.rawNorm||ultimo.raw)[k]) || 0;
+
+  const ac=g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE');
+  const ta=g('TOTAL ACTIVO')||(ac+g('TOTAL ACTIVO NO CORRIENTE'));
+  const tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO')||ta-tp;
+  const ef=g('EFECTIVO'), cxc=g('CUENTAS POR COBRAR'), inv=g('INVENTARIOS'), cxp=g('CUENTAS POR PAGAR');
+  const vtas=g('VENTAS NETAS'), costo=g('COSTO DE VENTAS'), utNeta=g('UTILIDAD EJERCICIO');
+  const gFin=g('GASTO FINANCIERO'), gAdmin=g('GASTO ADMINISTRATIVO'), gDep=g('GASTO DEPRECIACION'), ir=g('IMPUESTO RENTA GASTO');
+  const ebit = utNeta+ir+gFin;
+  const razonCorriente = pc?ac/pc:0;
+  const endeudActivo = ta?tp/ta*100:0;
+  const margenNeto = vtas?utNeta/vtas*100:0;
+  const roe = pat?utNeta/pat*100:0;
+  const diasInv = costo?inv/costo*365:0;
+  const diasCobro = vtas?cxc/vtas*365:0;
+  const diasPago = costo?cxp/costo*365:0;
+  const coberturaIntereses = gFin?ebit/gFin:0;
+  const capitalTrabajo = ac-pc;
+  const gastoAdminVentas = vtas?gAdmin/vtas*100:0;
+  const crecVentas = anterior ? (() => { const vAnt=parseFloat((anterior.rawNorm||anterior.raw)['VENTAS NETAS'])||0; return vAnt?(vtas-vAnt)/Math.abs(vAnt)*100:null; })() : null;
+
+  const financieras = [];
+  const control = [];
+
+  // ── Recomendaciones financieras (rule-based sobre los índices calculados) ──
+  if (pc && razonCorriente < 1.2) financieras.push({ sev:'alto', texto:`Liquidez corriente de ${razonCorriente.toFixed(2)}x, por debajo del rango saludable (≥1.5x). Considere negociar plazos con proveedores, gestionar una línea de crédito de corto plazo, o acelerar la cobranza de cartera.` });
+  else if (pc && razonCorriente > 3) financieras.push({ sev:'medio', texto:`Liquidez corriente de ${razonCorriente.toFixed(2)}x, posiblemente por encima de lo necesario. Evalúe si hay exceso de recursos ociosos en caja o inventarios que podrían invertirse de forma más rentable.` });
+
+  if (endeudActivo > 60) financieras.push({ sev:'alto', texto:`Endeudamiento sobre activos de ${endeudActivo.toFixed(1)}%, por encima del umbral prudente (≤60%). Evalúe capitalización de socios, reestructuración de pasivos o priorizar el pago de deuda antes de asumir nuevos compromisos.` });
+
+  if (vtas && margenNeto < 3) financieras.push({ sev:'medio', texto:`Margen neto de ${margenNeto.toFixed(1)}%, estrecho. Revise la estructura de costos y gastos, y evalúe si la política de precios refleja adecuadamente los costos actuales.` });
+
+  if (pat && roe < 10) financieras.push({ sev:'medio', texto:`ROE de ${roe.toFixed(1)}%, por debajo de referencias típicas de costo de oportunidad (≈10-15%). Evalúe la eficiencia operativa y el uso del apalancamiento financiero (ver descomposición Dupont en la pestaña KPIs).` });
+
+  if (costo && diasInv > 90) financieras.push({ sev:'medio', texto:`${Math.round(diasInv)} días de inventario en bodega. Revise políticas de compras, promociones para inventario de lento movimiento, y la posibilidad de descuentos por pronto pago a proveedores.` });
+
+  if (vtas && diasCobro > 60) financieras.push({ sev:'alto', texto:`${Math.round(diasCobro)} días promedio de cobro a clientes. Fortalezca las políticas de crédito, considere descuentos por pronto pago, y dé seguimiento activo a la cartera vencida.` });
+
+  if (gFin && coberturaIntereses < 2) financieras.push({ sev:'alto', texto:`Cobertura de intereses de ${coberturaIntereses.toFixed(1)}x — la operación genera poco margen sobre el gasto financiero. Existe riesgo ante una eventual dificultad de refinanciamiento.` });
+
+  if (capitalTrabajo < 0) financieras.push({ sev:'alto', texto:`Capital de trabajo negativo ($${capitalTrabajo.toLocaleString('es-EC',{minimumFractionDigits:2})}). El pasivo corriente supera al activo corriente, lo que representa un riesgo de iliquidez operativa en el corto plazo.` });
+
+  if (crecVentas !== null && crecVentas < 0) financieras.push({ sev:'alto', texto:`Las ventas cayeron ${Math.abs(crecVentas).toFixed(1)}% respecto al período anterior. Revise la estrategia comercial, la cartera de clientes y las condiciones de mercado.` });
+
+  if (gastoAdminVentas > 15) financieras.push({ sev:'medio', texto:`Gasto administrativo equivalente al ${gastoAdminVentas.toFixed(1)}% de las ventas. Evalúe oportunidades de eficiencia en la estructura administrativa.` });
+
+  if (!financieras.length) financieras.push({ sev:'ok', texto:'No se identificaron alertas financieras significativas con los umbrales estándar aplicados. Los indicadores del período se encuentran dentro de rangos razonables.' });
+
+  // ── Recomendaciones de control interno (heurísticas generales + señales del propio EEFF) ──
+  if (ef && ac && ef/ac > 0.4) control.push({ sev:'medio', texto:`El efectivo representa ${(ef/ac*100).toFixed(0)}% del activo corriente. Verifique que existan controles de custodia adecuados: conciliaciones bancarias mensuales, doble firma para pagos, y arqueos de caja sorpresivos.` });
+
+  if (cxc > 0) control.push({ sev:'bajo', texto:'Confirme que exista una política formal de provisión para cuentas incobrables, con un análisis de antigüedad de cartera actualizado y revisado periódicamente.' });
+
+  if (inv > 0) control.push({ sev:'bajo', texto:'Verifique que se realicen conteos físicos de inventario periódicos (cíclicos o anuales) y que las diferencias se concilien oportunamente contra los registros contables.' });
+
+  if (g('PROPIEDAD PLANTA EQUIPO') > 0) control.push({ sev:'bajo', texto:'Revise que las vidas útiles y valores residuales de los activos fijos se reevalúen periódicamente, y que exista un registro auxiliar de activos fijos conciliado con contabilidad.' });
+
+  control.push({ sev:'bajo', texto:'Confirme la segregación de funciones en los ciclos de compras (solicitud, aprobación, recepción y pago) y de ventas (facturación, despacho y cobranza), de forma que ninguna persona controle todo el proceso.' });
+  control.push({ sev:'bajo', texto:'Establezca niveles de aprobación de gastos según monto (ej. gerencia para gastos menores, junta directiva para inversiones mayores) y documente las autorizaciones.' });
+
+  const iconoSev = { alto:'🔴', medio:'🟡', bajo:'🔵', ok:'🟢' };
+  const colorSev = { alto:'#ef4444', medio:'#f59e0b', bajo:'#6366f1', ok:'var(--emerald)' };
+  const renderLista = (items) => items.map(it => `
+    <div style="display:flex;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-left:3px solid ${colorSev[it.sev]};border-radius:8px;margin-bottom:10px">
+      <span style="flex-shrink:0">${iconoSev[it.sev]}</span>
+      <span style="font-size:.82rem;color:var(--text-secondary);line-height:1.5">${it.texto}</span>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-bottom:4px">Recomendaciones — ${ultimo.nombre}</h4>
+    <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:18px">Generadas automáticamente a partir de los índices y KPIs calculados. Son una guía inicial de puntos a revisar — no reemplazan el juicio profesional del analista o auditor.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="ef-recom-grid">
+      <div>
+        <h5 style="color:var(--gold);margin:0 0 10px;font-size:.85rem">💰 Recomendaciones Financieras</h5>
+        ${renderLista(financieras)}
+      </div>
+      <div>
+        <h5 style="color:var(--gold);margin:0 0 10px;font-size:.85rem">🛡️ Recomendaciones de Control Interno</h5>
+        ${renderLista(control)}
+      </div>
+    </div>
+    <style>@media(max-width:900px){.ef-recom-grid{grid-template-columns:1fr !important}}</style>`;
+}
+
+function renderKPIsEF() {
+  const el = document.getElementById('ef-kpis');
+  if (!el) return;
+  if (!periodos.length) { el.innerHTML = '<p style="color:var(--text-muted);padding:20px">Cargue al menos 1 período.</p>'; return; }
+
+  const ultimo = periodos[periodos.length - 1];
+  const anterior = periodos.length > 1 ? periodos[periodos.length - 2] : null;
+  const g = (p, k) => parseFloat((p.rawNorm||p.raw)[k]) || 0;
+  const fmtN = v => '$' + (parseFloat(v)||0).toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:0});
+  const fmtP = v => (parseFloat(v)||0).toFixed(1) + '%';
+  const fmtR = v => (parseFloat(v)||0).toFixed(2) + 'x';
+
+  const calc = (p) => {
+    const vtas = g(p,'VENTAS NETAS'), costo = g(p,'COSTO DE VENTAS');
+    const gPers = g(p,'GASTO PERSONAL'), gAdmin = g(p,'GASTO ADMINISTRATIVO'), gVenta = g(p,'GASTO VENTAS'), gDep = g(p,'GASTO DEPRECIACION'), gFin = g(p,'GASTO FINANCIERO');
+    const ta = g(p,'TOTAL ACTIVO') || (g(p,'TOTAL ACTIVO CORRIENTE')+g(p,'TOTAL ACTIVO NO CORRIENTE'));
+    const pat = g(p,'TOTAL PATRIMONIO'), tp = g(p,'TOTAL PASIVO'), ac = g(p,'TOTAL ACTIVO CORRIENTE'), pc = g(p,'TOTAL PASIVO CORRIENTE');
+    const utNeta = g(p,'UTILIDAD EJERCICIO'), ir = g(p,'IMPUESTO RENTA GASTO');
+    const ebit = utNeta + ir + gFin;
+    // Aproximación: costos fijos = personal + admin + depreciación; costo variable = costo de ventas + gasto de ventas
+    const costosFijos = gPers + gAdmin + gDep;
+    const costoVariableRatio = vtas ? (costo + gVenta) / vtas : 0;
+    const puntoEquilibrio = costoVariableRatio < 1 ? costosFijos / (1 - costoVariableRatio) : 0;
+    const margenContribucion = vtas - (costo + gVenta);
+    const apalancOperativo = (margenContribucion - costosFijos) !== 0 ? margenContribucion / (margenContribucion - costosFijos) : 0;
+    const wacc = 0.10; // costo de capital asumido para el EVA aproximado — ajustable según el caso
+    const evaAprox = ebit*(1-0.22) - (ta*wacc);
+    const capitalTrabajo = ac - pc;
+    return { vtas, utNeta, ebit, ta, pat, tp, puntoEquilibrio, apalancOperativo, evaAprox, capitalTrabajo,
+      rotActivos: ta?vtas/ta:0, margenOper: vtas?ebit/vtas*100:0, autonomia: ta?pat/ta*100:0 };
+  };
+
+  const act = calc(ultimo);
+  const ant = anterior ? calc(anterior) : null;
+  const crecVentas = ant && ant.vtas ? (act.vtas-ant.vtas)/Math.abs(ant.vtas)*100 : null;
+  const crecUtilidad = ant && ant.utNeta ? (act.utNeta-ant.utNeta)/Math.abs(ant.utNeta)*100 : null;
+
+  const tarjeta = (icono, titulo, valor, colorEstado, subtitulo, tendencia) => `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid ${colorEstado};border-radius:10px;padding:16px 18px">
+      <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${icono} ${titulo}</div>
+      <div style="font-size:1.5rem;font-weight:700;color:${colorEstado};font-family:var(--font-mono)">${valor}</div>
+      ${subtitulo ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">${subtitulo}</div>` : ''}
+      ${tendencia !== null && tendencia !== undefined ? `<div style="font-size:.72rem;margin-top:6px;color:${tendencia>=0?'var(--emerald)':'#ef4444'}">${tendencia>=0?'▲':'▼'} ${Math.abs(tendencia).toFixed(1)}% vs. ${anterior.nombre}</div>` : ''}
+    </div>`;
+
+  const colorPorRango = (v, bueno, malo, invertido) => {
+    if (invertido) return v<=bueno ? 'var(--emerald)' : (v<=malo ? '#f59e0b' : '#ef4444');
+    return v>=bueno ? 'var(--emerald)' : (v>=malo ? '#f59e0b' : '#ef4444');
+  };
+
+  el.innerHTML = `
+    <h4 style="color:var(--gold);margin-bottom:4px">Tablero de KPIs — ${ultimo.nombre}</h4>
+    <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:16px">Indicadores clave de gestión, más allá de los índices financieros clásicos. ${!anterior?'Cargue un segundo período para ver tendencias de crecimiento.':''}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:20px">
+      ${tarjeta('📈','Crecimiento en Ventas', crecVentas!==null?(crecVentas>=0?'+':'')+crecVentas.toFixed(1)+'%':'—', crecVentas===null?'var(--text-muted)':colorPorRango(crecVentas,5,0), crecVentas===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
+      ${tarjeta('💵','Crecimiento en Utilidad', crecUtilidad!==null?(crecUtilidad>=0?'+':'')+crecUtilidad.toFixed(1)+'%':'—', crecUtilidad===null?'var(--text-muted)':colorPorRango(crecUtilidad,5,0), crecUtilidad===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
+      ${tarjeta('⚖️','Punto de Equilibrio (Ventas)', act.puntoEquilibrio>0?fmtN(act.puntoEquilibrio):'N/D', 'var(--gold)', 'Ventas mínimas para no perder ni ganar (aprox.)')}
+      ${tarjeta('🎚️','Apalancamiento Operativo', act.apalancOperativo?fmtR(act.apalancOperativo):'N/D', 'var(--gold)', 'Sensibilidad de la utilidad ante cambios en ventas')}
+      ${tarjeta('💎','EVA Aproximado', fmtN(act.evaAprox), act.evaAprox>=0?'var(--emerald)':'#ef4444', 'EBIT×(1-22%) − Activo×10% costo capital (asumido)')}
+      ${tarjeta('🏗️','Capital de Trabajo', fmtN(act.capitalTrabajo), act.capitalTrabajo>=0?'var(--emerald)':'#ef4444', 'Activo Corriente − Pasivo Corriente')}
+      ${tarjeta('🔄','Productividad del Activo', fmtR(act.rotActivos), colorPorRango(act.rotActivos,0.8,0.4), 'Ventas generadas por cada $1 de activo')}
+      ${tarjeta('🛡️','Autonomía Financiera', fmtP(act.autonomia), colorPorRango(act.autonomia,40,25), 'Patrimonio / Activo Total')}
+      ${tarjeta('📊','Margen Operacional', fmtP(act.margenOper), colorPorRango(act.margenOper,10,5), 'EBIT / Ventas')}
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
+      <h5 style="color:var(--gold);margin:0 0 10px;font-size:.85rem">🧮 Descomposición DuPont del ROE — ${ultimo.nombre}</h5>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--font-mono);font-size:.95rem">
+        <span style="color:var(--text-primary)">${fmtP(act.vtas?act.utNeta/act.vtas*100:0)}</span><span style="color:var(--text-muted)">(Margen Neto)</span>
+        <span style="color:var(--text-muted)">×</span>
+        <span style="color:var(--text-primary)">${fmtR(act.rotActivos)}</span><span style="color:var(--text-muted)">(Rotación Activos)</span>
+        <span style="color:var(--text-muted)">×</span>
+        <span style="color:var(--text-primary)">${fmtR(act.pat?act.ta/act.pat:0)}</span><span style="color:var(--text-muted)">(Apalancamiento)</span>
+        <span style="color:var(--text-muted)">=</span>
+        <span style="color:var(--gold);font-weight:700">${fmtP(act.pat?act.utNeta/act.pat*100:0)}</span><span style="color:var(--text-muted)">(ROE)</span>
+      </div>
+      <p style="font-size:.72rem;color:var(--text-muted);margin-top:10px">La descomposición Dupont muestra qué está impulsando la rentabilidad del patrimonio: eficiencia en márgenes, uso de activos, o apalancamiento financiero.</p>
+    </div>`;
+}
 
 function renderGraficosEF() {
   const el = document.getElementById('ef-graficos');
@@ -9374,6 +9644,52 @@ function renderGraficosEF() {
     </div>`;
   }).join('');
 
+  // ── Gráfico de dona/pie SVG (para composición de gastos) ─────────────────
+  const svgDona = (datos, titulo) => {
+    const total = datos.reduce((s,d)=>s+Math.max(0,d.val),0) || 1;
+    const cx=110, cy=110, r=80, rInterior=45;
+    let anguloAcum = -Math.PI/2;
+    let arcos = '';
+    datos.forEach((d,i) => {
+      const frac = Math.max(0,d.val)/total;
+      const anguloFin = anguloAcum + frac*2*Math.PI;
+      const x1=cx+r*Math.cos(anguloAcum), y1=cy+r*Math.sin(anguloAcum);
+      const x2=cx+r*Math.cos(anguloFin), y2=cy+r*Math.sin(anguloFin);
+      const xi1=cx+rInterior*Math.cos(anguloFin), yi1=cy+rInterior*Math.sin(anguloFin);
+      const xi2=cx+rInterior*Math.cos(anguloAcum), yi2=cy+rInterior*Math.sin(anguloAcum);
+      const grandeArco = frac>0.5?1:0;
+      if (frac > 0.0005) {
+        arcos += `<path d="M${x1},${y1} A${r},${r} 0 ${grandeArco} 1 ${x2},${y2} L${xi1},${yi1} A${rInterior},${rInterior} 0 ${grandeArco} 0 ${xi2},${yi2} Z"
+          fill="${COLORES[i%COLORES.length]}" opacity=".88"><title>${d.nombre}: ${fmtK(d.val)} (${(frac*100).toFixed(1)}%)</title></path>`;
+      }
+      anguloAcum = anguloFin;
+    });
+    const leyenda = datos.map((d,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:.73rem;color:var(--text-secondary)">
+      <span style="width:11px;height:11px;background:${COLORES[i%COLORES.length]};border-radius:2px;display:inline-block"></span>${d.nombre} (${(Math.max(0,d.val)/total*100).toFixed(0)}%)</span>`).join('');
+    return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:18px">
+      <h5 style="color:var(--gold);margin:0 0 12px;font-size:.88rem">${titulo}</h5>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <svg viewBox="0 0 220 220" style="width:180px;height:180px;flex-shrink:0">${arcos}</svg>
+        <div style="display:flex;flex-direction:column;gap:6px">${leyenda}</div>
+      </div>
+    </div>`;
+  };
+
+  // ── Datos para gráficos adicionales ───────────────────────────────────────
+  const ultimoP = periodos[periodos.length-1];
+  const composicionGastos = [
+    { nombre:'Costo de Ventas', val: g(ultimoP,'COSTO DE VENTAS') },
+    { nombre:'Gasto Personal', val: g(ultimoP,'GASTO PERSONAL') },
+    { nombre:'Gasto Administrativo', val: g(ultimoP,'GASTO ADMINISTRATIVO') },
+    { nombre:'Gasto de Ventas', val: g(ultimoP,'GASTO VENTAS') },
+    { nombre:'Gasto Financiero', val: g(ultimoP,'GASTO FINANCIERO') },
+    { nombre:'Depreciación', val: g(ultimoP,'GASTO DEPRECIACION') },
+  ].filter(d => d.val > 0);
+  const ebitdaArr  = periodos.map(p=>{ const u=g(p,'UTILIDAD EJERCICIO'), ir=g(p,'IMPUESTO RENTA GASTO'), gf=g(p,'GASTO FINANCIERO'), gd=g(p,'GASTO DEPRECIACION'); return u+ir+gf+gd; });
+  const deudaArr   = periodos.map(p=>g(p,'OBLIGACIONES BANCARIAS CP')+g(p,'OBLIGACIONES BANCARIAS LP'));
+  const crecVentasArr = ventas.map((v,i)=> i===0?0:(ventas[i-1]?(v-ventas[i-1])/Math.abs(ventas[i-1])*100:0));
+  const crecUtilArr   = util.map((v,i)=> i===0?0:(util[i-1]?(v-util[i-1])/Math.abs(util[i-1])*100:0));
+
   el.innerHTML = `
     <h4 style="color:var(--gold);margin-bottom:4px">Gráficos Financieros</h4>
     <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:16px">Análisis visual de la evolución financiera — ${labels.join(' · ')}</p>
@@ -9389,6 +9705,9 @@ function renderGraficosEF() {
       <div>${svgLinea([{nombre:'Razón Corriente',vals:corriente},{nombre:'Prueba Ácida',vals:prueba}],'💧 Índices de Liquidez',v=>(parseFloat(v)||0).toFixed(2)+'x')}</div>
       <div>${svgLinea([{nombre:'Margen Bruto',vals:mBruto},{nombre:'Margen Neto',vals:mNeto},{nombre:'ROE',vals:roe},{nombre:'ROA',vals:roa}],'📈 Márgenes y Rentabilidad',fmtP)}</div>
       <div>${svgLinea([{nombre:'Días de Cobro',vals:diasCob},{nombre:'Días de Inventario',vals:diasInv}],'🔄 Ciclo Operacional (días)',v=>Math.round(parseFloat(v)||0)+' d')}</div>
+      <div>${svgDona(composicionGastos,'🥧 Composición de Gastos — '+ultimoP.nombre)}</div>
+      <div>${svgBarras([{nombre:'EBITDA',vals:ebitdaArr},{nombre:'Deuda Financiera',vals:deudaArr}],'🏦 EBITDA vs. Deuda Financiera',fmtK)}</div>
+      ${periodos.length>1?`<div>${svgLinea([{nombre:'Crec. Ventas %',vals:crecVentasArr},{nombre:'Crec. Utilidad %',vals:crecUtilArr}],'🚀 Crecimiento Período a Período',fmtP)}</div>`:''}
     </div>
 
     <!-- Gráfico de endeudamiento ancho completo -->
@@ -10284,6 +10603,9 @@ function initNavegacion() {
     modules.forEach(m => m.classList.toggle('active', m.id === `mod-${id}`));
     sidebar?.classList.remove('open');
     try { history.replaceState(null, '', `#${id}`); } catch (e) { /* sandbox preview no permite replaceState */ }
+    // Si el ítem activo vive en una sección colapsada, se expande para que no quede oculto
+    const itemActivo = document.querySelector(`.nav-item[data-module="${id}"]`);
+    itemActivo?.closest('.nav-section')?.classList.remove('collapsed');
 
     if (id === 'inversiones' && !mktInited) {
       mktInited = true;
@@ -10363,6 +10685,24 @@ function initNavegacion() {
     const colapsados = JSON.parse(localStorage.getItem('financeOS_nav_colapsados') || '{}');
     Object.keys(colapsados).forEach(nombre => {
       if (colapsados[nombre]) document.getElementById(`navgroup-${nombre}`)?.classList.add('collapsed');
+    });
+  })();
+
+  // Secciones principales del menú (MÓDULOS, CONTABILIDAD Y FINANZAS, etc.) — también colapsables
+  window.toggleFinanceSection = function(nombre) {
+    const el = document.getElementById(`navsection-${nombre}`);
+    if (!el) return;
+    el.classList.toggle('collapsed');
+    const colapsadas = JSON.parse(localStorage.getItem('financeOS_secciones_colapsadas') || '{}');
+    colapsadas[nombre] = el.classList.contains('collapsed');
+    localStorage.setItem('financeOS_secciones_colapsadas', JSON.stringify(colapsadas));
+  };
+  (function restaurarSeccionesNav() {
+    const colapsadas = JSON.parse(localStorage.getItem('financeOS_secciones_colapsadas') || '{}');
+    Object.keys(colapsadas).forEach(nombre => {
+      const el = document.getElementById(`navsection-${nombre}`);
+      if (!el) return;
+      el.classList.toggle('collapsed', colapsadas[nombre]);
     });
   })();
 
