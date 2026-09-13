@@ -2256,6 +2256,14 @@ details[id^="ced-card-"] summary { outline:none; }
           <div class="card">
             <h3 style="margin-top:0">📊 Analítica de Datos — Detección de Anomalías</h3>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Aplica la <strong>Ley de Benford</strong> (distribución esperada del primer dígito en datos financieros reales) y detecta registros duplicados, secuencias rotas y valores atípicos en las transacciones cargadas.</p>
+            <div class="doc-btn-row" style="margin-bottom:10px">
+              <label class="btn-calc" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                📂 Cargar Transacciones (Excel/CSV)
+                <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="cargarTransaccionesAuditoria(this)">
+              </label>
+              <button class="btn-secondary" onclick="cargarEjemploAuditoria()">🧪 Cargar Datos de Ejemplo</button>
+            </div>
+            <div id="ap-benford-datos-status" style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px"></div>
             <div class="doc-btn-row">
               <button class="btn-calc" onclick="analizarLeyBenford()">📐 Ley de Benford</button>
               <button class="btn-calc" onclick="detectarDuplicados()">🔁 Detectar Duplicados</button>
@@ -13394,6 +13402,19 @@ function cambiarTipoAudit(tipo, btnEl) {
     if (badge) badge.style.display = 'none';
   }
 
+  // Datos de Hoja de Trabajo IVA/F103 son exclusivos de Auditoría Tributaria — nunca deben persistir al cambiar de tipo
+  window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null;
+  window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
+
+  // Volver siempre a la pestaña "Fases" — evita dejar visible el contenido de un tab exclusivo de otro tipo (ej. Hoja de Trabajo IVA en Forense)
+  const modTipo = document.getElementById('mod-audit-pro');
+  if (modTipo) {
+    modTipo.querySelectorAll('.bib-tab').forEach(t => t.classList.remove('active'));
+    modTipo.querySelectorAll('.bib-content').forEach(c => c.classList.remove('active'));
+    modTipo.querySelector('.bib-tab[onclick*="showApTab(\'fases\')"]')?.classList.add('active');
+    document.getElementById('ap-fases')?.classList.add('active');
+  }
+
   // Renderizar el panel del tipo
   renderPanelTipo(tipo);
   actualizarTabHojaIVA();
@@ -13524,6 +13545,8 @@ function iniciarExpedienteAuditoria() {
   renderFasesAuditoria();
   renderCedulasAnaliticasCompleto(); // Inicializar vista de cédulas vacía
   window._apCedulas = {}; // Reset cédulas para nuevo expediente
+  window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null;
+  window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
   cargarHistorialExpedientes(); // Actualizar historial
   actualizarTabHojaIVA();
   toast(`Expediente ${codigo} iniciado`, 'success');
@@ -14979,7 +15002,7 @@ function renderHallazgosLista() {
 function cargarTransaccionesAuditoria(input) {
   const file = input.files[0];
   if (!file) return;
-  const status = document.getElementById('ap-datos-status');
+  const status = document.getElementById('ap-benford-datos-status');
   if (status) status.textContent = '⏳ Procesando...';
 
   const reader = new FileReader();
@@ -15217,7 +15240,7 @@ function cargarEjemploAuditoria() {
       TipoDoc: ['FAC','EG','ING','TR'][i%4],
     })),
   ];
-  const status = document.getElementById('ap-datos-status');
+  const status = document.getElementById('ap-benford-datos-status');
   if (status) status.textContent = `✅ ${_apTransacciones.length} transacciones de ejemplo cargadas (incluye duplicados y anomalías para demostración)`;
   toast('Datos de ejemplo cargados', 'success');
 }
@@ -15875,8 +15898,17 @@ async function abrirExpediente(key) {
     document.getElementById(`tipo-card-${exp.tipo}`)?.classList.add('activo');
   }
   actualizarTabHojaIVA();
-  window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVAAnio = null; // reset — se carga al abrir el tab
-  window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteAnio = null;
+  window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVASust = null; window._apHojaIVARevisado = null; window._apHojaIVAAnio = null; window._apHojaIVACalculado = null; // reset — se carga al abrir el tab
+  window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteSust = null; window._apHojaFuenteRevisado = null; window._apHojaFuenteAnio = null; window._apHojaFuenteCalculado = null;
+
+  // Volver siempre a la pestaña "Fases" al abrir un expediente — evita dejar visible un tab exclusivo de otro tipo
+  const modAbrir = document.getElementById('mod-audit-pro');
+  if (modAbrir) {
+    modAbrir.querySelectorAll('.bib-tab').forEach(t => t.classList.remove('active'));
+    modAbrir.querySelectorAll('.bib-content').forEach(c => c.classList.remove('active'));
+    modAbrir.querySelector('.bib-tab[onclick*="showApTab(\'fases\')"]')?.classList.add('active');
+    document.getElementById('ap-fases')?.classList.add('active');
+  }
 
   // Guardar en localStorage para auto-restaurar en próxima sesión
   localStorage.setItem('financeOS-ultimo-expediente', key);
