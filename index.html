@@ -17291,6 +17291,10 @@ async function guardarCedulaEditada(cedulaId) {
     // Verify
     const check = await FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`);
     if (!check) throw new Error('Verificación fallida — no se encontró en Firebase tras guardar');
+
+    // Propagar el saldo auditado a cualquier partida de cédula sumaria que ya esté vinculada a esta cédula
+    await sincronizarSumariasConCedula(updated);
+
     document.getElementById('ced-edit-modal')?.remove();
     window._cedulaEditando = null;
     renderCedulasAnaliticasCompleto();
@@ -17298,6 +17302,34 @@ async function guardarCedulaEditada(cedulaId) {
   } catch(err) {
     console.error('Error guardando cédula:', err);
     toast(`❌ Error al guardar cédula: ${err.message} — Verifique conexión`, 'error');
+  }
+}
+
+// Actualiza el saldo auditado en toda cédula sumaria que esté vinculada (por Ref.) a la cédula analítica dada.
+// Se ejecuta cada vez que se guarda una cédula analítica, para que el ajuste se refleje sin pasos adicionales.
+async function sincronizarSumariasConCedula(cedulaActualizada) {
+  if (!_apExpediente?.sumarias?.length || !cedulaActualizada?.ref) return;
+  const refBuscar = String(cedulaActualizada.ref).trim().toUpperCase();
+  const saldoAud = parseFloat(cedulaActualizada.totalAuditado) || parseFloat(cedulaActualizada.totalLibros) || 0;
+  let cambiaron = false;
+
+  _apExpediente.sumarias.forEach(sumaria => {
+    (sumaria.partidas||[]).forEach(partida => {
+      if (partida.cedulaVinculada && (partida.cedulaRef||'').trim().toUpperCase() === refBuscar) {
+        partida.saldoAuditoria = saldoAud;
+        partida.cedulaTitulo = cedulaActualizada.titulo || partida.cedulaTitulo;
+        partida.notaCambio = '';
+        cambiaron = true;
+      }
+    });
+  });
+
+  if (cambiaron) {
+    await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/sumarias`, _apExpediente.sumarias);
+    // Si la pestaña de sumarias está visible, refrescarla para mostrar el nuevo saldo de inmediato
+    if (document.getElementById('ap-sumarias')?.classList.contains('active')) {
+      renderCedulasSumarias();
+    }
   }
 }
 
