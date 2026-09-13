@@ -2038,7 +2038,10 @@ details[id^="ced-card-"] summary { outline:none; }
           <h1>🏛️ Auditoría Profesional</h1>
           <p>Auditoría Financiera · Tributaria · Forense · Gestión · Fichas Analíticas · Ley de Benford · Papeles de Trabajo</p>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div id="ap-expediente-badge" style="display:none;align-items:center;gap:6px;padding:7px 14px;background:rgba(212,175,55,.12);border:1px solid var(--gold);border-radius:8px;font-size:.78rem;color:var(--gold);white-space:nowrap">
+            📂 <span id="ap-tipo-label" style="text-transform:capitalize"></span> — <strong id="ap-expediente-codigo"></strong>
+          </div>
           <button onclick="abrirSelectorImpresion()"
             style="padding:8px 16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);
             border-radius:8px;cursor:pointer;font-size:.8rem;white-space:nowrap;flex-shrink:0">
@@ -13344,9 +13347,9 @@ function cambiarTipoAudit(tipo, btnEl) {
   const badge = document.getElementById('ap-expediente-badge');
   if (_apExpediente) {
     if (panel) panel.style.display = 'block';
-    if (badge) badge.style.display = 'block';
-    document.getElementById('ap-expediente-codigo').textContent = _apExpediente.codigo || '';
-    document.getElementById('ap-tipo-label').textContent = tipo;
+    if (badge) badge.style.display = 'flex';
+    const codEl = document.getElementById('ap-expediente-codigo'); if (codEl) codEl.textContent = _apExpediente.codigo || '';
+    const tipEl = document.getElementById('ap-tipo-label'); if (tipEl) tipEl.textContent = tipo;
   } else {
     if (panel) panel.style.display = 'none';
     if (badge) badge.style.display = 'none';
@@ -13472,10 +13475,10 @@ function iniciarExpedienteAuditoria() {
 
   // Mostrar badge y panel principal
   const badge = document.getElementById('ap-expediente-badge');
-  if (badge) badge.style.display = 'block';
-  document.getElementById('ap-expediente-codigo').textContent = codigo;
-  document.getElementById('ap-tipo-label').textContent = tiposLabel[tipo] || tipo;
-  document.getElementById('ap-panel-principal').style.display = 'block';
+  if (badge) badge.style.display = 'flex';
+  const codEl = document.getElementById('ap-expediente-codigo'); if (codEl) codEl.textContent = codigo;
+  const tipEl = document.getElementById('ap-tipo-label'); if (tipEl) tipEl.textContent = tiposLabel[tipo] || tipo;
+  const panelEl = document.getElementById('ap-panel-principal'); if (panelEl) panelEl.style.display = 'block';
 
   renderFasesAuditoria();
   renderCedulasAnaliticasCompleto(); // Inicializar vista de cédulas vacía
