@@ -13597,9 +13597,9 @@ const HIVA_COLS = [
   { c:'AB', l:'IVA N/C Compra 5%',                     f:r=>r.AA*0.05 },
   { c:'AC', l:'Compras Netas 5%',               k:550,  f:r=>r.Y-r.AA },
   { c:'AD', l:'IVA Neto 5%',                    k:560,  f:r=>r.Z-r.AB },
-  { c:'AE', l:'Compras Brutas 0%',              k:508,  m:1 },
+  { c:'AE', l:'Compras Brutas 0%',              k:[507,508],  m:1 },
   { c:'AF', l:'N/C Compra 0%',                         m:1 },
-  { c:'AG', l:'Compras Netas 0%',               k:518,  f:r=>r.AE-r.AF },
+  { c:'AG', l:'Compras Netas 0%',               k:[517,518],  f:r=>r.AE-r.AF },
   { c:'AH', l:'Compras Sin Derecho a CT',              m:1 },
   { c:'AI', l:'IVA 15% Sin Der. CT',                   f:r=>r.AH*0.15 },
   { c:'AJ', l:'Importaciones 15%',              k:514,  m:1 },
@@ -13653,6 +13653,9 @@ const HIVA_COLS = [
 const HIVA_COLS_FLAT = HIVA_COLS.filter(c => c.c);
 
 function hivaNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+// Normaliza col.k a array (algunas columnas del Excel del usuario suman 2 casilleros SRI en una sola celda, ej. 507+508)
+function hivaKeys(col) { return col.k === undefined || col.k === null ? [] : (Array.isArray(col.k) ? col.k : [col.k]); }
+function hivaKeyId(col) { return hivaKeys(col).join('_'); }
 
 // Calcula todas las columnas de un mes a partir de los valores manuales ingresados
 // y la fila (ya calculada) del mes anterior.
@@ -13730,7 +13733,7 @@ function renderHojaIVATabla() {
   const theadCols = ['<th style="min-width:90px;position:sticky;left:0;background:var(--bg-card2);z-index:2">MES</th>']
     .concat(HIVA_COLS_FLAT.map(col => `
       <th style="min-width:98px;font-size:.65rem;padding:4px;background:${col.m||col.km?'rgba(147,197,253,.08)':'var(--bg-card2)'};color:var(--text-secondary);white-space:normal;line-height:1.15">
-        ${col.l}${col.k ? `<br><span style="color:var(--gold);font-weight:700">#${col.k}</span>` : (col.km ? `<br><span style="color:#94a3b8">F103 #${col.km}</span>` : '')}
+        ${col.l}${col.k ? `<br><span style="color:var(--gold);font-weight:700">${hivaKeys(col).map(k=>'#'+k).join(' + ')}</span>` : (col.km ? `<br><span style="color:#94a3b8">F103 #${col.km}</span>` : '')}
       </th>`));
 
   const filasHtml = [];
@@ -13742,11 +13745,13 @@ function renderHojaIVATabla() {
       const val = r[col.c] || 0;
       const editable = (col.m || col.km || (col.rolling && mes === 1));
       let cmp = '';
-      if (col.k && dec && dec[col.k] !== undefined && !editable) {
-        const diff = Math.round((val - dec[col.k]) * 100) / 100;
+      if (col.k && dec && dec[hivaKeyId(col)] !== undefined && !editable) {
+        const declarado = dec[hivaKeyId(col)];
+        const diff = Math.round((val - declarado) * 100) / 100;
+        const codLabel = hivaKeys(col).map(k=>'#'+k).join('+');
         cmp = Math.abs(diff) < 0.01
-          ? ` <span title="Coincide con declarado F104 #${col.k}" style="color:var(--emerald)">✓</span>`
-          : ` <span title="Declarado F104 #${col.k}: $${dec[col.k].toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
+          ? ` <span title="Coincide con declarado F104 ${codLabel}" style="color:var(--emerald)">✓</span>`
+          : ` <span title="Declarado F104 ${codLabel}: $${declarado.toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
       }
       if (editable) {
         const raw = (col.rolling ? manual[col.c] : manual[col.c]);
@@ -13861,23 +13866,29 @@ async function subirDeclaracionHojaIVA(input) {
       const anioEl = document.getElementById('hiva-anio');
       if (anioEl && !anioEl.value) anioEl.value = anio;
 
-      // 1) Columnas manuales con casillero → autollenar directamente
+      // 1) Columnas manuales con casillero → autollenar directamente (suma si la columna combina 2 casilleros)
       let llenados = 0;
       window._apHojaIVA[mes] = window._apHojaIVA[mes] || {};
       HIVA_COLS_FLAT.forEach(col => {
-        if ((col.m || (col.rolling && mes === 1)) && col.k && (col.k in todosLosPares)) {
-          window._apHojaIVA[mes][col.c] = todosLosPares[col.k];
-          llenados++;
+        if ((col.m || (col.rolling && mes === 1)) && col.k) {
+          const keys = hivaKeys(col).filter(k => k in todosLosPares);
+          if (keys.length) {
+            window._apHojaIVA[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+            llenados++;
+          }
         }
       });
 
-      // 2) Columnas de fórmula con casillero → guardar como "declarado" para comparación
+      // 2) Columnas de fórmula con casillero → guardar como "declarado" para comparación (suma si combina 2 casilleros)
       window._apHojaIVADeclarados[mes] = window._apHojaIVADeclarados[mes] || {};
       let comparados = 0;
       HIVA_COLS_FLAT.forEach(col => {
-        if (!col.m && !col.km && !(col.rolling && mes === 1) && col.k && (col.k in todosLosPares)) {
-          window._apHojaIVADeclarados[mes][col.k] = todosLosPares[col.k];
-          comparados++;
+        if (!col.m && !col.km && !(col.rolling && mes === 1) && col.k) {
+          const keys = hivaKeys(col).filter(k => k in todosLosPares);
+          if (keys.length) {
+            window._apHojaIVADeclarados[mes][hivaKeyId(col)] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+            comparados++;
+          }
         }
       });
 
