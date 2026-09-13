@@ -863,10 +863,6 @@ details[id^="ced-card-"] summary { outline:none; }
       <span class="nav-icon">🏛️</span>
       <span>GEA</span>
     </a>
-    <a href="#" class="nav-item" data-module="audit-niif">
-      <span class="nav-icon">📚</span>
-      <span>Auditoría NIIF</span>
-    </a>
   </nav>
 
   <div class="sidebar-footer">
@@ -3128,14 +3124,6 @@ details[id^="ced-card-"] summary { outline:none; }
     </section>
 
   </div><!-- end module-wrapper -->
-    <!-- ═══ AUDITORÍA NIIF ═══════════════════════════════════════════════════ -->
-    <section class="module" id="mod-audit-niif">
-      <div class="module-hero" style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%)">
-        <h1>📚 Auditoría NIIF</h1>
-        <p>Marco normativo completo — Normas Internacionales de Auditoría e Información Financiera</p>
-      </div>
-      <div id="niif-contenido" style="padding:0 4px"></div>
-    </section>
 
     <!-- ═══════════════════════════════════ GEA — GESTIÓN EMPRESARIAL Y AUDITORÍA ═══════════════════════════════════ -->
     <section class="module" id="mod-gea">
@@ -10073,10 +10061,6 @@ function initNavegacion() {
       window._niifInited = true;
       if (window.initNIIF) initNIIF();
     }
-    if (id === 'audit-niif' && !window._auditNiifInited) {
-      window._auditNiifInited = true;
-      if (window.initNIIF) initNIIF();
-    }
     if (id === 'noticias' && !window._noticiasInited) {
       window._noticiasInited = true;
       if (window.initNoticias) initNoticias();
@@ -14743,55 +14727,72 @@ function generarInformeEjecutivoFuente() {
 const NIIF_CHECKLIST = [
   { id:'vnr', categoria:'Inventarios y Activos No Financieros', concepto:'Valor Neto de Realización (VNR)', norma:'NIC 2 — Inventarios',
     principio:'Los inventarios se miden al menor valor entre el costo y el valor neto de realización (precio de venta estimado menos costos de terminación y de venta).',
-    procedimiento:'Comparar el costo en libros de cada línea de inventario contra su precio de venta esperado menos costos para completar y vender; verificar castigos por obsolescencia o lento movimiento.' },
+    procedimiento:'Comparar el costo en libros de cada línea de inventario contra su precio de venta esperado menos costos para completar y vender; verificar castigos por obsolescencia o lento movimiento.',
+    papel:{ cols:[ {key:'item',label:'Producto/Ítem',tipo:'texto'}, {key:'costo',label:'Costo',tipo:'manual'}, {key:'precioVenta',label:'Precio Venta Est.',tipo:'manual'}, {key:'costosVenta',label:'Costos Term./Venta',tipo:'manual'}, {key:'vnr',label:'VNR',tipo:'formula',f:'precioVenta-costosVenta'}, {key:'valorRegistrar',label:'Valor a Registrar',tipo:'formula',f:'Math.min(costo,vnr)'}, {key:'ajuste',label:'Ajuste (Deterioro)',tipo:'formula',f:'Math.min(costo,vnr)-costo'} ] } },
   { id:'deterioro', categoria:'Inventarios y Activos No Financieros', concepto:'Deterioro del Valor de Activos', norma:'NIC 36 — Deterioro del Valor de los Activos',
     principio:'Un activo no debe reconocerse por encima de su importe recuperable (el mayor entre el valor razonable menos costos de venta y el valor en uso).',
-    procedimiento:'Identificar indicios de deterioro (obsolescencia, daño físico, cambios tecnológicos o de mercado) y calcular el importe recuperable cuando existan.' },
+    procedimiento:'Identificar indicios de deterioro (obsolescencia, daño físico, cambios tecnológicos o de mercado) y calcular el importe recuperable cuando existan.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'ppe', categoria:'Inventarios y Activos No Financieros', concepto:'Propiedad, Planta y Equipo', norma:'NIC 16 — Propiedades, Planta y Equipo',
     principio:'Los activos fijos se deprecian sistemáticamente según su vida útil y valor residual; el modelo de revaluación exige tasaciones periódicas.',
-    procedimiento:'Verificar razonabilidad de vidas útiles y valores residuales, recalcular la depreciación del período y confirmar revaluaciones si la política lo exige.' },
+    procedimiento:'Verificar razonabilidad de vidas útiles y valores residuales, recalcular la depreciación del período y confirmar revaluaciones si la política lo exige.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'intangibles', categoria:'Inventarios y Activos No Financieros', concepto:'Activos Intangibles', norma:'NIC 38 — Activos Intangibles',
     principio:'Solo se reconocen intangibles identificables, controlados por la entidad y que generen beneficios económicos futuros; el goodwill generado internamente no se capitaliza.',
-    procedimiento:'Verificar que los intangibles reconocidos cumplan los criterios de reconocimiento y revisar su amortización o vida útil indefinida.' },
+    procedimiento:'Verificar que los intangibles reconocidos cumplan los criterios de reconocimiento y revisar su amortización o vida útil indefinida.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'prop-inversion', categoria:'Inventarios y Activos No Financieros', concepto:'Propiedades de Inversión', norma:'NIC 40 — Propiedades de Inversión',
     principio:'Los inmuebles mantenidos para obtener renta o plusvalía se miden a costo o a valor razonable, según la política contable adoptada.',
-    procedimiento:'Verificar la clasificación correcta (uso propio vs. inversión) y la consistencia del modelo de medición aplicado.' },
+    procedimiento:'Verificar la clasificación correcta (uso propio vs. inversión) y la consistencia del modelo de medición aplicado.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'interes-implicito', categoria:'Instrumentos Financieros', concepto:'Interés Implícito / Valor Presente', norma:'NIIF 9 — Instrumentos Financieros',
     principio:'Las cuentas por cobrar o pagar a largo plazo sin tasa de interés de mercado deben descontarse a valor presente, reconociendo el componente financiero por separado.',
-    procedimiento:'Identificar operaciones con plazos superiores a 12 meses sin tasa pactada de mercado, calcular la tasa de interés implícita y ajustar a valor presente.' },
+    procedimiento:'Identificar operaciones con plazos superiores a 12 meses sin tasa pactada de mercado, calcular la tasa de interés implícita y ajustar a valor presente.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cliente',tipo:'texto'}, {key:'valorNominal',label:'Valor Nominal',tipo:'manual'}, {key:'plazoMeses',label:'Plazo (meses)',tipo:'manual'}, {key:'tasaAnual',label:'Tasa Mercado Anual %',tipo:'manual'}, {key:'valorPresente',label:'Valor Presente',tipo:'formula',f:'valorNominal/Math.pow(1+(tasaAnual/100),(plazoMeses/12))'}, {key:'interesImplicito',label:'Interés Implícito',tipo:'formula',f:'valorNominal-valorPresente'} ] } },
   { id:'clasif-if', categoria:'Instrumentos Financieros', concepto:'Clasificación y Medición de Instrumentos Financieros', norma:'NIIF 9 — Instrumentos Financieros',
     principio:'Los activos financieros se clasifican según el modelo de negocio de la entidad y las características de sus flujos de caja contractuales (costo amortizado, valor razonable con cambios en ORI o en resultados).',
-    procedimiento:'Revisar la clasificación y medición de inversiones, cuentas por cobrar y demás instrumentos financieros.' },
+    procedimiento:'Revisar la clasificación y medición de inversiones, cuentas por cobrar y demás instrumentos financieros.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'pce', categoria:'Instrumentos Financieros', concepto:'Pérdida Crediticia Esperada (Deterioro de CxC)', norma:'NIIF 9 — Instrumentos Financieros',
     principio:'Se reconoce una provisión por pérdida crediticia esperada desde el reconocimiento inicial del activo financiero, no solo cuando el deterioro ya ha ocurrido.',
-    procedimiento:'Verificar la metodología de estimación de pérdida esperada (matriz de provisión, histórico de incobrabilidad) y su razonabilidad.' },
+    procedimiento:'Verificar la metodología de estimación de pérdida esperada (matriz de provisión, histórico de incobrabilidad) y su razonabilidad.',
+    papel:{ cols:[ {key:'cliente',label:'Cliente',tipo:'texto'}, {key:'saldo',label:'Saldo CxC',tipo:'manual'}, {key:'pctPerdida',label:'% Pérdida Esperada',tipo:'manual'}, {key:'provision',label:'Provisión',tipo:'formula',f:'saldo*(pctPerdida/100)'} ] } },
   { id:'arrendamientos', categoria:'Instrumentos Financieros', concepto:'Arrendamientos', norma:'NIIF 16 — Arrendamientos',
     principio:'El arrendatario reconoce un activo por derecho de uso y un pasivo por arrendamiento para prácticamente todos los contratos de arrendamiento.',
-    procedimiento:'Identificar los contratos de arrendamiento vigentes y verificar el registro del activo por derecho de uso y su pasivo correspondiente.' },
+    procedimiento:'Identificar los contratos de arrendamiento vigentes y verificar el registro del activo por derecho de uso y su pasivo correspondiente.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'imp-diferido', categoria:'Impuestos e Ingresos', concepto:'Impuestos Diferidos', norma:'NIC 12 — Impuesto a las Ganancias',
     principio:'Se reconocen activos y pasivos por impuestos diferidos sobre las diferencias temporarias entre la base contable y la base fiscal de activos y pasivos.',
-    procedimiento:'Identificar diferencias temporarias (depreciación, provisiones, pérdidas fiscales) y calcular el impuesto diferido correspondiente; evaluar recuperabilidad del activo.' },
+    procedimiento:'Identificar diferencias temporarias (depreciación, provisiones, pérdidas fiscales) y calcular el impuesto diferido correspondiente; evaluar recuperabilidad del activo.',
+    papel:{ cols:[ {key:'partida',label:'Partida',tipo:'texto'}, {key:'baseContable',label:'Base Contable',tipo:'manual'}, {key:'baseFiscal',label:'Base Fiscal',tipo:'manual'}, {key:'tasaImpuesto',label:'Tasa Impuesto %',tipo:'manual'}, {key:'diferenciaTemp',label:'Diferencia Temporaria',tipo:'formula',f:'baseContable-baseFiscal'}, {key:'impuestoDiferido',label:'Impuesto Diferido',tipo:'formula',f:'(baseContable-baseFiscal)*(tasaImpuesto/100)'} ] } },
   { id:'ing-diferido', categoria:'Impuestos e Ingresos', concepto:'Ingresos Diferidos / Reconocimiento de Ingresos', norma:'NIIF 15 — Ingresos de Actividades Ordinarias procedentes de Contratos con Clientes',
     principio:'El ingreso se reconoce cuando (o a medida que) se transfiere el control del bien o servicio al cliente, siguiendo el modelo de cinco pasos.',
-    procedimiento:'Verificar la identificación de obligaciones de desempeño y el momento/monto de reconocimiento de ingresos; revisar anticipos de clientes registrados como ingreso diferido.' },
+    procedimiento:'Verificar la identificación de obligaciones de desempeño y el momento/monto de reconocimiento de ingresos; revisar anticipos de clientes registrados como ingreso diferido.',
+    papel:{ cols:[ {key:'contrato',label:'Contrato/Cliente',tipo:'texto'}, {key:'montoTotal',label:'Monto Total Facturado',tipo:'manual'}, {key:'ingresoReconocido',label:'Ingreso Reconocido',tipo:'manual'}, {key:'ingresoDiferido',label:'Ingreso Diferido',tipo:'formula',f:'montoTotal-ingresoReconocido'} ] } },
   { id:'provisiones', categoria:'Otras Áreas de Cumplimiento', concepto:'Provisiones, Pasivos y Activos Contingentes', norma:'NIC 37 — Provisiones, Pasivos Contingentes y Activos Contingentes',
     principio:'Una provisión se reconoce cuando existe una obligación presente, es probable una salida de recursos y el monto puede estimarse con fiabilidad; los pasivos contingentes solo se revelan.',
-    procedimiento:'Revisar litigios, garantías y otras obligaciones potenciales; verificar la clasificación entre provisión y contingencia.' },
+    procedimiento:'Revisar litigios, garantías y otras obligaciones potenciales; verificar la clasificación entre provisión y contingencia.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'beneficios-empleados', categoria:'Otras Áreas de Cumplimiento', concepto:'Beneficios a Empleados', norma:'NIC 19 — Beneficios a los Empleados',
     principio:'Los beneficios post-empleo de beneficio definido (jubilación patronal, desahucio) requieren cálculo actuarial.',
-    procedimiento:'Verificar la existencia y razonabilidad del estudio actuarial de jubilación patronal y desahucio.' },
+    procedimiento:'Verificar la existencia y razonabilidad del estudio actuarial de jubilación patronal y desahucio.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'moneda-extranjera', categoria:'Otras Áreas de Cumplimiento', concepto:'Moneda Extranjera', norma:'NIC 21 — Efectos de las Variaciones en las Tasas de Cambio de la Moneda Extranjera',
     principio:'Las partidas monetarias en moneda extranjera se reexpresan al tipo de cambio de cierre; las diferencias se reconocen en resultados.',
-    procedimiento:'Verificar la reexpresión de saldos en moneda extranjera y el cálculo de la diferencia en cambio del período.' },
+    procedimiento:'Verificar la reexpresión de saldos en moneda extranjera y el cálculo de la diferencia en cambio del período.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'hechos-posteriores', categoria:'Otras Áreas de Cumplimiento', concepto:'Hechos Posteriores al Cierre', norma:'NIC 10 — Hechos Ocurridos Después del Periodo sobre el que se Informa',
     principio:'Los hechos posteriores al cierre pueden requerir ajuste (si confirman condiciones existentes al cierre) o solo revelación (si son indicativos de condiciones surgidas después).',
-    procedimiento:'Indagar sobre eventos relevantes ocurridos después del cierre y evaluar si requieren ajuste o revelación.' },
+    procedimiento:'Indagar sobre eventos relevantes ocurridos después del cierre y evaluar si requieren ajuste o revelación.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'partes-relacionadas', categoria:'Otras Áreas de Cumplimiento', concepto:'Partes Relacionadas', norma:'NIC 24 — Información a Revelar sobre Partes Relacionadas',
     principio:'Deben revelarse las transacciones y saldos significativos con partes relacionadas (accionistas, administradores, empresas del grupo).',
-    procedimiento:'Identificar partes relacionadas y verificar la revelación completa de transacciones y saldos con las mismas.' },
+    procedimiento:'Identificar partes relacionadas y verificar la revelación completa de transacciones y saldos con las mismas.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
   { id:'presentacion-eeff', categoria:'Otras Áreas de Cumplimiento', concepto:'Presentación de Estados Financieros', norma:'NIC 1 — Presentación de Estados Financieros',
     principio:'Los EEFF deben presentarse de forma comparativa, clasificando activos y pasivos en corriente/no corriente, con las notas explicativas necesarias.',
-    procedimiento:'Verificar la clasificación corriente/no corriente y la completitud de las notas a los estados financieros.' },
+    procedimiento:'Verificar la clasificación corriente/no corriente y la completitud de las notas a los estados financieros.',
+    papel:{ cols:[ {key:'concepto',label:'Concepto/Cuenta',tipo:'texto'}, {key:'valorLibros',label:'Valor s/Libros',tipo:'manual'}, {key:'valorNIIF',label:'Valor s/NIIF',tipo:'manual'}, {key:'ajuste',label:'Ajuste',tipo:'formula',f:'valorNIIF-valorLibros'} ] } },
 ];
 
 const NIIF_CATEGORIAS = [...new Set(NIIF_CHECKLIST.map(it => it.categoria))];
@@ -14804,11 +14805,35 @@ function cargarNiifCumplimiento() {
   el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">⏳ Cargando checklist NIIF...</p>';
   FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/niif_cumplimiento`).then(d => {
     window._apNiifCumplimiento = d || {};
+    return FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/niif_papeles`);
+  }).then(p => {
+    window._apNiifPapeles = p || {};
     renderNiifCumplimiento();
   }).catch(() => {
     window._apNiifCumplimiento = {};
+    window._apNiifPapeles = {};
     renderNiifCumplimiento();
   });
+}
+
+// Evalúa una fórmula de papel de trabajo NIIF (expresión JS simple sobre las columnas de la fila)
+function _evalFormulaNiif(expr, row) {
+  const keys = Object.keys(row);
+  const vals = keys.map(k => parseFloat(row[k]) || 0);
+  try { return Function(...keys, 'return (' + expr + ')')(...vals) || 0; }
+  catch (e) { return 0; }
+}
+
+// Calcula todas las columnas de fórmula de una fila del papel de trabajo, dado un item del checklist
+function _calcularFilaPapelNiif(it, filaManual) {
+  const cols = it.papel.cols;
+  const row = {};
+  cols.forEach(c => {
+    if (c.tipo === 'manual') row[c.key] = parseFloat(filaManual[c.key]) || 0;
+    else if (c.tipo === 'texto') row[c.key] = 0; // no participa en fórmulas, pero se referencia por nombre
+    else if (c.tipo === 'formula') row[c.key] = _evalFormulaNiif(c.f, row);
+  });
+  return row;
 }
 
 function renderNiifCumplimiento() {
@@ -14869,10 +14894,21 @@ function renderNiifCumplimiento() {
               onchange="actualizarObservacionNiif('${it.id}',this.value)"
               style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.76rem;resize:vertical">${d.observacion || ''}</textarea>
           </div>
+          <div style="margin-top:8px">
+            <span onclick="togglePapelNiif('${it.id}')" style="cursor:pointer;font-size:.72rem;color:#a855f7;font-weight:600">
+              📋 Papel de trabajo — cálculo de ajuste ${(() => { const t=_totalAjustePapelNiif(it); return t!==0 ? `(ajuste actual: $${Math.abs(t).toLocaleString('es-EC',{minimumFractionDigits:2})})` : ''; })()} ▾
+            </span>
+            <div id="niif-papel-${it.id}" style="display:none;margin-top:8px"></div>
+          </div>
         </div>`;
       }).join('')}
     </div>`;
   }).join('');
+
+  // Renderizar los papeles de trabajo que ya estaban abiertos (si el usuario re-renderiza por otro cambio)
+  NIIF_CHECKLIST.forEach(it => {
+    if (window._apNiifPapelAbierto && window._apNiifPapelAbierto[it.id]) renderPapelNiif(it.id);
+  });
 }
 
 let _niifSaveTimer = null;
@@ -14904,7 +14940,140 @@ function toggleRevisadoNiif(id) {
 async function guardarNiifCumplimiento(manual) {
   if (!_apExpediente) return;
   await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/niif_cumplimiento`, window._apNiifCumplimiento || {});
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/niif_papeles`, window._apNiifPapeles || {});
   if (manual) toast('Checklist de cumplimiento NIIF guardado ✓', 'success');
+}
+
+// ── Papeles de trabajo NIIF — pegar datos y calcular filas (misma mecánica que Cédulas Analíticas) ──
+
+// Suma la última columna de fórmula (el "efecto"/ajuste final) de todas las filas guardadas de un ítem
+function _totalAjustePapelNiif(it) {
+  const filas = (window._apNiifPapeles && window._apNiifPapeles[it.id]) || [];
+  if (!filas.length) return 0;
+  const colsFormula = it.papel.cols.filter(c => c.tipo === 'formula');
+  if (!colsFormula.length) return 0;
+  const ultimaCol = colsFormula[colsFormula.length - 1].key;
+  return filas.reduce((s, fm) => s + (_calcularFilaPapelNiif(it, fm)[ultimaCol] || 0), 0);
+}
+
+function togglePapelNiif(itemId) {
+  window._apNiifPapelAbierto = window._apNiifPapelAbierto || {};
+  window._apNiifPapelAbierto[itemId] = !window._apNiifPapelAbierto[itemId];
+  const cont = document.getElementById(`niif-papel-${itemId}`);
+  if (!cont) return;
+  if (window._apNiifPapelAbierto[itemId]) {
+    cont.style.display = 'block';
+    renderPapelNiif(itemId);
+  } else {
+    cont.style.display = 'none';
+  }
+}
+
+function renderPapelNiif(itemId) {
+  const it = NIIF_CHECKLIST.find(x => x.id === itemId);
+  const cont = document.getElementById(`niif-papel-${itemId}`);
+  if (!it || !cont) return;
+  const cols = it.papel.cols;
+  window._apNiifPapeles = window._apNiifPapeles || {};
+  const filas = window._apNiifPapeles[itemId] || [];
+  const fmtV = v => (parseFloat(v) || 0).toLocaleString('es-EC', { minimumFractionDigits: 2 });
+
+  const filasHtml = filas.map((fm, fi) => {
+    const calc = _calcularFilaPapelNiif(it, fm);
+    const tds = cols.map(c => {
+      if (c.tipo === 'formula') {
+        return `<td style="text-align:right;font-family:var(--font-mono);font-size:.74rem;font-weight:700;color:var(--gold);padding:4px 6px">${fmtV(calc[c.key])}</td>`;
+      }
+      const val = fm[c.key] !== undefined && fm[c.key] !== null ? fm[c.key] : '';
+      const inputType = c.tipo === 'manual' ? 'number' : 'text';
+      return `<td style="padding:2px">
+        <input type="${inputType}" ${c.tipo==='manual'?'step="0.01"':''} value="${String(val).replace(/"/g,'&quot;')}"
+          onchange="actualizarCeldaPapelNiif('${itemId}',${fi},'${c.key}',this.value)"
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text-primary);font-size:.74rem;${c.tipo==='manual'?'text-align:right;color:#93c5fd':''}">
+      </td>`;
+    }).join('');
+    return `<tr>${tds}<td><button onclick="eliminarFilaPapelNiif('${itemId}',${fi})" style="padding:2px 6px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.7rem">✕</button></td></tr>`;
+  }).join('');
+
+  // Totales de columnas de fórmula
+  const totales = cols.map(c => {
+    if (c.tipo !== 'formula') return '<td></td>';
+    const suma = filas.reduce((s, fm) => s + (_calcularFilaPapelNiif(it, fm)[c.key] || 0), 0);
+    return `<td style="text-align:right;font-family:var(--font-mono);font-size:.74rem;font-weight:700;color:var(--gold);padding:4px 6px;border-top:2px solid var(--border)">${fmtV(suma)}</td>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="card" style="background:rgba(168,85,247,.05);border:1px solid rgba(168,85,247,.25)">
+      <p style="font-size:.72rem;color:var(--text-muted);margin:0 0 6px">Pegue filas desde Excel (columnas separadas por tabulador, en este orden: <strong>${cols.filter(c=>c.tipo!=='formula').map(c=>c.label).join(' · ')}</strong>) y presione Enter, o agregue filas manualmente. Las columnas en dorado se calculan solas.</p>
+      <textarea id="niif-paste-${itemId}" rows="2" placeholder="Pegue aquí filas de Excel..."
+        onpaste="setTimeout(()=>procesarPegarPapelNiif('${itemId}'),50)"
+        style="width:100%;background:var(--bg-card);border:2px dashed var(--border);border-radius:6px;padding:6px 8px;color:var(--text-primary);font-size:.74rem;font-family:monospace;resize:vertical;margin-bottom:8px"></textarea>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>${cols.map(c => `<th style="text-align:${c.tipo==='formula'||c.tipo==='manual'?'right':'left'};font-size:.68rem;color:var(--text-muted);padding:4px 6px;white-space:nowrap">${c.label}${c.tipo==='formula'?' <span style="color:var(--gold)">(calc.)</span>':''}</th>`).join('')}<th></th></tr></thead>
+          <tbody>${filasHtml || `<tr><td colspan="${cols.length+1}" style="text-align:center;color:var(--text-muted);font-size:.74rem;padding:10px">Sin filas — pegue datos o agregue una fila</td></tr>`}</tbody>
+          ${filas.length ? `<tfoot><tr>${totales}<td></td></tr></tfoot>` : ''}
+        </table>
+      </div>
+      <button onclick="agregarFilaPapelNiif('${itemId}')" style="margin-top:8px;font-size:.72rem;padding:4px 10px;background:rgba(168,85,247,.1);color:#a855f7;border:1px solid #a855f7;border-radius:5px;cursor:pointer">+ Agregar fila</button>
+    </div>`;
+}
+
+function procesarPegarPapelNiif(itemId) {
+  const it = NIIF_CHECKLIST.find(x => x.id === itemId);
+  const ta = document.getElementById(`niif-paste-${itemId}`);
+  if (!it || !ta || !ta.value.trim()) return;
+  const texto = ta.value.trim();
+  ta.value = '';
+
+  const colsEntrada = it.papel.cols.filter(c => c.tipo !== 'formula'); // orden esperado del pegado
+  const limpiarNum = s => parseFloat((s||'0').replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'')) || 0;
+
+  window._apNiifPapeles = window._apNiifPapeles || {};
+  window._apNiifPapeles[itemId] = window._apNiifPapeles[itemId] || [];
+
+  let agregadas = 0;
+  texto.split('\n').filter(l => l.trim()).forEach(linea => {
+    const cols = linea.split('\t').map(c => c.trim().replace(/^"|"$/g,''));
+    if (!cols.length || !cols[0]) return;
+    const fila = {};
+    colsEntrada.forEach((c, i) => {
+      fila[c.key] = c.tipo === 'manual' ? limpiarNum(cols[i]) : (cols[i] || '');
+    });
+    window._apNiifPapeles[itemId].push(fila);
+    agregadas++;
+  });
+
+  renderPapelNiif(itemId);
+  renderNiifCumplimiento();
+  clearTimeout(_niifSaveTimer);
+  _niifSaveTimer = setTimeout(() => guardarNiifCumplimiento(), 900);
+  toast(`${agregadas} fila${agregadas!==1?'s':''} agregada${agregadas!==1?'s':''} y calculada${agregadas!==1?'s':''} ✓`, 'success');
+}
+
+function actualizarCeldaPapelNiif(itemId, fi, key, valor) {
+  window._apNiifPapeles = window._apNiifPapeles || {};
+  window._apNiifPapeles[itemId] = window._apNiifPapeles[itemId] || [];
+  window._apNiifPapeles[itemId][fi] = window._apNiifPapeles[itemId][fi] || {};
+  window._apNiifPapeles[itemId][fi][key] = valor;
+  renderPapelNiif(itemId);
+  clearTimeout(_niifSaveTimer);
+  _niifSaveTimer = setTimeout(() => guardarNiifCumplimiento(), 900);
+}
+
+function agregarFilaPapelNiif(itemId) {
+  window._apNiifPapeles = window._apNiifPapeles || {};
+  window._apNiifPapeles[itemId] = window._apNiifPapeles[itemId] || [];
+  window._apNiifPapeles[itemId].push({});
+  renderPapelNiif(itemId);
+}
+
+function eliminarFilaPapelNiif(itemId, fi) {
+  if (!window._apNiifPapeles?.[itemId]) return;
+  window._apNiifPapeles[itemId].splice(fi, 1);
+  renderPapelNiif(itemId);
+  renderNiifCumplimiento();
+  guardarNiifCumplimiento();
 }
 
 // ── Informe de Cumplimiento NIIF ─────────────────────────────────────
@@ -16850,11 +17019,27 @@ async function crearCedulasDesdeSeleccion() {
   toast(`${n} cédula${n!==1?'s':''} creada${n!==1?'s':''} ✓`, 'success');
 }
 
+// Convierte una referencia tipo columna de Excel (A, B, ..., Z, AA, AB, ...) a su valor numérico
+// de orden real (A=1, Z=26, AA=27, AB=28...). Evita que "AA" ordene antes que "K" por comparación
+// de texto. Devuelve null si la referencia no es puramente alfabética (ref personalizada).
+function _refOrdenNumero(ref) {
+  const s = String(ref || '').trim().toUpperCase();
+  if (!s || !/^[A-Z]+$/.test(s)) return null;
+  let n = 0;
+  for (let i = 0; i < s.length; i++) n = n * 26 + (s.charCodeAt(i) - 64);
+  return n;
+}
+function _compararPorRef(a, b) {
+  const na = _refOrdenNumero(a.ref), nb = _refOrdenNumero(b.ref);
+  if (na !== null && nb !== null) return na - nb;
+  return String(a.ref || '').localeCompare(String(b.ref || ''));
+}
+
 function renderCedulasAnaliticasCompleto() {
   const el = document.getElementById('ap-cedulas-lista');
   if (!el) return;
   const cedulas = window._apCedulas || {};
-  const lista   = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  const lista   = Object.values(cedulas).sort(_compararPorRef);
 
   if (!lista.length) {
     el.innerHTML = `<div class="card" style="text-align:center;padding:24px">
@@ -17696,7 +17881,7 @@ function obtenerSeccionHTML(secId) {
 // ── 2. Impresión de cédulas analíticas con selector ───────────────────────────
 function imprimirCedulasSeleccion(cedIdsParam) {
   const cedulas = window._apCedulas || {};
-  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  const lista = Object.values(cedulas).sort(_compararPorRef);
   if (!lista.length) { toast('No hay cédulas analíticas', 'warning'); return; }
 
   // Si se pasan IDs específicos, usar esos; si no, mostrar selector
@@ -18232,6 +18417,53 @@ function construirInformeHTML(tipo) {
       </div>
     </div>
 
+    <!-- Gráfico de indicadores financieros -->
+    <h3>C.2 Indicadores Financieros — Vista Gráfica</h3>
+    <div style="margin:10pt 0 4pt">
+      ${(() => {
+        const roa = ta ? (util/ta*100) : 0;
+        const margenNeto = vtas ? (util/vtas*100) : 0;
+        const margenBruto = vtas ? (ub/vtas*100) : 0;
+        const roe = pat ? (util/pat*100) : 0;
+        const endeudamiento = ta ? (tp/ta*100) : 0;
+        const razonCorriente = pc ? (ac/pc) : 0;
+        const barraPct = (valor, max) => Math.max(0, Math.min(100, Math.abs(valor)/max*100));
+        const indicadores = [
+          { label:'Razón Corriente', valor:razonCorriente, max:3, unidad:'x', bueno: razonCorriente>=1.2 },
+          { label:'Endeudamiento s/Activo', valor:endeudamiento, max:100, unidad:'%', bueno: endeudamiento<=60 },
+          { label:'Margen Bruto', valor:margenBruto, max:60, unidad:'%', bueno: margenBruto>=20 },
+          { label:'Margen Neto', valor:margenNeto, max:30, unidad:'%', bueno: margenNeto>=3 },
+          { label:'ROE', valor:roe, max:40, unidad:'%', bueno: roe>=10 },
+          { label:'ROA', valor:roa, max:20, unidad:'%', bueno: roa>=3 },
+        ];
+        return indicadores.map(it => {
+          const pct = barraPct(it.valor, it.max);
+          const color = it.bueno ? '#059669' : '#DC2626';
+          const valTxt = it.unidad==='x' ? it.valor.toFixed(2)+'x' : it.valor.toFixed(1)+'%';
+          return `<div style="display:flex;align-items:center;gap:8pt;margin-bottom:5pt">
+            <div style="width:115pt;font-size:8pt;color:#334155">${it.label}</div>
+            <div style="flex:1;background:#F1F5F9;border-radius:3pt;height:12pt;position:relative">
+              <div style="width:${pct}%;background:${color};height:100%;border-radius:3pt"></div>
+            </div>
+            <div style="width:55pt;text-align:right;font-size:8pt;font-family:'Courier New';font-weight:700;color:${color}">${valTxt}</div>
+          </div>`;
+        }).join('')
+        +
+        // Composición del Activo: Pasivo vs Patrimonio (barra apilada)
+        `<div style="margin-top:12pt">
+          <div style="font-size:8pt;color:#334155;margin-bottom:3pt">Composición del Activo Total (Pasivo vs. Patrimonio)</div>
+          <div style="display:flex;height:16pt;border-radius:3pt;overflow:hidden;border:0.5pt solid #CBD5E1">
+            <div style="width:${(tp/ta*100).toFixed(1)}%;background:#DC2626;display:flex;align-items:center;justify-content:center;font-size:6.5pt;color:#fff">${tp/ta>0.12?fmtP(tp/ta*100):''}</div>
+            <div style="width:${(pat/ta*100).toFixed(1)}%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:6.5pt;color:#fff">${pat/ta>0.12?fmtP(pat/ta*100):''}</div>
+          </div>
+          <div style="display:flex;gap:14pt;margin-top:3pt;font-size:7.5pt;color:#475569">
+            <span><span style="display:inline-block;width:7pt;height:7pt;background:#DC2626;border-radius:2pt;margin-right:3pt"></span>Pasivo (${fmtP(tp/ta*100)})</span>
+            <span><span style="display:inline-block;width:7pt;height:7pt;background:#059669;border-radius:2pt;margin-right:3pt"></span>Patrimonio (${fmtP(pat/ta*100)})</span>
+          </div>
+        </div>`;
+      })()}
+    </div>
+
     <!-- D. MATERIALIDAD -->
     <h2>D. MATERIALIDAD Y ALCANCE</h2>
     <div class="nota-box gold no-pb">
@@ -18632,7 +18864,7 @@ function exportarSeccionWord(secId, titulo) {
 // Exportar cédulas analíticas a Excel
 function exportarCedulasExcel() {
   const cedulas = window._apCedulas || {};
-  const lista = Object.values(cedulas).sort((a,b)=>(a.ref||'').localeCompare(b.ref||''));
+  const lista = Object.values(cedulas).sort(_compararPorRef);
   if (!lista.length) { toast('No hay cédulas analíticas', 'warning'); return; }
   const exp = _apExpediente || {};
   const fmtN = v => (Math.abs(parseFloat(v)||0)).toFixed(2);
