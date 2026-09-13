@@ -17305,20 +17305,40 @@ async function guardarCedulaEditada(cedulaId) {
   }
 }
 
-// Actualiza el saldo auditado en toda cédula sumaria que esté vinculada (por Ref.) a la cédula analítica dada.
-// Se ejecuta cada vez que se guarda una cédula analítica, para que el ajuste se refleje sin pasos adicionales.
+// Actualiza el saldo auditado en toda cédula sumaria que corresponda a la cédula analítica dada.
+// Coincide automáticamente por nombre de cuenta (sin necesidad de escribir una referencia manual),
+// y también respeta un vínculo por Ref. ya establecido a mano. Se ejecuta cada vez que se guarda
+// una cédula analítica, para que el ajuste se refleje sin pasos adicionales.
 async function sincronizarSumariasConCedula(cedulaActualizada) {
-  if (!_apExpediente?.sumarias?.length || !cedulaActualizada?.ref) return;
-  const refBuscar = String(cedulaActualizada.ref).trim().toUpperCase();
-  const saldoAud = parseFloat(cedulaActualizada.totalAuditado) || parseFloat(cedulaActualizada.totalLibros) || 0;
+  if (!_apExpediente?.sumarias?.length) return;
+  const refBuscar   = String(cedulaActualizada.ref || '').trim().toUpperCase();
+  const tituloCed   = String(cedulaActualizada.titulo || '').trim().toUpperCase();
+  const saldoCedula = parseFloat(cedulaActualizada.totalAuditado) || parseFloat(cedulaActualizada.totalLibros) || 0;
   let cambiaron = false;
 
   _apExpediente.sumarias.forEach(sumaria => {
     (sumaria.partidas||[]).forEach(partida => {
-      if (partida.cedulaVinculada && (partida.cedulaRef||'').trim().toUpperCase() === refBuscar) {
-        partida.saldoAuditoria = saldoAud;
-        partida.cedulaTitulo = cedulaActualizada.titulo || partida.cedulaTitulo;
-        partida.notaCambio = '';
+      const cuentaPartida = String(partida.cuenta || '').trim().toUpperCase();
+      let saldoAud = null;
+
+      if (partida.cedulaVinculada && String(partida.cedulaRef||'').trim().toUpperCase() === refBuscar) {
+        // Ya estaba vinculada a esta cédula por referencia manual
+        saldoAud = saldoCedula;
+      } else if (cuentaPartida && cuentaPartida === tituloCed) {
+        // Coincidencia automática: cédula individual con el mismo nombre de cuenta
+        saldoAud = saldoCedula;
+      } else if (cuentaPartida) {
+        // Coincidencia automática dentro de una cédula agrupada (por sección o combinada)
+        const fila = (cedulaActualizada.filas||[]).find(f => String(f.cuenta||'').trim().toUpperCase() === cuentaPartida);
+        if (fila) saldoAud = parseFloat(fila.saldoAuditado) || 0;
+      }
+
+      if (saldoAud !== null) {
+        partida.saldoAuditoria  = saldoAud;
+        partida.cedulaRef       = cedulaActualizada.ref;
+        partida.cedulaVinculada = true;
+        partida.cedulaTitulo    = cedulaActualizada.titulo || partida.cedulaTitulo;
+        partida.notaCambio      = '';
         cambiaron = true;
       }
     });
@@ -18674,6 +18694,22 @@ function exportarCedulasExcel() {
 }
 
 
+// Busca una cédula analítica que corresponda a una cuenta específica (coincidencia exacta
+// por título de cédula individual, o por fila dentro de una cédula agrupada por sección).
+function buscarCedulaPorCuenta(nombreCuenta) {
+  const cedulas = window._apCedulas || {};
+  const buscar = String(nombreCuenta || '').trim().toUpperCase();
+  if (!buscar) return null;
+  for (const ced of Object.values(cedulas)) {
+    if (String(ced.titulo || '').trim().toUpperCase() === buscar) {
+      return { cedula: ced, saldoAuditado: parseFloat(ced.totalAuditado) || parseFloat(ced.totalLibros) || 0 };
+    }
+    const fila = (ced.filas || []).find(f => String(f.cuenta || '').trim().toUpperCase() === buscar);
+    if (fila) return { cedula: ced, saldoAuditado: parseFloat(fila.saldoAuditado) || 0 };
+  }
+  return null;
+}
+
 function generarSumariasDesdeEEFF() {
   if (!_apExpediente) { toast('Inicie un expediente primero', 'warning'); return; }
   const data = window._apEEFFSeleccionado;
@@ -18707,9 +18743,17 @@ function generarSumariasDesdeEEFF() {
   _apExpediente.sumarias = GRUPOS.map(grp => {
     const partidas = grp.cuentas
       .filter(k => Math.abs(g(k)) > 0)
-      .map(k => ({
-        cuenta: k, saldoLibros: g(k), saldoAuditoria: g(k), cedulaRef: '', marcas: '✓'
-      }));
+      .map(k => {
+        const match = buscarCedulaPorCuenta(k);
+        return {
+          cuenta: k, saldoLibros: g(k),
+          saldoAuditoria: match ? match.saldoAuditado : g(k),
+          cedulaRef: match ? match.cedula.ref : '',
+          cedulaVinculada: !!match,
+          cedulaTitulo: match ? (match.cedula.titulo||'') : '',
+          marcas: '✓',
+        };
+      });
     const sumaria = (_apExpediente.sumarias||[]).find(s=>s.ref===grp.ref) || {};
     return {
       ref: grp.ref, nombre: grp.nombre,
