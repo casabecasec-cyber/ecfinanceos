@@ -15158,7 +15158,9 @@ function seleccionarEEFFParaAuditoria(key) {
     .catch(err=>toast('Error al guardar en Firebase: '+err.message,'warning'));
 
   // Cargar transacciones para analítica Benford
-  window._apTransacciones = Object.entries(rawL).map(([n,v])=>({Cuenta:n,Monto:parseFloat(v)||0}));
+  _apTransacciones = Object.entries(rawL).map(([n,v])=>({Cuenta:n,Monto:parseFloat(v)||0}));
+  const statusBenford = document.getElementById('ap-benford-datos-status');
+  if (statusBenford) statusBenford.textContent = `✅ ${_apTransacciones.length} cuentas del EEFF vinculado cargadas como transacciones para Analítica/Ley de Benford`;
 
   try { generarSumariasDesdeEEFF(); } catch(e){ console.warn(e); }
   renderEEFFenAuditoria('balance');
