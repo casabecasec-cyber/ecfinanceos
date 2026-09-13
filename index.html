@@ -1088,12 +1088,12 @@ html[data-theme="claro"] #gea-native-root{
 
     <div class="nav-section collapsed" id="navsection-gea">
       <div class="nav-section-label" onclick="toggleFinanceSection('gea')">
-        <span>GEA — GESTIÓN EMPRESARIAL</span><span class="nav-section-arrow">▾</span>
+        <span>GESTIÓN EMPRESARIAL</span><span class="nav-section-arrow">▾</span>
       </div>
       <div class="nav-section-items">
         <a href="#" class="nav-item" data-module="gea" data-geaview="dashboard">
           <span class="nav-icon">📊</span>
-          <span>Dashboard (GEA)</span>
+          <span>Dashboard Empresarial</span>
         </a>
         <a href="#" class="nav-item" data-module="gea" data-geaview="empresas">
           <span class="nav-icon">🏢</span>
@@ -1122,14 +1122,10 @@ html[data-theme="claro"] #gea-native-root{
           <span>Equipo de Trabajo</span>
         </a>
 
-        <div class="nav-group" id="navgroup-gea-auditoria">
-          <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-auditoria')">
-            <span class="nav-icon">🔎</span><span>Auditoría (GEA)</span><span class="nav-group-arrow">▾</span>
-          </div>
-          <div class="nav-group-items">
-            <a href="#" class="nav-item" data-module="gea" data-geaview="auditoria"><span>📋 Hallazgos de Auditoría</span></a>
-          </div>
-        </div>
+        <a href="#" class="nav-item" data-module="gea" data-geaview="auditoria">
+          <span class="nav-icon">📋</span>
+          <span>Hallazgos de Auditoría</span>
+        </a>
 
         <div class="nav-group" id="navgroup-gea-bancario">
           <div class="nav-group-title" onclick="toggleFinanceNavGroup('gea-bancario')">
@@ -7247,6 +7243,41 @@ function eliminarPeriodoCargado(i) {
 }
 
 
+function recolectarTodosLosEstados() {
+  if (!periodos.length) return '';
+  // Asegurar que cada sección esté generada, aunque el usuario nunca haya abierto esa pestaña en pantalla
+  periodos.forEach(p => { if (p.raw) p.rawNorm = normalizarRaw(p.raw); });
+  try { renderBalance(); } catch(e) { console.error('Error en renderBalance:', e); }
+  try { renderResultados(); } catch(e) { console.error('Error en renderResultados:', e); }
+  try { renderCambiosPatrimonio(); } catch(e) { console.error('Error en renderCambiosPatrimonio:', e); }
+  try { renderFlujoEfectivo(); } catch(e) { console.error('Error en renderFlujoEfectivo:', e); }
+  try { renderNotasEEFF(); } catch(e) { console.error('Error en renderNotasEEFF:', e); }
+  try { renderAnalisisHV(); } catch(e) { console.error('Error en renderAnalisisHV:', e); }
+  try { renderIndicesEF(); } catch(e) { console.error('Error en renderIndicesEF:', e); }
+  try { renderKPIsEF(); } catch(e) { console.error('Error en renderKPIsEF:', e); }
+  try { renderGraficosEF(); } catch(e) { console.error('Error en renderGraficosEF:', e); }
+  try { renderRecomendacionesEF(); } catch(e) { console.error('Error en renderRecomendacionesEF:', e); }
+
+  const secciones = [
+    { id: 'ef-balance',         titulo: 'Estado de Situación Financiera' },
+    { id: 'ef-resultados',      titulo: 'Estado de Resultados' },
+    { id: 'ef-patrimonio',      titulo: 'Estado de Cambios en el Patrimonio' },
+    { id: 'ef-flujo',           titulo: 'Estado de Flujo de Efectivo' },
+    { id: 'ef-notas',           titulo: 'Notas a los Estados Financieros' },
+    { id: 'ef-h-v',             titulo: 'Análisis Horizontal y Vertical' },
+    { id: 'ef-indices',         titulo: 'Índices Financieros' },
+    { id: 'ef-kpis',            titulo: 'KPIs' },
+    { id: 'ef-graficos',        titulo: 'Gráficos Financieros' },
+    { id: 'ef-recomendaciones', titulo: 'Recomendaciones' },
+  ];
+  return secciones.map(s => {
+    const el = document.getElementById(s.id);
+    const html = el ? el.innerHTML : '';
+    if (!html || !html.trim()) return '';
+    return `<div class="seccion-ef"><h2>${s.titulo}</h2>${html}</div>`;
+  }).filter(Boolean).join('');
+}
+
 function imprimirTodosEEFF() {
   if (!periodos.length) { toast('Cargue períodos primero', 'warning'); return; }
   const empresa = periodos[periodos.length-1]?.nombreEmpresa || '';
@@ -7888,6 +7919,12 @@ function updatePeriodsUI() {
     renderEfTab('balance');
     renderAnalisisHV();
     renderIndicesEF();
+    // También refrescar KPIs, Gráficos y Recomendaciones — si el usuario había entrado
+    // a esas pestañas antes de cargar datos, se quedaban con el mensaje de "sin datos".
+    periodos.forEach(p => { if (p.raw) p.rawNorm = normalizarRaw(p.raw); });
+    renderKPIsEF();
+    renderGraficosEF();
+    renderRecomendacionesEF();
   }
 }
 
@@ -8475,85 +8512,87 @@ function renderCambiosPatrimonio() {
     const s = Math.abs(n).toLocaleString('es-EC',{minimumFractionDigits:2});
     return n<0 ? `<span class="negative">(${s})</span>` : `<span class="${pos?'positive':''}">${s}</span>`;
   };
+  const NCOLS = 9; // Concepto + Capital, Aportes futura cap., Res. Legal, Res. Facultativa, Superávit Reval., Result. Acum., Result. Ejercicio + TOTAL
 
   let html = `<h4 style="color:var(--gold);margin-bottom:4px">Estado de Cambios en el Patrimonio Neto</h4>
-    <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:16px">Movimientos patrimoniales del ejercicio — en USD | Norma: NIC 1 párr. 106</p>`;
+    <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:16px">Movimientos patrimoniales del ejercicio, por cada cuenta que interviene — en USD | Norma: NIC 1 párr. 106</p>`;
 
   periodos.forEach((p, idx) => {
     const d   = p.rawNorm || p.raw;
     const dAnt = idx > 0 ? (periodos[idx-1].rawNorm || periodos[idx-1].raw) : null;
 
-    // ── Componentes finales (directo del balance) ──────────────────────────
-    const capFin  = parseFloat(d['CAPITAL SOCIAL']||0);
-    const rlFin   = parseFloat(d['RESERVA LEGAL']||0);
-    const rfFin   = parseFloat(d['RESERVAS FACULTATIVAS']||0);
-    const uaFin   = parseFloat(d['UTILIDADES RETENIDAS']||0);
-    const uejFin  = parseFloat(d['UTILIDAD EJERCICIO']||0);
-    const otroFin = parseFloat(d['RESERVA DE CAPITAL']||0) + parseFloat(d['RESERVAS OTRAS']||0);
+    // ── Componentes finales (directo del balance, una columna por cada cuenta patrimonial) ──
+    const capFin     = parseFloat(d['CAPITAL SOCIAL']||0);
+    const aportesFin = parseFloat(d['APORTES FUTURA CAPITALIZACION']||0);
+    const rlFin      = parseFloat(d['RESERVA LEGAL']||0);
+    const rfFin      = parseFloat(d['RESERVAS FACULTATIVAS']||0);
+    const supFin     = parseFloat(d['SUPERAVIT POR REVALUACION']||0);
+    const uaFin       = parseFloat(d['UTILIDADES RETENIDAS']||0) - parseFloat(d['PERDIDA ACUMULADA']||0);
+    const uejFin      = parseFloat(d['UTILIDAD EJERCICIO']||0) - parseFloat(d['PERDIDA EJERCICIO']||0);
     // Total patrimonio real del balance — esta es la cifra de control
-    const patFin  = parseFloat(d['TOTAL PATRIMONIO']||0) ||
-                    (capFin + rlFin + rfFin + uaFin + uejFin + otroFin);
+    const sumaComponentesFin = capFin + aportesFin + rlFin + rfFin + supFin + uaFin + uejFin;
+    const patFin  = parseFloat(d['TOTAL PATRIMONIO']||0) || sumaComponentesFin;
+    // Residual si el TOTAL PATRIMONIO reportado no coincide exactamente con la suma de cuentas mapeadas
+    const ajusteNoMapeadoFin = patFin - sumaComponentesFin;
 
     // ── Componentes iniciales (período anterior) ──────────────────────────
-    const capIni  = dAnt ? parseFloat(dAnt['CAPITAL SOCIAL']||0)       : capFin;
-    const rlIni   = dAnt ? parseFloat(dAnt['RESERVA LEGAL']||0)         : rlFin;
-    const rfIni   = dAnt ? parseFloat(dAnt['RESERVAS FACULTATIVAS']||0) : rfFin;
-    const uaIni   = dAnt ? parseFloat(dAnt['UTILIDADES RETENIDAS']||0)  : uaFin;
-    const uejIni  = dAnt ? parseFloat(dAnt['UTILIDAD EJERCICIO']||0)    : 0;
-    const otroIni = dAnt ? (parseFloat(dAnt['RESERVA DE CAPITAL']||0)+parseFloat(dAnt['RESERVAS OTRAS']||0)) : otroFin;
+    const capIni     = dAnt ? parseFloat(dAnt['CAPITAL SOCIAL']||0)                 : capFin;
+    const aportesIni = dAnt ? parseFloat(dAnt['APORTES FUTURA CAPITALIZACION']||0)   : aportesFin;
+    const rlIni      = dAnt ? parseFloat(dAnt['RESERVA LEGAL']||0)                   : rlFin;
+    const rfIni      = dAnt ? parseFloat(dAnt['RESERVAS FACULTATIVAS']||0)           : rfFin;
+    const supIni     = dAnt ? parseFloat(dAnt['SUPERAVIT POR REVALUACION']||0)       : supFin;
+    const uaIni      = dAnt ? (parseFloat(dAnt['UTILIDADES RETENIDAS']||0) - parseFloat(dAnt['PERDIDA ACUMULADA']||0)) : uaFin;
+    const uejIni     = dAnt ? (parseFloat(dAnt['UTILIDAD EJERCICIO']||0) - parseFloat(dAnt['PERDIDA EJERCICIO']||0))   : 0;
+    const sumaComponentesIni = capIni + aportesIni + rlIni + rfIni + supIni + uaIni + uejIni;
     const patIni  = dAnt
-      ? (parseFloat(dAnt['TOTAL PATRIMONIO']||0) || (capIni+rlIni+rfIni+uaIni+uejIni+otroIni))
+      ? (parseFloat(dAnt['TOTAL PATRIMONIO']||0) || sumaComponentesIni)
       : patFin;
+    const ajusteNoMapeadoIni = dAnt ? (patIni - sumaComponentesIni) : ajusteNoMapeadoFin;
 
-    // ── Movimientos del período ────────────────────────────────────────────
-    const dCap   = capFin - capIni;
+    // ── Movimientos del período, cuenta por cuenta ─────────────────────────
+    const dCap     = capFin - capIni;
+    const dAportes = aportesFin - aportesIni;
+    const dRL      = rlFin - rlIni;
+    const dRF      = rfFin - rfIni;
+    const dSup     = supFin - supIni;
 
-    // Reserva legal: su incremento viene de la utilidad del ejercicio (apropiación)
-    const dRL    = rlFin - rlIni;
-
-    // Reservas facultativas
-    const dRF    = rfFin - rfIni;
-
-    // Transferencia del resultado anterior a resultados acumulados
-    // (siempre que haya un período anterior con utilidad)
+    // Transferencia del resultado del período anterior a resultados acumulados
     const transf = dAnt ? uejIni : 0;
 
     // Resultado neto del ejercicio actual
     const utilNeta = uejFin;
 
-    // Cálculo de la variación de resultados acumulados:
-    // uaFin = uaIni + transf + (dividendos si negativos) + ajuste
-    // Despejamos el ajuste residual para que cuadre exactamente
-    const varUAesp  = transf; // lo esperado
+    // Variación de resultados acumulados = transferencia + dividendos/otros ajustes (residual)
+    const varUAesp  = transf;
     const varUAreal = uaFin - uaIni;
     const dividendos = varUAreal - varUAesp; // negativo = dividendos pagados; positivo = otros ajustes
 
-    // Otros resultados integrales y variaciones
-    const dOtro  = otroFin - otroIni;
+    // Ajuste por cifras no mapeadas a una cuenta específica (si el TOTAL PATRIMONIO reportado
+    // no coincide exactamente con la suma de las cuentas detectadas — ej. otro componente de ORI)
+    const dAjusteNoMapeado = ajusteNoMapeadoFin - ajusteNoMapeadoIni;
 
-    // ── Totales por columna (usando datos reales del balance, no cálculo) ──
-    // Total inicio: patrimonioIni  Total fin: patFin
-    // El total de los movimientos = patFin - patIni (MATEMÁTICAMENTE exacto)
     const totalMovimientos = patFin - patIni;
 
     // ── HTML ──────────────────────────────────────────────────────────────
     const per = p.nombre;
     const perAnt = dAnt ? periodos[idx-1].nombre : '—';
+    const vacia = Array(NCOLS-2).fill('<td>—</td>').join('');
 
     html += `
     <div style="margin-bottom:28px;overflow-x:auto">
       <h5 style="color:var(--text-primary);margin-bottom:10px;border-left:3px solid var(--gold);padding-left:10px">
         Período ${per}${dAnt ? ` — comparativo vs. ${perAnt}` : ' — período base'}
       </h5>
-      <table class="ef-table" style="min-width:700px">
+      <table class="ef-table" style="min-width:900px">
         <thead><tr>
-          <th class="left" style="min-width:220px">Concepto</th>
+          <th class="left" style="min-width:240px">Concepto</th>
           <th>Capital<br>Suscrito</th>
+          <th>Aportes Futura<br>Capitalización</th>
           <th>Reserva<br>Legal</th>
           <th>Res.<br>Facultativa</th>
+          <th>Superávit por<br>Revaluación</th>
           <th>Result.<br>Acumulados</th>
           <th>Resultado<br>del Ejercicio</th>
-          <th>Otros<br>Res. Int.</th>
           <th style="color:var(--gold);min-width:110px">TOTAL<br>PATRIMONIO</th>
         </tr></thead>
         <tbody>
@@ -8561,11 +8600,12 @@ function renderCambiosPatrimonio() {
           <tr style="background:rgba(212,175,55,.05)">
             <td class="account"><strong>Saldo al ${dAnt?`31-dic-${perAnt}`:`inicio del período ${per}`}</strong></td>
             <td>${fmtN(capIni)}</td>
+            <td>${fmtN(aportesIni)}</td>
             <td>${fmtN(rlIni)}</td>
             <td>${fmtN(rfIni)}</td>
+            <td>${fmtN(supIni)}</td>
             <td>${fmtN(uaIni + uejIni)}</td>
             <td>—</td>
-            <td>${fmtN(otroIni)}</td>
             <td style="color:var(--gold)"><strong>${fmtN(patIni)}</strong></td>
           </tr>
 
@@ -8573,72 +8613,88 @@ function renderCambiosPatrimonio() {
           ${dCap!==0?`<tr>
             <td class="account" style="padding-left:18px">(+/-) Aportes o devoluciones de capital</td>
             <td class="${dCap>=0?'positive':'negative'}">${fmtC(dCap,true)}</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
             <td class="${dCap>=0?'positive':'negative'}">${fmtC(dCap,true)}</td>
+          </tr>`:''}
+
+          <!-- Aportes para futura capitalización -->
+          ${dAportes!==0?`<tr>
+            <td class="account" style="padding-left:18px">(+/-) Aportes de socios para futura capitalización</td>
+            <td>—</td>
+            <td class="${dAportes>=0?'positive':'negative'}">${fmtC(dAportes,true)}</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+            <td class="${dAportes>=0?'positive':'negative'}">${fmtC(dAportes,true)}</td>
           </tr>`:''}
 
           <!-- Reserva legal -->
           ${dRL!==0?`<tr>
-            <td class="account" style="padding-left:18px">(+) Apropiación reserva legal ${dAnt?`(10% utilidad ${perAnt})`:''}  </td>
-            <td>—</td>
-            <td class="positive">${fmtC(dRL,true)}</td>
-            <td>—</td>
-            <td class="negative">(${fmtN(dRL)})</td>
+            <td class="account" style="padding-left:18px">(+) Apropiación reserva legal ${dAnt?`(10% utilidad ${perAnt})`:''}</td>
             <td>—</td><td>—</td>
+            <td class="positive">${fmtC(dRL,true)}</td>
+            <td>—</td><td>—</td>
+            <td class="negative">(${fmtN(dRL)})</td>
+            <td>—</td>
             <td>—</td>
           </tr>`:''}
 
           <!-- Reservas facultativas -->
           ${dRF!==0?`<tr>
-            <td class="account" style="padding-left:18px">(+/-) Variación reservas facultativas</td>
-            <td>—</td><td>—</td>
+            <td class="account" style="padding-left:18px">(+/-) Variación reservas facultativas y estatutarias</td>
+            <td>—</td><td>—</td><td>—</td>
             <td class="${dRF>=0?'positive':'negative'}">${fmtC(dRF,true)}</td>
             <td>—</td><td>—</td><td>—</td>
             <td class="${dRF>=0?'positive':'negative'}">${fmtC(dRF,true)}</td>
           </tr>`:''}
 
+          <!-- Superávit por revaluación -->
+          ${dSup!==0?`<tr>
+            <td class="account" style="padding-left:18px">(+/-) Superávit por revaluación de propiedad, planta y equipo</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td>
+            <td class="${dSup>=0?'positive':'negative'}">${fmtC(dSup,true)}</td>
+            <td>—</td><td>—</td>
+            <td class="${dSup>=0?'positive':'negative'}">${fmtC(dSup,true)}</td>
+          </tr>`:''}
+
           <!-- Transferencia resultado anterior -->
           ${transf!==0?`<tr>
             <td class="account" style="padding-left:18px">Transferencia resultado ${perAnt} a resultados acumulados</td>
-            <td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
             <td class="positive">${fmtC(transf,true)}</td>
             <td class="negative">(${fmtN(transf)})</td>
-            <td>—</td>
             <td>—</td>
           </tr>`:''}
 
           <!-- Dividendos / distribución -->
           ${dividendos<0?`<tr>
             <td class="account" style="padding-left:18px">(-) Dividendos decretados / distribución de utilidades</td>
-            <td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
             <td class="negative">(${fmtN(Math.abs(dividendos))})</td>
-            <td>—</td><td>—</td>
+            <td>—</td>
             <td class="negative">(${fmtN(Math.abs(dividendos))})</td>
           </tr>`:''}
 
           <!-- Otros ajustes de resultados acumulados -->
           ${dividendos>0?`<tr>
             <td class="account" style="padding-left:18px">(+) Otros incrementos en resultados acumulados</td>
-            <td>—</td><td>—</td><td>—</td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
             <td class="positive">${fmtC(dividendos,true)}</td>
-            <td>—</td><td>—</td>
+            <td>—</td>
             <td class="positive">${fmtC(dividendos,true)}</td>
           </tr>`:''}
 
-          <!-- Otros resultados integrales -->
-          ${dOtro!==0?`<tr>
-            <td class="account" style="padding-left:18px">(+/-) Otros resultados integrales (ORI)</td>
-            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
-            <td class="${dOtro>=0?'positive':'negative'}">${fmtC(dOtro,true)}</td>
-            <td class="${dOtro>=0?'positive':'negative'}">${fmtC(dOtro,true)}</td>
+          <!-- Ajuste por cifras patrimoniales no mapeadas a una cuenta específica (si aplica) -->
+          ${Math.abs(dAjusteNoMapeado)>0.01?`<tr>
+            <td class="account" style="padding-left:18px">(+/-) Otros movimientos patrimoniales no desglosados por cuenta</td>
+            ${vacia}
+            <td class="${dAjusteNoMapeado>=0?'positive':'negative'}">${fmtC(dAjusteNoMapeado,true)}</td>
           </tr>`:''}
 
           <!-- Resultado integral del ejercicio -->
           <tr>
             <td class="account" style="padding-left:18px"><strong>Resultado integral del ejercicio ${per}</strong></td>
-            <td>—</td><td>—</td><td>—</td><td>—</td>
-            <td class="${utilNeta>=0?'positive':'negative'}"><strong>${fmtC(utilNeta,true)}</strong></td>
+            <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
             <td>—</td>
+            <td class="${utilNeta>=0?'positive':'negative'}"><strong>${fmtC(utilNeta,true)}</strong></td>
             <td class="${utilNeta>=0?'positive':'negative'}"><strong>${fmtC(utilNeta,true)}</strong></td>
           </tr>
 
@@ -8646,17 +8702,18 @@ function renderCambiosPatrimonio() {
           <tr style="background:rgba(212,175,55,.08)">
             <td class="account"><strong>Saldo al 31-dic-${per}</strong></td>
             <td><strong>${fmtN(capFin)}</strong></td>
+            <td><strong>${fmtN(aportesFin)}</strong></td>
             <td><strong>${fmtN(rlFin)}</strong></td>
             <td><strong>${fmtN(rfFin)}</strong></td>
+            <td><strong>${fmtN(supFin)}</strong></td>
             <td><strong>${fmtN(uaFin)}</strong></td>
             <td><strong>${fmtN(uejFin)}</strong></td>
-            <td><strong>${fmtN(otroFin)}</strong></td>
             <td style="color:var(--gold)"><strong>${fmtN(patFin)}</strong></td>
           </tr>
 
           <!-- Indicador de cuadre: siempre verde porque usamos datos reales del balance -->
           <tr>
-            <td colspan="8" style="text-align:center;font-size:.72rem;padding:7px;
+            <td colspan="${NCOLS}" style="text-align:center;font-size:.72rem;padding:7px;
               background:rgba(16,185,129,.06);color:var(--emerald)">
               ✅ Cuadrado — Saldo final ${fmtN(patFin)} = Saldo inicial ${fmtN(patIni)} + Movimientos netos ${fmtN(totalMovimientos)}
             </td>
@@ -10667,7 +10724,7 @@ function initNavegacion() {
         if (cont) cont.innerHTML = `<div class="card" style="max-width:560px;margin:40px auto;text-align:center;">
           <p>⚠️ Ocurrió un error al abrir esta sección: ${(err.message||String(err)).replace(/</g,'&lt;')}</p>
         </div>`;
-        if (window.toast) toast('Error al abrir la sección de GEA — revisa la consola', 'error');
+        if (window.toast) toast('Error al abrir esta sección — revisa la consola', 'error');
       }
     }
   }));
