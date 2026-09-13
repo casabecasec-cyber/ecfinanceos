@@ -135,13 +135,14 @@ body { font-family: var(--font-main); background: var(--bg-deep); color: var(--t
 .logo-sub { display: block; font-size: .7rem; color: var(--text-muted); }
 
 .sidebar-nav { flex: 1; padding: 16px 8px; overflow-y: auto; }
-.nav-section-label { font-size: .65rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1.5px; padding: 0 8px 8px; }
+.nav-section-label { font-size: .65rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1.5px; padding: 0 8px 8px; margin-top: 18px; }
+.nav-section-label:first-child { margin-top: 0; }
 
 .nav-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: var(--radius-sm);
   color: var(--text-secondary); font-size: .875rem; font-weight: 500;
-  text-decoration: none; transition: all .2s; margin-bottom: 2px;
+  text-decoration: none; transition: all .2s; margin-bottom: 4px;
   cursor: pointer;
 }
 .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -988,6 +989,7 @@ html[data-theme="claro"] #gea-native-root{
       <span class="nav-icon">📈</span>
       <span>Inversiones</span>
     </a>
+    <div class="nav-section-label">CONTABILIDAD Y FINANZAS</div>
     <a href="#" class="nav-item" data-module="documentos">
       <span class="nav-icon">📄</span>
       <span>Documentos</span>
@@ -999,10 +1001,6 @@ html[data-theme="claro"] #gea-native-root{
     <a href="#" class="nav-item" data-module="estados">
       <span class="nav-icon">📊</span>
       <span>Estados Financieros</span>
-    </a>
-    <a href="#" class="nav-item" data-module="audit-pro">
-      <span class="nav-icon">🏛️</span>
-      <span>Auditoría Profesional</span>
     </a>
     <a href="#" class="nav-item" data-module="presupuestos">
       <span class="nav-icon">💰</span>
@@ -1020,10 +1018,20 @@ html[data-theme="claro"] #gea-native-root{
       <span class="nav-icon">⚖️</span>
       <span>Análisis de Deudas</span>
     </a>
+    <div class="nav-section-label">AUDITORÍA Y CUMPLIMIENTO</div>
+    <a href="#" class="nav-item" data-module="audit-pro">
+      <span class="nav-icon">🏛️</span>
+      <span>Auditoría Profesional</span>
+    </a>
     <a href="#" class="nav-item" data-module="auditoria">
       <span class="nav-icon">🔎</span>
       <span>Auditoría</span>
     </a>
+    <a href="#" class="nav-item" data-module="niif">
+      <span class="nav-icon">📘</span>
+      <span>NIIF</span>
+    </a>
+    <div class="nav-section-label">HERRAMIENTAS</div>
     <a href="#" class="nav-item" data-module="inventarios">
       <span class="nav-icon">📦</span>
       <span>Inventarios</span>
@@ -1036,15 +1044,12 @@ html[data-theme="claro"] #gea-native-root{
       <span class="nav-icon">📰</span>
       <span>Noticias Financieras</span>
     </a>
-    <a href="#" class="nav-item" data-module="niif">
-      <span class="nav-icon">📘</span>
-      <span>NIIF</span>
-    </a>
     <a href="#" class="nav-item" data-module="seguimiento">
       <span class="nav-icon">🔍</span>
       <span>Seguimiento</span>
     </a>
-    <a href="#" class="nav-item" data-module="gea" data-geaview="dashboard" style="border-top:1px solid var(--border-color);margin-top:8px;padding-top:8px">
+    <div class="nav-section-label">GEA — GESTIÓN EMPRESARIAL</div>
+    <a href="#" class="nav-item" data-module="gea" data-geaview="dashboard">
       <span class="nav-icon">📊</span>
       <span>Dashboard (GEA)</span>
     </a>
@@ -10326,6 +10331,11 @@ function initNavegacion() {
     activar(item.dataset.module);
     const geaView = item.dataset.geaview;
     if (geaView && item.dataset.module === 'gea') {
+      // Todos los ítems de GEA comparten data-module="gea" (para mostrar la misma sección),
+      // así que activar() los resalta a todos a la vez. Aquí se corrige: solo el que
+      // realmente se clickeó queda marcado como activo.
+      document.querySelectorAll('.nav-item[data-module="gea"]').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
       try {
         if (window.geaInitNative) await geaInitNative();
         if (window.goTo) goTo(geaView);
@@ -13800,6 +13810,14 @@ async function renderPanelTipo(tipo) {
         </h4>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:12px">
           <div class="form-group">
+            <label style="font-size:.72rem">Empresa (de GEA, opcional)</label>
+            <select id="ap-empresa-gea-id" onchange="vincularExpedienteAEmpresaGea(this.value)"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+              <option value="">-- Escribir manualmente --</option>
+              ${(typeof empresasCache!=="undefined"?empresasCache:[]).map(e => `<option value="${e.id}">${(e.nombre||'').replace(/"/g,'&quot;')}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
             <label style="font-size:.72rem">Empresa</label>
             <input type="text" id="ap-empresa" placeholder="Nombre de la empresa"
               style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
@@ -13853,9 +13871,21 @@ async function renderPanelTipo(tipo) {
 }
 
 
+// Al elegir una empresa de GEA en el expediente, autocompleta nombre y RUC
+function vincularExpedienteAEmpresaGea(empresaId) {
+  if (!empresaId) return;
+  const emp = (typeof empresasCache!=='undefined'?empresasCache:[]).find(e => e.id === empresaId);
+  if (!emp) return;
+  const nombreEl = document.getElementById('ap-empresa');
+  const rucEl = document.getElementById('ap-ruc');
+  if (nombreEl) nombreEl.value = emp.nombre || '';
+  if (rucEl && emp.ruc) rucEl.value = emp.ruc;
+}
+
 function iniciarExpedienteAuditoria() {
   const empresa = document.getElementById('ap-empresa')?.value?.trim();
   const ruc     = document.getElementById('ap-ruc')?.value?.trim();
+  const empresaGeaId = document.getElementById('ap-empresa-gea-id')?.value || null;
   const periodo = document.getElementById('ap-periodo')?.value?.trim();
   const auditor = document.getElementById('ap-auditor')?.value?.trim() || window._userDisplay || 'Auditor';
   const tipo    = window._tipoActivo || window._apTipoSeleccionado || 'financiera';
@@ -13868,7 +13898,7 @@ function iniciarExpedienteAuditoria() {
   if (document.getElementById('ap-expediente')) document.getElementById('ap-expediente').value = codigo;
 
   _apExpediente = {
-    codigo, tipo, empresa, ruc, periodo, auditor,
+    codigo, tipo, empresa, ruc, empresaGeaId, periodo, auditor,
     fechaInicio: new Date().toISOString(),
     fases: {},
     cedulas: [],
@@ -16656,7 +16686,13 @@ async function cargarHistorialExpedientes(filtroTipo) {
       .sort((a, b) => (b[1].fecha || '').localeCompare(a[1].fecha || ''));
 
     // Filtrar por tipo
-    const items = todos.filter(([, v]) => (v.tipo || 'financiera') === tipo);
+    let items = todos.filter(([, v]) => (v.tipo || 'financiera') === tipo);
+
+    // Si la sesión está limitada a una sola empresa (selector de empresa al iniciar sesión),
+    // solo mostrar expedientes vinculados explícitamente a esa empresa de GEA.
+    if (window._empresaContextoId) {
+      items = items.filter(([, v]) => v.empresaGeaId === window._empresaContextoId);
+    }
 
     if (!items.length) {
       // Show message + quick links to other types that have expedientes
@@ -21932,11 +21968,15 @@ function elegirEmpresaContexto(empresaId){
   window._empresaContextoId = empresaId || null;
   const overlay = document.getElementById('empresa-contexto-overlay');
   if(overlay) overlay.style.display = 'none';
-  // Si GEA ya estaba inicializado en esta sesión, refrescar sus datos con el nuevo contexto
-  if(window._geaNativeInited){
-    window._geaNativeInited = false;
-    cargarEmpresas().then(() => { if(window.goTo && typeof currentView !== 'undefined') goTo(currentView); });
-  }
+  // Cargar empresasCache siempre (no solo si ya se había entrado a GEA), para que
+  // selectores como el de "Auditoría Profesional" también puedan vincular una empresa
+  // desde el primer momento.
+  cargarEmpresas().then(() => {
+    if(window._geaNativeInited && window.goTo && typeof currentView !== 'undefined'){
+      window._geaNativeInited = false;
+      goTo(currentView);
+    }
+  }).catch(e => console.error('Error cargando empresas tras elegir contexto:', e));
 }
 
 // Herramienta rápida para que el Administrador defina qué empresas puede ver el rol "Invitado"
