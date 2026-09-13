@@ -2186,6 +2186,7 @@ details[id^="ced-card-"] summary { outline:none; }
                   <input type="file" accept="application/pdf" style="display:none" onchange="subirDeclaracionHojaIVA(this)">
                 </label>
                 <button class="btn-secondary" onclick="guardarHojaIVA(true)">💾 Guardar</button>
+                <button class="btn-calc" onclick="generarInformeEjecutivoHojaIVA()" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">🖨 Informe Ejecutivo</button>
               </div>
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">
@@ -13781,7 +13782,7 @@ function renderHojaIVATabla() {
       }
       // Marca de auditoría — solo en columnas con casillero (son las auditables contra mayores contables)
       const revChecked = !!revFila[col.c];
-      const marcaRevisado = col.k ? `<span onclick="toggleRevisadoHojaIVA(${mes},'${col.c}')" title="${revChecked?'Revisado contra mayores contables ✓ (clic para quitar)':'Marcar como revisado contra mayores contables'}" style="cursor:pointer;margin-left:3px;font-size:.68rem;opacity:${revChecked?1:.35}">${revChecked?'📗':'📄'}</span>` : '';
+      const marcaRevisado = (col.k || col.km) ? `<span onclick="toggleRevisadoHojaIVA(${mes},'${col.c}')" title="${revChecked?'Revisado contra mayores contables ✓ (clic para quitar)':'Marcar como revisado contra mayores contables'}" style="cursor:pointer;margin-left:3px;font-size:.68rem;opacity:${revChecked?1:.35}">${revChecked?'📗':'📄'}</span>` : '';
       if (editable) {
         const raw = manual[col.c];
         return `<td style="padding:2px;background:rgba(147,197,253,.05)">
@@ -13992,6 +13993,139 @@ async function subirDeclaracionHojaIVA(input) {
   input.value = '';
 }
 
+// ── Informe Ejecutivo — Hoja de Trabajo IVA ─────────────────────────────────
+function generarInformeEjecutivoHojaIVA() {
+  if (!_apExpediente) { toast('Abra un expediente primero', 'warning'); return; }
+  const filas = recalcularHojaIVACompleta();
+  const declarados = window._apHojaIVADeclarados || {};
+  const sustManual = window._apHojaIVASust || {};
+  const revisado = window._apHojaIVARevisado || {};
+  const colsConCasillero = HIVA_COLS_FLAT.filter(c => c.k || c.km);
+  const fmtN = v => '$'+(v||0).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // 1) Diferencias Original vs. Declarado F104 (> 2 centavos)
+  const diferenciasDeclarado = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const r = filas[mes];
+    const dec = (declarados[mes] && declarados[mes].original) || null;
+    if (!dec) continue;
+    colsConCasillero.forEach(col => {
+      const editable = (col.m || col.km || (col.rolling && mes === 1));
+      if (editable) return; // solo columnas calculadas se comparan contra lo declarado
+      const key = hivaKeyId(col);
+      if (dec[key] === undefined) return;
+      const val = r[col.c] || 0;
+      const diff = Math.round((val - dec[key]) * 100) / 100;
+      if (Math.abs(diff) >= 0.02) {
+        diferenciasDeclarado.push({ mes, col, calculado: val, declarado: dec[key], diff });
+      }
+    });
+  }
+
+  // 2) Diferencias Original vs. Sustitutiva
+  const diferenciasSust = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const r = filas[mes];
+    const sustFila = sustManual[mes] || {};
+    colsConCasillero.forEach(col => {
+      const sustVal = sustFila[col.c];
+      if (sustVal === undefined || sustVal === null) return;
+      const original = r[col.c] || 0;
+      const diff = Math.round((sustVal - original) * 100) / 100;
+      diferenciasSust.push({ mes, col, original, sustitutiva: sustVal, diff });
+    });
+  }
+
+  // 3) Estado de revisión (marca "revisado contra mayores contables")
+  const mesesConDatos = Object.keys(window._apHojaIVA || {}).filter(m => Object.keys(window._apHojaIVA[m]||{}).length).length || 12;
+  const totalCeldasAuditable = colsConCasillero.length * 12;
+  let revisadas = 0;
+  for (let mes = 1; mes <= 12; mes++) {
+    const revFila = revisado[mes] || {};
+    colsConCasillero.forEach(col => { if (revFila[col.c]) revisadas++; });
+  }
+  const pctRevisado = totalCeldasAuditable ? ((revisadas/totalCeldasAuditable)*100).toFixed(1) : '0.0';
+
+  const mesesConSustitutiva = [...new Set(diferenciasSust.map(d => d.mes))];
+  const totalDiffDeclaradoAbs = diferenciasDeclarado.reduce((s,d)=>s+Math.abs(d.diff),0);
+  const totalDiffSustAbs = diferenciasSust.reduce((s,d)=>s+Math.abs(d.diff),0);
+
+  const exp = _apExpediente;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Informe Ejecutivo — Hoja de Trabajo IVA — ${exp.empresa||''}</title>
+    <style>${PRINT_CSS}
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10pt; margin:14pt 0; }
+    .kpi { border:0.5pt solid #CBD5E1; border-radius:6pt; padding:8pt 10pt; text-align:center; }
+    .kpi .num { font-size:14pt; font-weight:700; color:#0F172A; }
+    .kpi .lbl { font-size:7.5pt; color:#64748B; text-transform:uppercase; letter-spacing:.03em; }
+    </style></head><body>`);
+
+  win.document.write(`
+    <div class="encabezado">
+      <div class="empresa">${exp.empresa||'—'}</div>
+      <div class="meta">RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}</div>
+    </div>
+    <h1>Informe Ejecutivo — Hoja de Trabajo IVA</h1>
+    <p style="font-size:8.5pt;color:#475569">Año fiscal: ${window._apHojaIVAAnio||'—'} | Emitido: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+
+    <h2>Resumen General</h2>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num ${diferenciasDeclarado.length?'red':'emerald'}">${diferenciasDeclarado.length}</div><div class="lbl">Diferencias &gt; 2¢ vs. Declarado</div></div>
+      <div class="kpi"><div class="num">${fmtN(totalDiffDeclaradoAbs)}</div><div class="lbl">Monto Total en Diferencia</div></div>
+      <div class="kpi"><div class="num">${mesesConSustitutiva.length}</div><div class="lbl">Meses con Sustitutiva</div></div>
+      <div class="kpi"><div class="num">${pctRevisado}%</div><div class="lbl">Casilleros Revisados (${revisadas}/${totalCeldasAuditable})</div></div>
+    </div>
+    <p style="font-size:8.5pt">
+      Se revisaron ${mesesConDatos} mes(es) de la Hoja de Trabajo IVA contra las declaraciones F104 cargadas.
+      ${diferenciasDeclarado.length
+        ? `Se identificaron <strong class="red">${diferenciasDeclarado.length} diferencia(s)</strong> mayores a 2 centavos entre el valor calculado a partir de libros y el valor declarado, por un monto absoluto acumulado de <strong>${fmtN(totalDiffDeclaradoAbs)}</strong>.`
+        : `No se identificaron diferencias mayores a 2 centavos entre los valores calculados y los declarados en los meses comparados.`}
+      ${mesesConSustitutiva.length
+        ? ` Adicionalmente, se registraron declaraciones sustitutivas en ${mesesConSustitutiva.length} mes(es) (${mesesConSustitutiva.map(m=>HIVA_MESES[m-1]).join(', ')}), con un efecto neto acumulado de ${fmtN(totalDiffSustAbs)}.`
+        : ''}
+    </p>
+
+    <h2>Diferencias Significativas (&gt; 2 centavos) — Calculado vs. Declarado F104</h2>
+    ${diferenciasDeclarado.length ? `
+    <table>
+      <thead><tr><th>Mes</th><th>Concepto</th><th>Casillero</th><th style="text-align:right">Calculado</th><th style="text-align:right">Declarado</th><th style="text-align:right">Diferencia</th></tr></thead>
+      <tbody>${diferenciasDeclarado.map(d => `<tr>
+          <td>${HIVA_MESES[d.mes-1]}</td>
+          <td>${d.col.l}</td>
+          <td class="gold">${hivaKeys(d.col).map(k=>'#'+k).join('+')}</td>
+          <td style="text-align:right">${fmtN(d.calculado)}</td>
+          <td style="text-align:right">${fmtN(d.declarado)}</td>
+          <td style="text-align:right" class="red">${d.diff>0?'+':''}${fmtN(d.diff)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : `<p class="muted" style="font-size:8.5pt">Sin diferencias significativas que reportar.</p>`}
+
+    ${diferenciasSust.length ? `
+    <h2>Declaraciones Sustitutivas — Efecto por Casillero</h2>
+    <table>
+      <thead><tr><th>Mes</th><th>Concepto</th><th>Casillero</th><th style="text-align:right">Original</th><th style="text-align:right">Sustitutiva</th><th style="text-align:right">Diferencia</th></tr></thead>
+      <tbody>${diferenciasSust.map(d => `<tr>
+          <td>${HIVA_MESES[d.mes-1]}</td>
+          <td>${d.col.l}</td>
+          <td class="gold">${hivaKeys(d.col).map(k=>'#'+k).join('+')}</td>
+          <td style="text-align:right">${fmtN(d.original)}</td>
+          <td style="text-align:right">${fmtN(d.sustitutiva)}</td>
+          <td style="text-align:right" class="${d.diff>=0?'red':'emerald'}">${d.diff>0?'+':''}${fmtN(d.diff)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    <h2>Estado de Revisión de Evidencia</h2>
+    <p style="font-size:8.5pt">Se marcaron como revisados contra los mayores contables <strong>${revisadas}</strong> de <strong>${totalCeldasAuditable}</strong> casilleros posibles (${pctRevisado}%). ${pctRevisado<100 ? 'Los casilleros pendientes de marcar deben verificarse antes de concluir el trabajo de campo.' : 'Todos los casilleros auditables cuentan con evidencia de revisión.'}</p>
+
+    <div class="firma-grid">
+      <div class="firma">Elaborado por: ${exp.auditor||'—'}</div>
+      <div class="firma">Revisado por / Fecha</div>
+    </div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 400);
+}
 
 
 // ── Fases del trabajo ────────────────────────────────────────────
