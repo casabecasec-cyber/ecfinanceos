@@ -2038,47 +2038,93 @@ details[id^="ced-card-"] summary { outline:none; }
           <h1>🏛️ Auditoría Profesional</h1>
           <p>Auditoría Financiera · Tributaria · Forense · Gestión · Fichas Analíticas · Ley de Benford · Papeles de Trabajo</p>
         </div>
-        <button onclick="abrirSelectorImpresion()"
-          style="padding:8px 16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);
-          border-radius:8px;cursor:pointer;font-size:.8rem;white-space:nowrap;flex-shrink:0">
-          🖨 Imprimir Expediente
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="abrirSelectorImpresion()"
+            style="padding:8px 16px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);
+            border-radius:8px;cursor:pointer;font-size:.8rem;white-space:nowrap;flex-shrink:0">
+            🖨 Imprimir Expediente
+          </button>
+          <button onclick="diagnosticarCedulas()"
+            style="padding:8px 16px;background:rgba(239,68,68,.25);color:#fca5a5;border:1px solid rgba(239,68,68,.5);
+            border-radius:8px;cursor:pointer;font-size:.8rem;white-space:nowrap;flex-shrink:0"
+            title="Buscar cédulas perdidas en Firebase">
+            🔍 Recuperar Cédulas
+          </button>
+        </div>
       </div>
 
-      <!-- SELECCIÓN DE TIPO DE AUDITORÍA -->
-      <div class="card">
-        <h3 style="margin-top:0">Seleccione el Tipo de Auditoría</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px" id="ap-tipo-grid">
-          <div class="ap-tipo-card activo" onclick="seleccionarTipoAuditoria('financiera',this)">
-            <div class="ap-tipo-icon">📊</div>
-            <div class="ap-tipo-nombre">Financiera</div>
-            <div class="ap-tipo-desc">Razonabilidad de EEFF · NIIF · Fichas analíticas · Confirmaciones externas</div>
-          </div>
-          <div class="ap-tipo-card" onclick="seleccionarTipoAuditoria('tributaria',this)">
-            <div class="ap-tipo-icon">🧾</div>
-            <div class="ap-tipo-nombre">Tributaria</div>
-            <div class="ap-tipo-desc">Cumplimiento SRI · IVA · Retenciones · Impuesto a la Renta · Anexos ATS</div>
-          </div>
-          <div class="ap-tipo-card" onclick="seleccionarTipoAuditoria('forense',this)">
-            <div class="ap-tipo-icon">🔍</div>
-            <div class="ap-tipo-nombre">Forense</div>
-            <div class="ap-tipo-desc">Detección de fraude · Ley de Benford · Duplicados · Anomalías estadísticas</div>
-          </div>
-          <div class="ap-tipo-card" onclick="seleccionarTipoAuditoria('gestion',this)">
-            <div class="ap-tipo-icon">⚙️</div>
-            <div class="ap-tipo-nombre">Gestión</div>
-            <div class="ap-tipo-desc">Eficiencia operativa · Control interno · 3E (Economía, Eficacia, Eficiencia)</div>
+      <!-- SELECCIÓN DE TIPO DE AUDITORÍA — INDEPENDIENTES -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px">
+
+        <!-- FINANCIERA -->
+        <div class="ap-tipo-card activo" id="tipo-card-financiera"
+          onclick="activarTipoAuditoria('financiera',this)"
+          style="cursor:pointer;position:relative">
+          <div class="ap-tipo-icon">📊</div>
+          <div class="ap-tipo-nombre">Financiera</div>
+          <div class="ap-tipo-desc">Razonabilidad de EEFF · NIIF · Fichas analíticas · Confirmaciones externas</div>
+          <div id="tipo-badge-financiera" style="display:none;position:absolute;top:8px;right:8px;
+            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
+            ACTIVO
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+        <!-- TRIBUTARIA -->
+        <div class="ap-tipo-card" id="tipo-card-tributaria"
+          onclick="activarTipoAuditoria('tributaria',this)"
+          style="cursor:pointer;position:relative">
+          <div class="ap-tipo-icon">🧾</div>
+          <div class="ap-tipo-nombre">Tributaria</div>
+          <div class="ap-tipo-desc">Cumplimiento SRI · IVA · Retenciones · Impuesto a la Renta · Anexos ATS</div>
+          <div id="tipo-badge-tributaria" style="display:none;position:absolute;top:8px;right:8px;
+            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
+            ACTIVO
+          </div>
+        </div>
+
+        <!-- FORENSE -->
+        <div class="ap-tipo-card" id="tipo-card-forense"
+          onclick="activarTipoAuditoria('forense',this)"
+          style="cursor:pointer;position:relative">
+          <div class="ap-tipo-icon">🔍</div>
+          <div class="ap-tipo-nombre">Forense</div>
+          <div class="ap-tipo-desc">Detección de fraude · Ley de Benford · Duplicados · Anomalías estadísticas</div>
+          <div id="tipo-badge-forense" style="display:none;position:absolute;top:8px;right:8px;
+            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
+            ACTIVO
+          </div>
+        </div>
+
+        <!-- GESTIÓN -->
+        <div class="ap-tipo-card" id="tipo-card-gestion"
+          onclick="activarTipoAuditoria('gestion',this)"
+          style="cursor:pointer;position:relative">
+          <div class="ap-tipo-icon">⚙️</div>
+          <div class="ap-tipo-nombre">Gestión</div>
+          <div class="ap-tipo-desc">Eficiencia operativa · Control interno · 3E (Economía, Eficacia, Eficiencia)</div>
+          <div id="tipo-badge-gestion" style="display:none;position:absolute;top:8px;right:8px;
+            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
+            ACTIVO
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL DE INICIO — cambia según el tipo activo -->
+      <div class="card" id="ap-inicio-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+          <h3 style="margin:0" id="ap-inicio-titulo">📊 Auditoría Financiera</h3>
+          <button class="btn-secondary" onclick="cargarHistorialExpedientes()" style="font-size:.72rem">🔄 Actualizar historial</button>
+        </div>
+
+        <!-- Formulario nuevo expediente -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px" id="ap-form-nuevo">
           <div class="form-group">
             <label>Empresa / Entidad Auditada</label>
             <input type="text" id="ap-empresa" placeholder="Nombre de la empresa">
           </div>
           <div class="form-group">
             <label>RUC / Identificación</label>
-            <input type="text" id="ap-ruc" placeholder="RUC de la entidad">
+            <input type="text" id="ap-ruc" placeholder="RUC de la entidad" style="font-family:var(--font-mono)">
           </div>
           <div class="form-group">
             <label>Período de Auditoría</label>
@@ -2090,49 +2136,46 @@ details[id^="ced-card-"] summary { outline:none; }
           </div>
           <div class="form-group">
             <label>Código de Expediente</label>
-            <input type="text" id="ap-expediente" placeholder="Ej: AUD-FIN-2025-001" value="">
-          </div>
-          <div class="form-group">
-            <label>Fecha de Inicio</label>
-            <input type="date" id="ap-fecha-inicio">
+            <input type="text" id="ap-expediente" placeholder="Ej: AUD-FIN-2025-001" style="font-family:var(--font-mono)">
           </div>
         </div>
+        <button class="btn-calc" onclick="iniciarExpedienteAuditoria()"
+          style="background:linear-gradient(135deg,var(--gold),#b8960a);color:#000;margin-bottom:20px">
+          📂 Iniciar Expediente de Auditoría
+        </button>
 
-        <div class="doc-btn-row" style="margin-top:10px">
-          <button class="btn-calc" onclick="iniciarExpedienteAuditoria()">📁 Iniciar Expediente de Auditoría</button>
+        <!-- Carga de información -->
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px">
+          <h4 style="margin:0 0 10px;color:var(--gold)">📥 Carga de Información</h4>
+          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">Suba los estados financieros o registros de transacciones para el análisis.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <label class="btn-secondary" style="cursor:pointer">
+              📁 Cargar CSV <input type="file" accept=".csv" style="display:none" onchange="cargarCSVTransacciones(this)">
+            </label>
+            <label class="btn-calc" style="cursor:pointer;background:linear-gradient(135deg,#059669,#0a9468)">
+              📊 Cargar Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="cargarTransaccionesAuditoria(this)">
+            </label>
+            <button class="btn-calc" onclick="usarDatosEstadosFinancieros()"
+              style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
+              🔗 Usar datos de Estados Financieros
+            </button>
+            <button class="btn-secondary" onclick="cargarEjemploAuditoria()">📋 Datos de Ejemplo</button>
+          </div>
+          <div id="ap-datos-status" style="margin-top:10px;font-size:.78rem;color:var(--text-muted)"></div>
+          <div id="ap-eeff-selector" style="display:none;margin-top:8px"></div>
         </div>
-        <div id="ap-expediente-badge" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(212,175,55,.08);border:1px solid var(--gold);border-radius:8px;font-size:.8rem">
-          🏛️ <strong>Expediente abierto</strong> — Código: <strong id="ap-expediente-codigo"></strong> — <span id="ap-tipo-label"></span>
+
+        <!-- Historial filtrado por tipo -->
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <h4 style="margin:0 0 10px;color:var(--gold)" id="ap-historial-titulo">📚 Expedientes — Auditoría Financiera</h4>
+          <div id="ap-historial-expedientes">
+            <p style="color:var(--text-muted);font-size:.78rem">Cargando expedientes...</p>
+          </div>
         </div>
       </div>
 
-      <!-- SUBIR ESTADOS FINANCIEROS / DATOS -->
-      <div class="card" id="ap-card-datos">
-        <h3 style="margin-top:0">📂 Carga de Información</h3>
-        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Suba los estados financieros o registros de transacciones para el análisis. Acepta CSV, Excel o puede usar los datos ya cargados en el módulo Estados Financieros.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn-calc" onclick="document.getElementById('ap-csv-upload').click()">📂 Cargar CSV de Transacciones</button>
-          <input type="file" id="ap-csv-upload" accept=".csv" style="display:none" onchange="cargarTransaccionesAuditoria(this)">
-          <button class="btn-calc" onclick="document.getElementById('ap-xlsx-upload').click()" style="background:linear-gradient(135deg,var(--emerald) 0%,#0a9468 100%)">📊 Cargar Excel</button>
-          <input type="file" id="ap-xlsx-upload" accept=".xlsx,.xls" style="display:none" onchange="cargarTransaccionesAuditoria(this)">
-          <button class="btn-secondary" onclick="usarDatosEstadosFinancieros()">🔗 Usar datos de Estados Financieros</button>
-          <button class="btn-secondary" onclick="cargarEjemploAuditoria()">📋 Datos de Ejemplo</button>
-        </div>
-        <div id="ap-datos-status" style="margin-top:10px;font-size:.78rem;color:var(--text-muted)"></div>
-      </div>
 
-      <!-- HISTORIAL DE EXPEDIENTES -->
-      <div class="card" style="margin-top:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="margin:0">📚 Historial de Expedientes de Auditoría</h3>
-          <button class="btn-secondary" onclick="cargarHistorialExpedientes()" style="font-size:.72rem">🔄 Actualizar</button>
-        </div>
-        <div id="ap-historial-expedientes">
-          <p style="color:var(--text-muted);font-size:.78rem">Cargando expedientes...</p>
-        </div>
-      </div>
-
-      <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
+            <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
       <div id="ap-panel-principal" style="display:none">
 
         <!-- TABS DE TRABAJO -->
@@ -13311,22 +13354,6 @@ const AP_FASES = {
 };
 
 // ── Inicio de expediente ─────────────────────────────────────────
-function seleccionarTipoAuditoria(tipo, btn) {
-  // Si hay expediente activo de otro tipo con cédulas, advertir
-  if (_apExpediente && _apExpediente.tipo !== tipo &&
-      window._apCedulas && Object.keys(window._apCedulas).length > 0) {
-    const ok = confirm(
-      `⚠️ Tiene el expediente "${_apExpediente.codigo}" (${_apExpediente.tipo}) activo con cédulas analíticas guardadas.\n\n` +
-      `Cambiar el tipo NO elimina sus datos — están seguros en Firebase.\n` +
-      `Para recuperar el expediente actual, ábralo desde el Historial de Expedientes.\n\n` +
-      `¿Continuar?`
-    );
-    if (!ok) return;
-  }
-  document.querySelectorAll('.ap-tipo-card').forEach(c => c.classList.remove('activo'));
-  btn.classList.add('activo');
-  window._apTipoSeleccionado = tipo;
-}
 
 function iniciarExpedienteAuditoria() {
   const empresa = document.getElementById('ap-empresa')?.value;
@@ -14358,10 +14385,164 @@ async function autoRestaurarUltimoExpediente() {
 // Guardar expediente activo en localStorage al cambiar
 const _origIniciar = typeof iniciarExpedienteAuditoria === 'function' ? iniciarExpedienteAuditoria : null;
 
-async function cargarHistorialExpedientes() {
+
+// ── Diagnóstico de cédulas — ejecutar desde consola del navegador ──────────
+async function diagnosticarCedulas() {
+  if (!_fbReady || !_fbDb) {
+    alert('Primero inicie sesión en la app.');
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:99999;overflow-y:auto;padding:20px;box-sizing:border-box';
+
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#0f172a;border-radius:12px;padding:24px;width:min(800px,100%);margin:0 auto;font-family:monospace;font-size:13px;color:#e2e8f0;border:1px solid #334155';
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0;color:#D4AF37">🔍 Diagnóstico de Cédulas en Firebase</h3>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer">✕</button>
+    </div>
+    <div id="diag-out">⏳ Leyendo Firebase...</div>`;
+  modal.appendChild(panel);
+  document.body.appendChild(modal);
+
+  const out = panel.querySelector('#diag-out');
+  const log = html => out.innerHTML += '<br>' + html;
+  out.innerHTML = '';
+
+  try {
+    // Read all audit_pro
+    const snap = await _fbDb.ref('audit_pro').once('value');
+    const data = snap.val() || {};
+    const exps = Object.entries(data).filter(([,v]) => v?.codigo || v?.empresa);
+
+    log(`<span style="color:#6ee7b7">✅ Conectado. Expedientes: ${exps.length}</span>`);
+
+    let totalRecuperable = 0;
+
+    for (const [key, exp] of exps) {
+      log(`<br><b style="color:#D4AF37">📂 ${exp.codigo||key}</b> — ${exp.empresa||'—'} — tipo:${exp.tipo||'financiera'} — ${exp.periodo||''}`);
+
+      // Path 1: cedulas_analiticas (current)
+      const s1 = await _fbDb.ref(`audit_pro/${key}/cedulas_analiticas`).once('value');
+      const c1 = s1.val() || {};
+      const n1 = Object.keys(c1).length;
+
+      // Path 2: cedulas (old push-based)
+      const s2 = await _fbDb.ref(`audit_pro/${key}/cedulas`).once('value');
+      const c2 = s2.val() || {};
+      const n2 = Object.keys(c2).length;
+
+      if (n1 > 0) {
+        log(`<span style="color:#6ee7b7">  ✅ /cedulas_analiticas: ${n1} cédulas</span>`);
+        Object.values(c1).forEach(c => {
+          const s = (c.totalLibros||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+          log(`  &nbsp;&nbsp;Ref.<b style="color:#D4AF37">${c.ref||'?'}</b> — ${c.titulo||c.cuenta||'?'} — $${s} — ${c.estado||'borrador'}`);
+        });
+        totalRecuperable += n1;
+      } else {
+        log(`<span style="color:#fcd34d">  ⚠️ /cedulas_analiticas: vacío</span>`);
+      }
+
+      if (n2 > 0) {
+        log(`<span style="color:#fcd34d">  📋 /cedulas (ruta antigua): ${n2} cédulas</span>`);
+        Object.values(c2).forEach(c => log(`  &nbsp;&nbsp;${c.codigo||'?'} — ${c.cuenta||'?'}`));
+        totalRecuperable += n2;
+        // Migration button
+        const btn = document.createElement('button');
+        btn.textContent = `🔄 RECUPERAR ${n2} cédulas → convertir al formato actual`;
+        btn.style.cssText = 'margin:6px 0;padding:8px 16px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:block';
+        btn.onclick = () => migrarCedulasAntiguas(key, c2, out);
+        out.appendChild(btn);
+      }
+
+      const eeffSnap = await _fbDb.ref(`audit_pro/${key}/eeff_vinculado`).once('value');
+      const eeff = eeffSnap.val();
+      if (eeff?.raw) {
+        log(`<span style="color:#6ee7b7">  📊 EEFF: ${eeff.nombreEmpresa||''} ${eeff.year||''} — ${Object.keys(eeff.raw).length} cuentas</span>`);
+      }
+    }
+
+    if (totalRecuperable === 0) {
+      log(`<br><div style="padding:12px;background:rgba(239,68,68,.1);border:1px solid #ef4444;border-radius:8px;margin-top:12px">
+        <b style="color:#fca5a5">⚠️ No se encontraron cédulas en Firebase.</b><br><br>
+        Las cédulas se guardaron solo en memoria del navegador y no llegaron a guardarse.<br>
+        <b>Deben volver a ingresarse.</b> El sistema actual guarda correctamente.
+      </div>`);
+    } else {
+      log(`<br><span style="color:#6ee7b7;font-size:15px"><b>✅ Total recuperable: ${totalRecuperable} cédulas</b></span>`);
+    }
+
+  } catch(e) {
+    log(`<span style="color:#fca5a5">❌ Error: ${e.message}</span>`);
+  }
+}
+
+async function migrarCedulasAntiguas(expKey, antiguas, outEl) {
+  const log = html => outEl.innerHTML += '<br>' + html;
+  log(`<span style="color:#fcd34d">⏳ Migrando cédulas de ${expKey}...</span>`);
+  try {
+    const nuevas = {};
+    Object.entries(antiguas).forEach(([k, c]) => {
+      const id = 'ANA-MIG-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+      nuevas[id] = {
+        id,
+        ref: (c.codigo || k).slice(-2).toUpperCase(),
+        titulo: c.cuenta || 'Cuenta migrada',
+        expediente: expKey,
+        empresa: c.empresa || '',
+        periodo: c.periodo || '',
+        auditor: c.elaboradoPor || '',
+        fecha: c.fecha || new Date().toISOString(),
+        filas: (c.partidas||[]).map(p => ({
+          cuenta: p.descripcion || '',
+          saldoLibros: Math.abs(parseFloat(p.debito||p.credito||0)),
+          ajuste: 0,
+          saldoAuditado: Math.abs(parseFloat(p.debito||p.credito||0)),
+          marcas: p.marca || '✓',
+          notas: p.referencia || '',
+        })),
+        totalLibros:   parseFloat(c.saldoLibros||0),
+        totalAjustes:  0,
+        totalAuditado: parseFloat(c.saldoAuditoria||c.saldoLibros||0),
+        procedimiento: Array.isArray(c.ajustes) ? c.ajustes.join(' ') : '',
+        conclusion:    c.conclusion || '',
+        estado:        c.estado==='finalizada' ? 'aprobada' : 'borrador',
+        migrada: true,
+      };
+    });
+
+    await _fbDb.ref(`audit_pro/${expKey}/cedulas_analiticas`).set(nuevas);
+    window._apCedulas = nuevas;
+
+    log(`<span style="color:#6ee7b7">✅ ${Object.keys(nuevas).length} cédulas migradas.<br>
+      <b>Ahora abra el expediente ${expKey} desde el historial y las verá.</b></span>`);
+
+    toast(`✅ ${Object.keys(nuevas).length} cédulas recuperadas`, 'success');
+  } catch(e) {
+    log(`<span style="color:#fca5a5">❌ Error: ${e.message}</span>`);
+  }
+}
+
+async function cargarHistorialExpedientes(filtroTipo) {
   const el = document.getElementById('ap-historial-expedientes');
   if (!el) return;
   el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando expedientes...</p>';
+
+  // Usar el tipo activo si no se pasa filtro
+  const tipoActivo = filtroTipo || window._apTipoSeleccionado || 'financiera';
+
+
+    // Filtrar por tipo activo
+    const items = todosItems.filter(([, v]) => (v.tipo || 'financiera') === tipoActivo);
+    // Otros tipos para mostrar resumen
+    const otrosTipos = {};
+    todosItems.filter(([,v]) => (v.tipo||'financiera') !== tipoActivo).forEach(([,v]) => {
+      const t = v.tipo || 'financiera';
+      if (!otrosTipos[t]) otrosTipos[t] = 0;
+      otrosTipos[t]++;
+    });
 
   try {
     const data = await FirebaseDB.get('audit_pro') || {};
@@ -14370,7 +14551,16 @@ async function cargarHistorialExpedientes() {
       .sort((a, b) => (b[1].fecha || '').localeCompare(a[1].fecha || ''));
 
     if (!items.length) {
-      el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem;padding:12px 0">No hay expedientes guardados. Inicie una nueva auditoría para crear el primero.</p>';
+      el.innerHTML = `<div style="padding:16px;text-align:center">
+        <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">
+          No hay expedientes de <strong>${tipoActivo}</strong> guardados.
+          Use el formulario de arriba para crear el primero.
+        </p>
+        ${Object.keys(otrosTipos).length ? `<div style="font-size:.75rem;color:var(--text-muted);padding:8px;background:var(--bg-card2);border-radius:6px">
+          También tiene expedientes en: 
+          ${Object.entries(otrosTipos).map(([t,n])=>`<span onclick="activarTipoAuditoria('${t}',document.getElementById('tipo-card-${t}'))" style="cursor:pointer;color:var(--gold);text-decoration:underline">${t} (${n})</span>`).join(' · ')}
+        </div>` : ''}
+      </div>`;
       return;
     }
 
@@ -14510,6 +14700,18 @@ async function abrirExpediente(key) {
 
   // Guardar en localStorage para auto-restaurar en próxima sesión
   localStorage.setItem('financeOS-ultimo-expediente', key);
+
+  // Guardar en slot del tipo para independencia entre tipos
+  window._expedientesPorTipo = window._expedientesPorTipo || {};
+  window._expedientesPorTipo[exp.tipo || 'financiera'] = {
+    expediente: exp,
+    cedulas: window._apCedulas || {},
+    eeff: window._apEEFFSeleccionado || null,
+  };
+
+  // Actualizar badge del tipo card
+  const tipoBadge = document.getElementById(`tipo-badge-${exp.tipo||'financiera'}`);
+  if (tipoBadge) tipoBadge.style.display = 'block';
 
   // Restaurar todos los módulos guardados
   await restaurarModulosExpediente(key);
