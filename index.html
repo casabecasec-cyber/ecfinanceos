@@ -15849,231 +15849,531 @@ function imprimirHallazgos() {
 // ── 3. Informe con cuentas materiales/significativas + cédulas ────────────────
 function construirInformeHTML(tipo) {
   const exp   = _apExpediente || {};
-  const data  = window._apEEFFSeleccionado;
-  const rawN  = data?.rawNorm && Object.keys(data.rawNorm).length > 0
+  const data  = window._apEEFFSeleccionado || exp.eeffData;
+  const rawN  = (data?.rawNorm && Object.keys(data.rawNorm).length > 0)
     ? data.rawNorm : (data?.raw ? normalizarRaw(data.raw) : {});
-  const cedulas = window._apCedulas || {};
-  const fmtN  = v => '$'+(Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
-  const g     = k => parseFloat(rawN[k])||0;
+  const cedulas  = window._apCedulas || {};
+  const hallazgos = exp.hallazgos || [];
 
-  const opinion = document.getElementById('ap-opinion')?.value || 'limpia';
-  const numInf  = document.getElementById('ap-num-informe')?.value || `AUD-${new Date().getFullYear()}-001`;
-  const marco   = document.getElementById('ap-marco')?.value || 'niif';
-  const fechaEl = document.getElementById('ap-fecha-informe');
-  const fechaInf= fechaEl?.value
-    ? new Date(fechaEl.value+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})
-    : new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
-  const enfasis   = document.getElementById('ap-enfasis')?.value||'';
-  const salvedades= document.getElementById('ap-salvedades')?.value||'';
+  const g   = k => parseFloat(rawN[k]) || 0;
+  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC', {minimumFractionDigits:2});
+  const fmtP = v => (parseFloat(v)||0).toFixed(1) + '%';
+  const fecha = new Date().toLocaleDateString('es-EC', {day:'2-digit', month:'long', year:'numeric'});
 
-  const ta=g('TOTAL ACTIVO')||1, tp=g('TOTAL PASIVO'), pat=g('TOTAL PATRIMONIO')||1;
-  const vtas=g('VENTAS NETAS'), util=g('UTILIDAD EJERCICIO');
-  const ac=g('TOTAL ACTIVO CORRIENTE'), pc=g('TOTAL PASIVO CORRIENTE')||1;
-  const MATERIAL     = ta * 0.05;
-  const SIGNIFICATIVA= ta * 0.01;
+  // Datos del informe
+  const opinion    = document.getElementById('ap-opinion')?.value || 'limpia';
+  const numInf     = document.getElementById('ap-num-informe')?.value || `AUD-INF-${new Date().getFullYear()}-001`;
+  const marco      = document.getElementById('ap-marco')?.value || 'niif';
+  const marcoNombre= marco === 'niif-pymes' ? 'Normas Internacionales de Información Financiera para PYMES (NIIF para las PYMES)' :
+                     marco === 'pcga' ? 'Principios de Contabilidad Generalmente Aceptados (PCGA)' :
+                     'Normas Internacionales de Información Financiera (NIIF Completas)';
+  const fechaEl    = document.getElementById('ap-fecha-informe');
+  const fechaInf   = fechaEl?.value
+    ? new Date(fechaEl.value + 'T12:00:00').toLocaleDateString('es-EC', {day:'2-digit', month:'long', year:'numeric'})
+    : fecha;
+  const enfasis    = document.getElementById('ap-enfasis')?.value || '';
+  const salvedades = document.getElementById('ap-salvedades')?.value || '';
 
+  // Indicadores financieros
+  const ta  = g('TOTAL ACTIVO') || 1;
+  const tp  = g('TOTAL PASIVO');
+  const pat = g('TOTAL PATRIMONIO') || 1;
+  const ac  = g('TOTAL ACTIVO CORRIENTE');
+  const pc  = g('TOTAL PASIVO CORRIENTE') || 1;
+  const vtas  = g('VENTAS NETAS');
+  const cv    = g('COSTO DE VENTAS');
+  const ub    = vtas - cv;
+  const util  = g('UTILIDAD EJERCICIO');
+  const ebitda = ub - g('GASTO PERSONAL') - g('GASTO ADMINISTRATIVO') - g('GASTO VENTAS');
+
+  const MATERIAL      = ta * 0.05;
+  const SIGNIFICATIVA = ta * 0.01;
+  const periodo = exp.periodo || data?.year || '—';
+
+  // Opiniones profesionales
   const OPINIONES = {
-    'limpia':              { titulo:'OPINIÓN NO MODIFICADA', color:'#059669',
-      texto:`En nuestra opinión, los estados financieros presentan razonablemente, en todos sus aspectos materiales, la situación financiera de ${exp.empresa||'—'} al 31 de diciembre de ${exp.periodo||'—'}, de conformidad con las NIIF.` },
-    'salvedad-alcance':    { titulo:'OPINIÓN CON SALVEDAD — LIMITACIÓN AL ALCANCE', color:'#D97706',
-      texto:`Excepto por los efectos de la limitación descrita, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
-    'salvedad-desacuerdo': { titulo:'OPINIÓN CON SALVEDAD — DESACUERDO', color:'#D97706',
-      texto:`Excepto por los efectos del desacuerdo descrito, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
-    'adversa':             { titulo:'OPINIÓN ADVERSA', color:'#DC2626',
-      texto:`Los estados financieros NO presentan razonablemente la situación financiera de ${exp.empresa||'—'}. ${salvedades}` },
-    'abstencion':          { titulo:'ABSTENCIÓN DE OPINIÓN', color:'#7C3AED',
-      texto:`No expresamos ninguna opinión sobre los estados financieros de ${exp.empresa||'—'}. ${salvedades}` },
+    'limpia': {
+      titulo: 'OPINIÓN NO MODIFICADA',
+      color: '#065F46',
+      bg: '#D1FAE5',
+      texto: `En nuestra opinión, los estados financieros de ${exp.empresa||'la entidad'} presentan razonablemente, en todos sus aspectos materiales, la situación financiera al 31 de diciembre de ${periodo}, así como su rendimiento financiero y sus flujos de efectivo por el año terminado en dicha fecha, de conformidad con las ${marcoNombre}.`
+    },
+    'salvedad-alcance': {
+      titulo: 'OPINIÓN CON SALVEDAD — LIMITACIÓN AL ALCANCE',
+      color: '#92400E', bg: '#FEF3C7',
+      texto: `Excepto por los posibles efectos del asunto descrito en el párrafo de fundamento de la opinión con salvedades, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'la entidad'}. ${salvedades}`
+    },
+    'salvedad-desacuerdo': {
+      titulo: 'OPINIÓN CON SALVEDAD — DESACUERDO CON LA DIRECCIÓN',
+      color: '#92400E', bg: '#FEF3C7',
+      texto: `Excepto por los efectos del asunto descrito en el párrafo de fundamento, los estados financieros presentan razonablemente la situación financiera de ${exp.empresa||'la entidad'}. ${salvedades}`
+    },
+    'adversa': {
+      titulo: 'OPINIÓN ADVERSA (NEGATIVA)',
+      color: '#991B1B', bg: '#FEE2E2',
+      texto: `En nuestra opinión, debido a la importancia de los asuntos descritos en el párrafo de fundamento, los estados financieros NO presentan razonablemente la situación financiera de ${exp.empresa||'la entidad'}. ${salvedades}`
+    },
+    'abstencion': {
+      titulo: 'ABSTENCIÓN DE OPINIÓN',
+      color: '#5B21B6', bg: '#EDE9FE',
+      texto: `Debido a la importancia de los asuntos descritos, no nos es posible obtener evidencia de auditoría suficiente y adecuada que proporcione una base para una opinión. En consecuencia, no expresamos ninguna opinión sobre los estados financieros. ${salvedades}`
+    },
   };
   const op = OPINIONES[opinion] || OPINIONES['limpia'];
 
-  // Cuentas materiales y significativas con sus cédulas
-  const cuentasConCedula = [];
-  Object.entries(rawN).forEach(([k,v]) => {
-    const val = Math.abs(parseFloat(v)||0);
-    if (val < SIGNIFICATIVA) return;
-    const nivel = val >= MATERIAL ? 'MATERIAL' : 'SIGNIFICATIVA';
-    // Buscar cédula analítica que tenga esta cuenta como título
-    const ced = Object.values(cedulas).find(c =>
-      (c.titulo||'').toUpperCase().includes(k.toUpperCase()) ||
-      (c.filas||[]).some(f => (f.cuenta||'').toUpperCase().includes(k.toUpperCase()))
-    );
-    const dif = ced ? ((parseFloat(ced.totalAuditado)||0) - (parseFloat(ced.totalLibros)||0)) : 0;
-    cuentasConCedula.push({ cuenta:k, saldo:parseFloat(v)||0, nivel, ced, dif });
-  });
-  cuentasConCedula.sort((a,b) => Math.abs(b.saldo)-Math.abs(a.saldo));
+  // Cédulas materiales/significativas seleccionadas
+  const cedulasMat = Object.values(cedulas)
+    .filter(ced => {
+      const saldo = parseFloat(ced.totalLibros) || 0;
+      return Math.abs(saldo) >= SIGNIFICATIVA;
+    })
+    .sort((a,b) => Math.abs(parseFloat(b.totalLibros)||0) - Math.abs(parseFloat(a.totalLibros)||0));
 
-  const hallazgos = exp.hallazgos||[];
-  const hCrit = hallazgos.filter(h=>h.severidad==='critico').length;
-  const hAlto = hallazgos.filter(h=>h.severidad==='alto').length;
+  // Construir HTML de cédula ejecutiva (máx 9 filas + "Otros")
+  const htmlCedulaEjecutiva = (ced) => {
+    const filas  = ced.filas || [];
+    const fmtV   = v => '$' + fmtN(v);
+    const dif    = (parseFloat(ced.totalAuditado)||0) - (parseFloat(ced.totalLibros)||0);
+    const hayDif = Math.abs(dif) > 0.01;
+    const nivel  = Math.abs(parseFloat(ced.totalLibros)||0) >= MATERIAL ? 'MATERIAL' : 'SIGNIFICATIVA';
+    const colNivel = nivel === 'MATERIAL' ? '#DC2626' : '#D97706';
+    const bgNivel  = nivel === 'MATERIAL' ? '#FEE2E2' : '#FEF3C7';
 
-  const PRINT_CSS_LOCAL = `
-    body{font-family:Calibri,Arial,sans-serif;color:#1E293B;padding:35px 45px;font-size:9.5pt;line-height:1.7}
-    h1{font-size:15pt;color:#0F172A;margin-bottom:3pt}
-    h2{font-size:11pt;color:#0F172A;border-bottom:1.5pt solid #B8930A;padding-bottom:4pt;margin-top:22pt}
-    h3{font-size:10pt;margin-top:14pt}
-    table{width:100%;border-collapse:collapse;font-size:8.5pt;margin:8pt 0}
-    th{background:#F1F5F9;padding:5pt 7pt;text-align:left;border:0.5pt solid #CBD5E1;font-weight:600}
-    td{padding:4pt 7pt;border:0.5pt solid #E2E8F0;vertical-align:top}
-    .op-box{border-left:4pt solid ${op.color};padding:10pt 14pt;background:${op.color}10;margin:12pt 0}
-    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8pt;margin:10pt 0}
-    .kpi{border:0.5pt solid #E2E8F0;border-radius:4pt;padding:8pt;text-align:center}
-    .kpi-val{font-size:11pt;font-weight:700;color:#0F172A}
-    .kpi-lbl{font-size:7pt;color:#94A3B8;margin-top:2pt}
-    .mat{background:#FEE2E2;color:#DC2626}
-    .sig{background:#FEF3C7;color:#D97706}
-    .badge{display:inline-block;padding:1pt 5pt;border-radius:3pt;font-size:7pt;font-weight:700}
-    .dif-ok{color:#059669} .dif-mal{color:#DC2626}
-    .firma-row{display:grid;grid-template-columns:1fr 1fr;gap:60pt;margin-top:50pt}
-    .firma-box{text-align:center;border-top:0.5pt solid #374151;padding-top:5pt}
-    @page{size:A4;margin:18mm 14mm}
-    .pb{page-break-before:always}
+    // Ordenar filas por saldo descendente y tomar top 9
+    const filasOrd = [...filas].sort((a,b) => Math.abs(parseFloat(b.saldoLibros)||0) - Math.abs(parseFloat(a.saldoLibros)||0));
+    const top9  = filasOrd.slice(0, 9);
+    const resto = filasOrd.slice(9);
+    const sumaResto = resto.reduce((s,f) => s + (parseFloat(f.saldoLibros)||0), 0);
+    const sumaRestoAud = resto.reduce((s,f) => s + (parseFloat(f.saldoAuditado)||0), 0);
+
+    const filasHtml = top9.map(f => {
+      const aj = parseFloat(f.ajuste)||0;
+      const pct = ((Math.abs(parseFloat(f.saldoLibros)||0)) / (Math.abs(parseFloat(ced.totalLibros)||1)) * 100).toFixed(1);
+      return `<tr>
+        <td style="padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt">${f.cuenta||''}</td>
+        <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt;font-family:Courier New">${fmtV(f.saldoLibros)}</td>
+        <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8pt;color:${Math.abs(aj)>0.01?'#DC2626':'#94A3B8'}">${Math.abs(aj)>0.01?fmtV(Math.abs(aj)):'—'}</td>
+        <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt;font-family:Courier New;font-weight:700">${fmtV(f.saldoAuditado)}</td>
+        <td style="text-align:center;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8pt">${f.marcas||'✓'}</td>
+        <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8pt;color:#475569">${pct}%</td>
+      </tr>`;
+    }).join('');
+
+    const otrosHtml = resto.length ? `<tr>
+      <td style="padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt;font-style:italic;color:#475569">
+        Otros (${resto.length} subcuenta${resto.length>1?'s':''})
+      </td>
+      <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt;font-family:Courier New;color:#475569">${fmtV(sumaResto)}</td>
+      <td style="padding:3pt 6pt;border:0.3pt solid #E2E8F0">—</td>
+      <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8.5pt;font-family:Courier New;color:#475569">${fmtV(sumaRestoAud)}</td>
+      <td></td>
+      <td style="text-align:right;padding:3pt 6pt;border:0.3pt solid #E2E8F0;font-size:8pt;color:#475569">
+        ${((Math.abs(sumaResto))/(Math.abs(parseFloat(ced.totalLibros)||1))*100).toFixed(1)}%
+      </td>
+    </tr>` : '';
+
+    // NIC/NIIF de referencia por tipo de cuenta
+    const NIC_MAP = {
+      'EFECTIVO': 'NIC 7 — Estado de Flujos de Efectivo',
+      'BANCOS':   'NIC 7 — Estado de Flujos de Efectivo',
+      'CUENTAS POR COBRAR': 'NIIF 9 — Instrumentos Financieros (medición y deterioro)',
+      'INVENTARIOS': 'NIC 2 — Inventarios (costo, VNR, deterioro)',
+      'PROPIEDAD PLANTA': 'NIC 16 — Propiedades, Planta y Equipo',
+      'DEPRECIACION': 'NIC 16 — Método de depreciación y vida útil',
+      'INTANGIBLES': 'NIC 38 — Activos Intangibles',
+      'CUENTAS POR PAGAR': 'NIIF 9 — Pasivos Financieros (valor razonable)',
+      'IMPUESTO': 'NIC 12 — Impuesto a las Ganancias',
+      'INGRESOS': 'NIIF 15 — Ingresos de contratos con clientes',
+      'VENTAS': 'NIIF 15 — Reconocimiento de ingresos (5 pasos)',
+      'COSTO': 'NIC 2 — Costo de ventas y valuación de inventarios',
+      'PERSONAL': 'NIC 19 — Beneficios a los Empleados',
+      'PROVISION': 'NIC 37 — Provisiones, Pasivos y Activos Contingentes',
+      'ARRENDAMIENTO': 'NIIF 16 — Arrendamientos',
+    };
+    const tituloUp = (ced.titulo||'').toUpperCase();
+    const nic = Object.entries(NIC_MAP).find(([k]) => tituloUp.includes(k));
+    const nicRef = nic ? nic[1] : 'NIIF aplicables según naturaleza de la cuenta';
+
+    return `
+      <div style="margin-bottom:18pt;page-break-inside:avoid;border:0.5pt solid #E2E8F0;border-radius:4pt;overflow:hidden">
+        <!-- Encabezado de cédula -->
+        <div style="background:#1E293B;color:#fff;padding:7pt 10pt;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-size:8pt;font-family:Courier New;color:#94A3B8">REF. ${ced.ref||'—'}</span>
+            <span style="font-size:10pt;font-weight:700;margin-left:10pt">${ced.titulo||''}</span>
+          </div>
+          <span style="font-size:7.5pt;padding:2pt 7pt;border-radius:3pt;background:${bgNivel};color:${colNivel};font-weight:700">
+            ${nivel} — ${((Math.abs(parseFloat(ced.totalLibros)||0))/ta*100).toFixed(1)}% del Activo
+          </span>
+        </div>
+        <!-- Marco normativo -->
+        <div style="background:#F8FAFC;padding:4pt 10pt;font-size:7.5pt;color:#475569;border-bottom:0.3pt solid #E2E8F0">
+          <strong>Marco de referencia:</strong> ${nicRef}
+        </div>
+        <!-- Tabla de partidas -->
+        <table style="width:100%;border-collapse:collapse;margin:0">
+          <thead>
+            <tr style="background:#F1F5F9">
+              <th style="text-align:left;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:35%">Subcuenta / Concepto</th>
+              <th style="text-align:right;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:16%">Saldo s/Libros</th>
+              <th style="text-align:right;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:12%">Ajuste</th>
+              <th style="text-align:right;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:16%">Saldo Auditado</th>
+              <th style="text-align:center;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:9%">Marcas</th>
+              <th style="text-align:right;padding:4pt 6pt;border:0.3pt solid #CBD5E1;font-size:8pt;width:12%">% s/Cuenta</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filasHtml}${otrosHtml}
+            <tr style="background:#1E293B;color:#fff">
+              <td style="padding:4pt 6pt;font-weight:700;font-size:8.5pt">TOTAL ${ced.titulo||''}</td>
+              <td style="text-align:right;padding:4pt 6pt;font-family:Courier New;font-size:8.5pt">$${fmtN(ced.totalLibros)}</td>
+              <td style="text-align:right;padding:4pt 6pt;font-size:8.5pt;color:${hayDif?'#FCA5A5':'#94A3B8'}">${hayDif?'$'+fmtN(Math.abs(dif)):'—'}</td>
+              <td style="text-align:right;padding:4pt 6pt;font-family:Courier New;font-weight:700;font-size:8.5pt;color:${hayDif?'#FCD34D':'#6EE7B7'}">$${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+              <td></td>
+              <td style="text-align:right;padding:4pt 6pt;font-size:8.5pt">100%</td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- Conclusión del auditor -->
+        <div style="padding:6pt 10pt;border-top:0.3pt solid #E2E8F0;background:#FAFBFC">
+          ${hayDif ? `<div style="color:#DC2626;font-size:8pt;font-weight:700;margin-bottom:3pt">
+            ⚠️ Diferencia detectada: $${fmtN(Math.abs(dif))} — ${dif>0?'Saldo auditado MAYOR al registrado en libros':'Saldo auditado MENOR al registrado en libros'}
+          </div>` : ''}
+          <div style="font-size:8pt"><strong>Conclusión:</strong>
+            ${ced.conclusion || (hayDif
+              ? 'Se identificaron diferencias que requieren ajuste o revelación en las notas a los estados financieros.'
+              : 'Los saldos han sido verificados y se presentan razonablemente de conformidad con '+marcoNombre+'.')}
+          </div>
+          ${ced.procedimiento ? `<div style="font-size:7.5pt;color:#475569;margin-top:3pt"><strong>Procedimientos:</strong> ${ced.procedimiento}</div>` : ''}
+        </div>
+      </div>`;
+  };
+
+  // ─── CSS PROFESIONAL ────────────────────────────────────────────────────────
+  const CSS = `
+    @page { size: A4; margin: 20mm 16mm 18mm 16mm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 9.5pt; color: #1E293B; line-height: 1.65; padding: 0; margin: 0; }
+    h1 { font-size: 15pt; color: #0F172A; margin: 0 0 4pt; }
+    h2 { font-size: 11.5pt; color: #0F172A; border-bottom: 2pt solid #B8930A; padding-bottom: 4pt; margin: 22pt 0 10pt; page-break-after: avoid; }
+    h3 { font-size: 10pt; color: #1E293B; margin: 14pt 0 6pt; page-break-after: avoid; }
+    h4 { font-size: 9pt; color: #475569; margin: 10pt 0 4pt; font-weight: 700; }
+    p  { margin: 4pt 0; font-size: 9.5pt; text-align: justify; }
+    table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
+    th { background: #1E293B; color: #fff; padding: 5pt 8pt; text-align: left; font-size: 8.5pt; font-weight: 700; border: 0.3pt solid #374151; }
+    td { padding: 4pt 8pt; border: 0.3pt solid #E2E8F0; font-size: 8.5pt; vertical-align: top; }
+    tr:nth-child(even) td { background: #F8FAFC; }
+    .total-row td { background: #1E293B !important; color: #fff; font-weight: 700; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8pt; margin: 10pt 0; }
+    .kpi { border: 0.5pt solid #E2E8F0; border-radius: 4pt; padding: 8pt; text-align: center; background: #FAFBFC; }
+    .kpi-val { font-size: 11pt; font-weight: 700; color: #0F172A; font-family: 'Courier New'; }
+    .kpi-lbl { font-size: 7pt; color: #94A3B8; margin-top: 2pt; }
+    .kpi-sub { font-size: 7.5pt; color: #475569; }
+    .nota-box { border-left: 3pt solid #3B82F6; padding: 6pt 10pt; background: #EFF6FF; margin: 8pt 0; border-radius: 0 4pt 4pt 0; font-size: 8.5pt; }
+    .nota-box.gold { border-color: #B8930A; background: #FFFBEB; }
+    .nota-box.red  { border-color: #DC2626; background: #FEF2F2; }
+    .op-box { border: 0.5pt solid ${op.color}; border-left: 4pt solid ${op.color}; padding: 10pt 14pt; background: ${op.bg}; margin: 10pt 0; border-radius: 0 4pt 4pt 0; }
+    .badge { display: inline-block; padding: 1pt 6pt; border-radius: 3pt; font-size: 7.5pt; font-weight: 700; }
+    .badge-m { background: #FEE2E2; color: #DC2626; }
+    .badge-s { background: #FEF3C7; color: #D97706; }
+    .firma-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50pt; margin-top: 50pt; page-break-inside: avoid; }
+    .firma { text-align: center; border-top: 0.5pt solid #374151; padding-top: 5pt; font-size: 8.5pt; }
+    .pb { page-break-before: always; }
+    .no-pb { page-break-inside: avoid; }
+    .encabezado { border-bottom: 3pt solid #B8930A; padding-bottom: 12pt; margin-bottom: 18pt; }
+    .watermark { color: #E2E8F0; font-size: 7pt; }
   `;
 
-  let html = `<html><head><title>Informe Auditoría — ${exp.empresa||''}</title>
-    <style>${PRINT_CSS_LOCAL}</style></head><body>`;
+  // ─── CONSTRUIR HTML ─────────────────────────────────────────────────────────
+  let html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <title>Informe de Auditoría — ${exp.empresa||''} — ${periodo}</title>
+    <style>${CSS}</style></head><body>`;
 
-  // ── PORTADA ──────────────────────────────────────────────────────────────
+  // ══ PORTADA ════════════════════════════════════════════════════════════════
   html += `
-    <div style="border-bottom:3pt solid #B8930A;padding-bottom:14pt;margin-bottom:20pt">
-      <div style="font-size:9pt;color:#94A3B8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5pt">
-        Informe de Auditoría ${tipo==='ejecutivo'?'— Resumen Ejecutivo':'— Completo y Detallado'}
-      </div>
-      <h1>${exp.empresa||'—'}</h1>
-      <div style="font-size:8.5pt;color:#475569;margin-top:4pt">
-        RUC: ${exp.ruc||'—'} &nbsp;·&nbsp; Ejercicio ${exp.periodo||'—'} &nbsp;·&nbsp;
-        Ref.: ${numInf} &nbsp;·&nbsp; Fecha: ${fechaInf} &nbsp;·&nbsp; Auditor: ${exp.auditor||'—'}
+    <div class="encabezado">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:8.5pt;color:#94A3B8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5pt">
+            INFORME DE AUDITORÍA INDEPENDIENTE${tipo==='ejecutivo'?' — RESUMEN EJECUTIVO':''}
+          </div>
+          <h1>${exp.empresa||'—'}</h1>
+          <div style="font-size:8pt;color:#475569;margin-top:4pt">
+            RUC: ${exp.ruc||'—'} &nbsp;·&nbsp; Expediente: ${exp.codigo||'—'} &nbsp;·&nbsp;
+            Período: ${periodo} &nbsp;·&nbsp; Referencia: ${numInf}
+          </div>
+        </div>
+        <div style="text-align:right;font-size:8pt;color:#475569">
+          Fecha del informe:<br><strong style="font-size:9pt;color:#0F172A">${fechaInf}</strong><br>
+          Auditor: <strong>${exp.auditor||'—'}</strong>
+        </div>
       </div>
     </div>
 
-    <!-- OPINIÓN -->
-    <div class="op-box">
+    <!-- A. OPINIÓN -->
+    <h2>A. OPINIÓN DE AUDITORÍA</h2>
+    <p><strong>Destinatarios:</strong> A los accionistas y directivos de ${exp.empresa||'la entidad'}.</p>
+    <div class="op-box no-pb">
       <div style="font-size:8pt;font-weight:700;color:${op.color};text-transform:uppercase;margin-bottom:6pt">
         ${op.titulo}
       </div>
-      <p style="margin:0;font-size:9.5pt">${op.texto}</p>
+      <p style="margin:0">${op.texto}</p>
     </div>
+    ${enfasis ? `<div class="nota-box">
+      <strong>Párrafo de énfasis (NIA 706):</strong> ${enfasis}
+    </div>` : ''}
+
+    <!-- B. FUNDAMENTO DE LA OPINIÓN -->
+    <h2>B. FUNDAMENTO DE LA OPINIÓN</h2>
+    <p>Hemos llevado a cabo nuestra auditoría de conformidad con las <strong>Normas Internacionales de Auditoría (NIAs)</strong> emitidas por el International Auditing and Assurance Standards Board (IAASB). Nuestras responsabilidades de acuerdo con dichas normas se describen en la sección correspondiente de este informe.</p>
+    <p>Somos independientes de la entidad de conformidad con los requerimientos de ética aplicables a nuestra auditoría de los estados financieros y hemos cumplido las demás responsabilidades de ética de conformidad con esos requerimientos.</p>
+    <p>Consideramos que la evidencia de auditoría que hemos obtenido proporciona una base <strong>suficiente y adecuada</strong> para nuestra opinión (NIA 200 — Objetivos globales del auditor independiente).</p>
+    ${salvedades && opinion !== 'limpia' ? `<div class="nota-box red"><strong>Fundamento de la opinión con salvedades:</strong> ${salvedades}</div>` : ''}
+
+    <!-- C. ASPECTOS CLAVE DE AUDITORÍA -->
+    <h2>C. ASPECTOS CLAVE DE LA AUDITORÍA (NIA 701)</h2>
+    <p>Los aspectos clave de la auditoría son aquellos que, según nuestro juicio profesional, han sido los más significativos en la auditoría de los estados financieros del período actual.</p>
 
     <!-- KPIs -->
-    <h2>INDICADORES FINANCIEROS CLAVE — ${exp.periodo||'—'}</h2>
+    <h3>C.1 Indicadores Financieros — Período ${periodo}</h3>
     <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-val">${fmtN(ta)}</div><div class="kpi-lbl">Total Activo</div></div>
-      <div class="kpi"><div class="kpi-val">${fmtN(pat)}</div><div class="kpi-lbl">Patrimonio</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:${vtas>0?'#0F172A':'#DC2626'}">${fmtN(vtas)}</div><div class="kpi-lbl">Ventas Netas</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:${util>=0?'#059669':'#DC2626'}">${fmtN(util)}</div><div class="kpi-lbl">Utilidad Neta</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:${ac/pc>=1.2?'#059669':'#DC2626'}">${(ac/pc).toFixed(2)}x</div><div class="kpi-lbl">Razón Corriente</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:${tp/ta<=0.6?'#059669':'#DC2626'}">${(tp/ta*100).toFixed(1)}%</div><div class="kpi-lbl">Endeudamiento</div></div>
-      <div class="kpi"><div class="kpi-val">${vtas?(util/vtas*100).toFixed(1)+'%':'N/A'}</div><div class="kpi-lbl">Margen Neto</div></div>
-      <div class="kpi"><div class="kpi-val">${(util/pat*100).toFixed(1)}%</div><div class="kpi-lbl">ROE</div></div>
+      <div class="kpi">
+        <div class="kpi-val">$${fmtN(ta)}</div>
+        <div class="kpi-lbl">TOTAL ACTIVO</div>
+        <div class="kpi-sub">NIC 1 — Estado de Situación</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:${tp/ta<=0.6?'#059669':'#DC2626'}">$${fmtN(pat)}</div>
+        <div class="kpi-lbl">PATRIMONIO NETO</div>
+        <div class="kpi-sub">Endeudamiento: ${fmtP(tp/ta*100)}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">$${fmtN(vtas)}</div>
+        <div class="kpi-lbl">INGRESOS NETOS</div>
+        <div class="kpi-sub">NIIF 15 — Reconocimiento</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:${util>=0?'#059669':'#DC2626'}">$${fmtN(util)}</div>
+        <div class="kpi-lbl">UTILIDAD NETA</div>
+        <div class="kpi-sub">Margen: ${vtas?fmtP(util/vtas*100):'N/A'}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" style="color:${ac/pc>=1.2?'#059669':'#DC2626'}">${(ac/pc).toFixed(2)}x</div>
+        <div class="kpi-lbl">RAZÓN CORRIENTE</div>
+        <div class="kpi-sub">Óptimo ≥ 1.20x (NIC 1)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">${fmtP(tp/ta*100)}</div>
+        <div class="kpi-lbl">ENDEUDAMIENTO</div>
+        <div class="kpi-sub">Óptimo ≤ 60% (NIIF)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">${vtas?fmtP(ub/vtas*100):'N/A'}</div>
+        <div class="kpi-lbl">MARGEN BRUTO</div>
+        <div class="kpi-sub">NIC 2 — Costo de ventas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">${fmtP(util/pat*100)}</div>
+        <div class="kpi-lbl">ROE</div>
+        <div class="kpi-sub">Rentabilidad del patrimonio</div>
+      </div>
+    </div>
+
+    <!-- D. MATERIALIDAD -->
+    <h2>D. MATERIALIDAD Y ALCANCE</h2>
+    <div class="nota-box gold no-pb">
+      <strong>Criterio de materialidad (NIA 320):</strong>
+      <table style="margin-top:6pt">
+        <tr>
+          <td style="border:none;padding:2pt 8pt 2pt 0"><strong>Materialidad global:</strong></td>
+          <td style="border:none;padding:2pt 0">$${fmtN(MATERIAL)} (5% del Activo Total)</td>
+          <td style="border:none;padding:2pt 8pt 2pt 16pt"><strong>Significativa:</strong></td>
+          <td style="border:none;padding:2pt 0">$${fmtN(SIGNIFICATIVA)} (1% del Activo Total)</td>
+        </tr>
+      </table>
+      <p style="margin-top:4pt;font-size:8pt">La materialidad fue determinada con base en el activo total como referencia (NIA 320.A7). Las cuentas con saldo superior a $${fmtN(SIGNIFICATIVA)} fueron objeto de procedimientos de auditoría sustantivos.</p>
     </div>`;
 
-  // ── CUENTAS MATERIALES Y SIGNIFICATIVAS CON CÉDULAS ─────────────────────
-  html += `
-    <h2>CUENTAS MATERIALES Y SIGNIFICATIVAS — RESULTADO DE AUDITORÍA</h2>
-    <p style="font-size:8pt;color:#475569;margin-bottom:8pt">
-      Materialidad: ≥5% del Activo Total = ${fmtN(MATERIAL)} &nbsp;|&nbsp;
-      Significativa: ≥1% del Activo Total = ${fmtN(SIGNIFICATIVA)}
-    </p>
+  // ══ E. CÉDULAS ANALÍTICAS MATERIALES ════════════════════════════════════
+  if (cedulasMat.length > 0) {
+    html += `
+    <h2 class="pb">E. ANÁLISIS DETALLADO — CUENTAS MATERIALES Y SIGNIFICATIVAS</h2>
+    <p>Las siguientes cédulas analíticas documentan los procedimientos de auditoría aplicados a las cuentas que superan el umbral de significatividad. La revisión incluyó verificación de saldos, análisis de subcuentas, y evaluación de conformidad con las normas contables aplicables.</p>`;
+
+    cedulasMat.forEach(ced => {
+      html += htmlCedulaEjecutiva(ced);
+    });
+
+    // Tabla resumen de cédulas
+    const totalAjustes = cedulasMat.reduce((s,c) => s + Math.abs((parseFloat(c.totalAuditado)||0)-(parseFloat(c.totalLibros)||0)), 0);
+    html += `
+    <h3>E.${cedulasMat.length + 1} Resumen Consolidado</h3>
     <table>
       <thead><tr>
-        <th>Cuenta</th><th>Nivel</th>
-        <th style="text-align:right">Saldo s/Libros</th>
-        <th style="text-align:right">% Activo</th>
-        <th>Ref. Cédula</th>
-        <th style="text-align:right">Saldo Auditado</th>
-        <th style="text-align:right">Diferencia</th>
-        <th>Conclusión / Estado</th>
+        <th style="width:8%">Ref.</th>
+        <th>Cuenta Auditada</th>
+        <th style="text-align:center;width:12%">Nivel</th>
+        <th style="text-align:right;width:15%">Saldo s/Libros</th>
+        <th style="text-align:right;width:12%">Ajuste</th>
+        <th style="text-align:right;width:15%">Saldo Auditado</th>
+        <th style="text-align:center;width:10%">Estado</th>
       </tr></thead>
       <tbody>
-        ${cuentasConCedula.map(({cuenta,saldo,nivel,ced,dif}) => {
-          const pct = (Math.abs(saldo)/ta*100).toFixed(1);
+        ${cedulasMat.map(ced => {
+          const dif = (parseFloat(ced.totalAuditado)||0) - (parseFloat(ced.totalLibros)||0);
           const hayDif = Math.abs(dif) > 0.01;
+          const nivel = Math.abs(parseFloat(ced.totalLibros)||0) >= MATERIAL ? 'MATERIAL' : 'SIGNIFICATIVA';
           return `<tr>
-            <td style="font-weight:600">${cuenta}</td>
-            <td><span class="badge ${nivel==='MATERIAL'?'mat':'sig'}">${nivel}</span></td>
-            <td style="text-align:right">${fmtN(saldo)}</td>
-            <td style="text-align:right;color:#94A3B8">${pct}%</td>
-            <td style="text-align:center;font-weight:700;color:#B8930A">${ced?ced.ref:'—'}</td>
-            <td style="text-align:right;font-weight:700">${ced?fmtN(ced.totalAuditado||ced.totalLibros):'Sin cédula'}</td>
-            <td style="text-align:right" class="${hayDif?'dif-mal':'dif-ok'}">${hayDif?fmtN(Math.abs(dif)):ced?'✓ Sin dif.':'—'}</td>
-            <td style="font-size:8pt">${ced?.conclusion||(!ced?'⚠️ Sin cédula analítica':'Pendiente de conclusión')}</td>
+            <td style="font-weight:700;color:#B8930A;font-family:Courier New">${ced.ref||'—'}</td>
+            <td>${ced.titulo||''}</td>
+            <td style="text-align:center"><span class="badge ${nivel==='MATERIAL'?'badge-m':'badge-s'}">${nivel}</span></td>
+            <td style="text-align:right;font-family:Courier New">$${fmtN(ced.totalLibros)}</td>
+            <td style="text-align:right;font-family:Courier New;color:${hayDif?'#DC2626':'#94A3B8'}">${hayDif?'$'+fmtN(Math.abs(dif)):'—'}</td>
+            <td style="text-align:right;font-family:Courier New;font-weight:700">$${fmtN(ced.totalAuditado||ced.totalLibros)}</td>
+            <td style="text-align:center;font-size:8pt;color:${ced.estado==='aprobada'?'#059669':'#D97706'}">${ced.estado||'borrador'}</td>
           </tr>`;
         }).join('')}
+        <tr class="total-row">
+          <td colspan="3"><strong>TOTAL CUENTAS AUDITADAS</strong></td>
+          <td style="text-align:right">$${fmtN(cedulasMat.reduce((s,c)=>s+(parseFloat(c.totalLibros)||0),0))}</td>
+          <td style="text-align:right;color:${totalAjustes>0.01?'#FCA5A5':'#6EE7B7'}">$${fmtN(totalAjustes)}</td>
+          <td style="text-align:right">$${fmtN(cedulasMat.reduce((s,c)=>s+(parseFloat(c.totalAuditado||c.totalLibros)||0),0))}</td>
+          <td></td>
+        </tr>
       </tbody>
     </table>
-    ${cuentasConCedula.some(x=>Math.abs(x.dif)>0.01)?`
-    <div style="border:0.5pt solid #FECACA;background:#FEF2F2;padding:8pt 10pt;border-radius:4pt;margin-top:8pt">
-      <strong style="color:#DC2626">⚠️ Diferencias detectadas:</strong>
-      ${cuentasConCedula.filter(x=>Math.abs(x.dif)>0.01).map(x=>
-        `<br>${x.cuenta}: diferencia de ${fmtN(Math.abs(x.dif))} (${x.dif>0?'saldo auditado mayor':'saldo auditado menor'} al de libros)`
-      ).join('')}
-    </div>`:''}`;
-
-  if (tipo === 'detallado') {
-    // ── HALLAZGOS ────────────────────────────────────────────────────────
-    if (hallazgos.length) {
-      html += `<h2 class="pb">HALLAZGOS DE AUDITORÍA</h2>
-        <table>
-          <thead><tr><th style="width:5%">N°</th><th>Hallazgo</th><th style="width:12%">Severidad</th><th>Recomendación</th></tr></thead>
-          <tbody>${hallazgos.map((h,i)=>{
-            const c={critico:'#DC2626',alto:'#D97706',medio:'#B45309',bajo:'#059669'}[h.severidad||'bajo'];
-            return `<tr>
-              <td style="text-align:center;font-weight:700">H-${String(i+1).padStart(2,'0')}</td>
-              <td>${h.titulo||h.descripcion||'—'}</td>
-              <td><span class="badge" style="background:${c}20;color:${c}">${(h.severidad||'bajo').toUpperCase()}</span></td>
-              <td>${h.recomendacion||'—'}</td>
-            </tr>`;
-          }).join('')}</tbody>
-        </table>`;
-    }
-
-    // ── ESTADOS FINANCIEROS ─────────────────────────────────────────────
-    html += `
-      <h2 class="pb">ESTADOS FINANCIEROS AUDITADOS</h2>
-      <table>
-        <thead><tr><th>Concepto</th><th style="text-align:right">USD</th></tr></thead>
-        <tbody>
-          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">ACTIVO</td></tr>
-          <tr><td style="padding-left:16pt">Activo Corriente</td><td style="text-align:right">${fmtN(ac)}</td></tr>
-          <tr><td style="padding-left:16pt">Activo No Corriente</td><td style="text-align:right">${fmtN(ta-ac)}</td></tr>
-          <tr class="total-row"><td><strong>TOTAL ACTIVO</strong></td><td style="text-align:right"><strong>${fmtN(ta)}</strong></td></tr>
-          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">PASIVO</td></tr>
-          <tr><td style="padding-left:16pt">Pasivo Corriente</td><td style="text-align:right">${fmtN(pc)}</td></tr>
-          <tr><td style="padding-left:16pt">Pasivo No Corriente</td><td style="text-align:right">${fmtN(tp-pc)}</td></tr>
-          <tr class="total-row"><td><strong>TOTAL PASIVO</strong></td><td style="text-align:right"><strong>${fmtN(tp)}</strong></td></tr>
-          <tr class="total-row"><td><strong>PATRIMONIO NETO</strong></td><td style="text-align:right"><strong>${fmtN(pat)}</strong></td></tr>
-          <tr><td colspan="2" style="background:#1E293B;color:#fff;font-weight:700">RESULTADOS</td></tr>
-          <tr><td style="padding-left:16pt">Ventas Netas</td><td style="text-align:right">${fmtN(vtas)}</td></tr>
-          <tr><td style="padding-left:16pt">Utilidad Bruta</td><td style="text-align:right">${fmtN(g('VENTAS NETAS')-g('COSTO DE VENTAS'))}</td></tr>
-          <tr class="total-row"><td><strong>UTILIDAD NETA</strong></td><td style="text-align:right;color:${util>=0?'#059669':'#DC2626'}"><strong>${fmtN(util)}</strong></td></tr>
-        </tbody>
-      </table>`;
-
-    // ── RESPONSABILIDADES Y FIRMA ────────────────────────────────────────
-    html += `
-      <h2 class="pb">BASE LEGAL Y RESPONSABILIDADES</h2>
-      <p>Hemos llevado a cabo nuestra auditoría de conformidad con las Normas Internacionales de Auditoría (NIAs). La administración es responsable de la preparación y presentación razonable de los estados financieros de conformidad con las ${marco==='niif-pymes'?'NIIF para PYMES':'NIIF completas'}.</p>
-      <p>Consideramos que la evidencia de auditoría que hemos obtenido proporciona una base suficiente y adecuada para nuestra opinión.</p>
-      ${enfasis?`<div style="border-left:3pt solid #3B82F6;padding:8pt 12pt;background:#EFF6FF;margin:10pt 0">
-        <strong style="color:#1D4ED8">Párrafo de Énfasis:</strong> ${enfasis}
-      </div>`:''}
-      <div class="firma-row" style="margin-top:50pt">
-        <div class="firma-box">
-          ${exp.auditor||'___________________________'}<br>
-          <span style="font-size:8pt;color:#475569">Auditor Independiente — CPA<br>${fechaInf}</span>
-        </div>
-        <div class="firma-box">
-          Representante Legal<br>
-          <span style="font-size:8pt;color:#475569">${exp.empresa||'—'}</span>
-        </div>
-      </div>`;
+    ${totalAjustes > 0.01 ? `<div class="nota-box red">
+      <strong>⚠️ Se identificaron diferencias por $${fmtN(totalAjustes)}</strong> entre los saldos en libros y los saldos auditados.
+      Estas diferencias requieren evaluación de su efecto sobre la opinión de auditoría conforme a NIA 450 — Evaluación de las incorrecciones identificadas durante la auditoría.
+    </div>` : `<div class="nota-box" style="border-color:#059669;background:#D1FAE5">
+      <strong>✓ Sin diferencias materiales.</strong> Los saldos auditados se presentan razonablemente en todos sus aspectos materiales.
+    </div>`}`;
+  } else {
+    html += `<h2 class="pb">E. ANÁLISIS DETALLADO</h2>
+      <div class="nota-box"><p>No se han generado cédulas analíticas para esta auditoría. Genere las cédulas desde el módulo de Cédulas Analíticas para incluir el detalle en este informe.</p></div>`;
   }
+
+  // ══ F. HALLAZGOS ════════════════════════════════════════════════════════
+  if (hallazgos.length > 0) {
+    html += `<h2 class="pb">F. HALLAZGOS DE AUDITORÍA (NIA 265)</h2>
+      <p>Los siguientes hallazgos fueron identificados durante la ejecución de los procedimientos de auditoría. Se presentan siguiendo la estructura CCCE (Condición, Criterio, Causa, Efecto) conforme a las mejores prácticas de auditoría.</p>
+      <table>
+        <thead><tr>
+          <th style="width:6%">N°</th><th style="width:25%">Hallazgo / Condición</th>
+          <th style="width:20%">Criterio (NIC/NIIF)</th><th style="width:15%">Causa</th>
+          <th style="width:18%">Efecto / Impacto</th><th style="width:16%">Recomendación</th>
+        </tr></thead>
+        <tbody>${hallazgos.map((h,i) => {
+          const cc = {critico:'#DC2626',alto:'#D97706',medio:'#B45309',bajo:'#059669'}[h.severidad||'bajo'];
+          return `<tr>
+            <td style="text-align:center">
+              <strong style="color:${cc}">H-${String(i+1).padStart(2,'0')}</strong><br>
+              <span style="font-size:7pt;color:${cc}">${(h.severidad||'bajo').toUpperCase()}</span>
+            </td>
+            <td>${h.condicion||h.descripcion||h.titulo||'—'}</td>
+            <td style="font-size:8pt">${h.criterio||'NIIF/NIC aplicable'}</td>
+            <td style="font-size:8pt">${h.causa||'—'}</td>
+            <td style="font-size:8pt;color:${cc}">${h.efecto||'—'}</td>
+            <td style="font-size:8pt">${h.recomendacion||'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  // ══ G. NOTAS SOBRE PRINCIPIOS CONTABLES ═════════════════════════════════
+  html += `
+    <h2 class="pb">G. NOTAS SOBRE PRINCIPIOS CONTABLES APLICADOS</h2>
+    <p>La entidad ha preparado sus estados financieros de conformidad con las ${marcoNombre}. A continuación se detallan los principales principios y normas aplicados, evaluados durante la auditoría:</p>
+
+    <table>
+      <thead><tr>
+        <th style="width:22%">Norma</th>
+        <th style="width:25%">Área de aplicación</th>
+        <th style="width:38%">Criterio aplicado / Evaluación del auditor</th>
+        <th style="width:15%;text-align:center">Cumplimiento</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><strong>NIC 1</strong> — Presentación de EEFF</td>
+          <td>Estructura y revelaciones</td>
+          <td>Se verificó la presentación de los estados financieros, comparativos y revelaciones mínimas requeridas.</td>
+          <td style="text-align:center;color:#059669">✓ Cumple</td></tr>
+        <tr><td><strong>NIC 2</strong> — Inventarios</td>
+          <td>Valoración y costo de ventas</td>
+          <td>Se evaluó el método de valuación (FIFO/Promedio), la determinación del VNR y el reconocimiento de deterioro.</td>
+          <td style="text-align:center;color:${g('INVENTARIOS_SMIN')>0?'#059669':'#94A3B8'}">✓ Evaluado</td></tr>
+        <tr><td><strong>NIC 7</strong> — Flujos de efectivo</td>
+          <td>Conciliación de efectivo</td>
+          <td>Se verificaron los saldos de caja y bancos contra estados de cuenta y conciliaciones bancarias.</td>
+          <td style="text-align:center;color:#059669">✓ Verificado</td></tr>
+        <tr><td><strong>NIC 12</strong> — Impuesto a las Ganancias</td>
+          <td>IR corriente y diferido</td>
+          <td>Se revisó el cálculo del impuesto causado, participación trabajadores y activos/pasivos por impuesto diferido.</td>
+          <td style="text-align:center;color:#059669">✓ Revisado</td></tr>
+        <tr><td><strong>NIC 16</strong> — PPE</td>
+          <td>Activos fijos y depreciación</td>
+          <td>Se verificó la vida útil, método de depreciación, costo histórico y evidencia de posesión de los activos.</td>
+          <td style="text-align:center;color:#059669">✓ Verificado</td></tr>
+        <tr><td><strong>NIC 19</strong> — Beneficios a empleados</td>
+          <td>Nómina, provisiones laborales</td>
+          <td>Se verificó el cálculo de décimos, vacaciones, fondos de reserva, aporte patronal y provisión por desahucio.</td>
+          <td style="text-align:center;color:#059669">✓ Verificado</td></tr>
+        <tr><td><strong>NIC 36</strong> — Deterioro</td>
+          <td>Activos no corrientes</td>
+          <td>Se evaluó la existencia de indicios de deterioro en activos de larga vida y la estimación del valor recuperable.</td>
+          <td style="text-align:center;color:#059669">✓ Evaluado</td></tr>
+        <tr><td><strong>NIC 37</strong> — Provisiones</td>
+          <td>Pasivos contingentes</td>
+          <td>Se revisaron las provisiones registradas y se indagó sobre pasivos contingentes no reconocidos.</td>
+          <td style="text-align:center;color:#059669">✓ Revisado</td></tr>
+        <tr><td><strong>NIIF 9</strong> — Instrumentos financieros</td>
+          <td>CxC, deterioro esperado</td>
+          <td>Se evaluó el modelo de pérdida crediticia esperada (ECL) aplicado a las cuentas por cobrar comerciales.</td>
+          <td style="text-align:center;color:#059669">✓ Evaluado</td></tr>
+        <tr><td><strong>NIIF 15</strong> — Reconocimiento de ingresos</td>
+          <td>Ventas y servicios</td>
+          <td>Se verificó el cumplimiento del modelo de cinco pasos para el reconocimiento de ingresos en el período correcto.</td>
+          <td style="text-align:center;color:#059669">✓ Verificado</td></tr>
+        <tr><td><strong>NIIF 16</strong> — Arrendamientos</td>
+          <td>Activos por derecho de uso</td>
+          <td>Se revisó la identificación de contratos de arrendamiento y el reconocimiento de activos/pasivos correspondientes.</td>
+          <td style="text-align:center;color:#059669">✓ Revisado</td></tr>
+      </tbody>
+    </table>
+
+    <!-- H. RESPONSABILIDADES -->
+    <h2>H. RESPONSABILIDADES DE LA DIRECCIÓN Y DEL AUDITOR</h2>
+    <h3>Responsabilidad de la Dirección (NIA 200.A2)</h3>
+    <p>La administración de ${exp.empresa||'la entidad'} es responsable de la preparación y presentación razonable de los estados financieros de conformidad con las ${marcoNombre}. Esta responsabilidad incluye el diseño, implementación y mantenimiento del control interno relevante para la preparación de estados financieros libres de incorrección material, debida a fraude o error.</p>
+
+    <h3>Responsabilidad del Auditor (NIA 240, NIA 315)</h3>
+    <p>Nuestra responsabilidad es expresar una opinión sobre estos estados financieros basada en nuestra auditoría. Hemos realizado nuestra auditoría de acuerdo con las Normas Internacionales de Auditoría (NIAs). Dichas normas requieren que cumplamos los requerimientos de ética y que planifiquemos y ejecutemos la auditoría con el fin de obtener una seguridad razonable de que los estados financieros están libres de incorrección material.</p>
+    <p>Una auditoría implica aplicar procedimientos para obtener evidencia de auditoría sobre los importes y la información revelada en los estados financieros. Los procedimientos seleccionados dependen del juicio del auditor, incluida la valoración de los riesgos de incorrección material en los estados financieros, debida a fraude o error.</p>
+
+    <!-- FIRMAS -->
+    <div class="firma-grid">
+      <div class="firma">
+        <div style="margin-bottom:4pt">${exp.auditor||'_________________________'}</div>
+        <div><strong>Auditor Independiente — CPA</strong></div>
+        <div style="font-size:8pt;color:#475569">${exp.firmaNum||'Matrícula Profesional N° ____'}</div>
+        <div style="font-size:8pt;color:#475569">Fecha: ${fechaInf}</div>
+      </div>
+      <div class="firma">
+        <div style="margin-bottom:4pt">_________________________</div>
+        <div><strong>Representante Legal</strong></div>
+        <div style="font-size:8pt;color:#475569">${exp.empresa||'—'}</div>
+        <div style="font-size:8pt;color:#475569">RUC: ${exp.ruc||'—'}</div>
+      </div>
+    </div>
+    <p style="font-size:7.5pt;color:#94A3B8;margin-top:20pt;text-align:center">
+      Este informe ha sido preparado exclusivamente para los accionistas y directivos de ${exp.empresa||'la entidad'}.
+      Su uso por parte de terceros no está autorizado sin la expresa aprobación del auditor.
+      Ref.: ${numInf} | Generado: ${fecha}
+    </p>`;
 
   html += '</body></html>';
   return html;
 }
 
-// Sobreescribir generarInformeAuditoria para también actualizar el DOM
-const _generarInformeOriginal = typeof generarInformeAuditoria === 'function' ? generarInformeAuditoria : null;
 
 function generarInformeAuditoria(tipo) {
   tipo = tipo || 'detallado';
