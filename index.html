@@ -8466,21 +8466,33 @@ function renderEfTab(tab) {
   // Normalizar raw de todos los periodos para compatibilidad F101/CSV
   periodos.forEach(p => { if (p.raw) p.rawNorm = normalizarRaw(p.raw); });
 
-  if (tab === 'balance') renderBalance();
-  else if (tab === 'resultados') renderResultados();
-  else if (tab === 'patrimonio') renderCambiosPatrimonio();
-  else if (tab === 'flujo') renderFlujoEfectivo();
-  else if (tab === 'notas') renderNotasEEFF();
-  else if (tab === 'h-v') renderAnalisisHV();
-  else if (tab === 'indices') renderIndicesEF();
-  else if (tab === 'kpis') renderKPIsEF();
-  else if (tab === 'graficos') renderGraficosEF();
-  else if (tab === 'recomendaciones') renderRecomendacionesEF();
+  const intentar = (fn, divId) => {
+    try { fn(); }
+    catch (e) {
+      console.error(`Error en ${fn.name}:`, e);
+      const d = document.getElementById(divId);
+      if (d) d.innerHTML = `<div class="card" style="max-width:640px;margin:30px auto;border-left:3px solid #ef4444">
+        <p style="color:#ef4444;font-weight:600">⚠️ Error al calcular esta sección: ${(e.message||String(e)).replace(/</g,'&lt;')}</p>
+        <p style="font-size:.72rem;color:var(--text-muted)">Revisa la consola del navegador (F12) para más detalle, o comparte este mensaje.</p>
+      </div>`;
+    }
+  };
+
+  if (tab === 'balance') intentar(renderBalance, 'ef-balance');
+  else if (tab === 'resultados') intentar(renderResultados, 'ef-resultados');
+  else if (tab === 'patrimonio') intentar(renderCambiosPatrimonio, 'ef-patrimonio');
+  else if (tab === 'flujo') intentar(renderFlujoEfectivo, 'ef-flujo');
+  else if (tab === 'notas') intentar(renderNotasEEFF, 'ef-notas');
+  else if (tab === 'h-v') intentar(renderAnalisisHV, 'ef-h-v');
+  else if (tab === 'indices') intentar(renderIndicesEF, 'ef-indices');
+  else if (tab === 'kpis') intentar(renderKPIsEF, 'ef-kpis');
+  else if (tab === 'graficos') intentar(renderGraficosEF, 'ef-graficos');
+  else if (tab === 'recomendaciones') intentar(renderRecomendacionesEF, 'ef-recomendaciones');
   // Red de seguridad: mantener KPIs/Gráficos/Recomendaciones sincronizados sin importar
   // desde dónde se cargaron los períodos (subida, Firebase, edición manual, etc.)
-  if (tab !== 'kpis') { try { renderKPIsEF(); } catch(e) { console.error('renderKPIsEF:', e); } }
-  if (tab !== 'graficos') { try { renderGraficosEF(); } catch(e) { console.error('renderGraficosEF:', e); } }
-  if (tab !== 'recomendaciones') { try { renderRecomendacionesEF(); } catch(e) { console.error('renderRecomendacionesEF:', e); } }
+  if (tab !== 'kpis') intentar(renderKPIsEF, 'ef-kpis');
+  if (tab !== 'graficos') intentar(renderGraficosEF, 'ef-graficos');
+  if (tab !== 'recomendaciones') intentar(renderRecomendacionesEF, 'ef-recomendaciones');
   const accionesFinales = document.getElementById('ef-acciones-finales');
   if (accionesFinales) accionesFinales.style.display = periodos.length > 0 ? 'block' : 'none';
 }
