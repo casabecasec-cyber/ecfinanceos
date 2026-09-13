@@ -3794,7 +3794,7 @@ function filterBiblioteca(query) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); cargarHistorialExpedientes(); });
+document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); cargarHistorialExpedientes(); autoRestaurarUltimoExpediente(); });
 
 
 // ═══════════════ pizarra.js ═══════════════
@@ -13312,6 +13312,17 @@ const AP_FASES = {
 
 // ── Inicio de expediente ─────────────────────────────────────────
 function seleccionarTipoAuditoria(tipo, btn) {
+  // Si hay expediente activo de otro tipo con cédulas, advertir
+  if (_apExpediente && _apExpediente.tipo !== tipo &&
+      window._apCedulas && Object.keys(window._apCedulas).length > 0) {
+    const ok = confirm(
+      `⚠️ Tiene el expediente "${_apExpediente.codigo}" (${_apExpediente.tipo}) activo con cédulas analíticas guardadas.\n\n` +
+      `Cambiar el tipo NO elimina sus datos — están seguros en Firebase.\n` +
+      `Para recuperar el expediente actual, ábralo desde el Historial de Expedientes.\n\n` +
+      `¿Continuar?`
+    );
+    if (!ok) return;
+  }
   document.querySelectorAll('.ap-tipo-card').forEach(c => c.classList.remove('activo'));
   btn.classList.add('activo');
   window._apTipoSeleccionado = tipo;
@@ -13347,6 +13358,8 @@ function iniciarExpedienteAuditoria() {
 
   // Guardar en Firebase
   FirebaseDB.set(`audit_pro/${codigo}`, _apExpediente);
+  // Recordar para auto-restaurar
+  localStorage.setItem('financeOS-ultimo-expediente', codigo);
 
   // Mostrar badge y panel principal
   const badge = document.getElementById('ap-expediente-badge');
@@ -14277,6 +14290,74 @@ function insertarMarca(marca, targetId) {
 // ══════════════════════════════════════════════════════
 // HISTORIAL DE EXPEDIENTES — CARGAR, ABRIR, EDITAR, BORRAR
 // ══════════════════════════════════════════════════════
+
+// ── Auto-restaurar último expediente al cargar la app ─────────────────────
+async function autoRestaurarUltimoExpediente() {
+  try {
+    const ultimoCodigo = localStorage.getItem('financeOS-ultimo-expediente');
+    if (!ultimoCodigo) return;
+
+    const exp = await FirebaseDB.get(`audit_pro/${ultimoCodigo}`);
+    if (!exp?.codigo) return;
+
+    // Restaurar silenciosamente sin toast molesto
+    _apExpediente = exp;
+    window._apCedulas = {};
+
+    // Pre-llenar campos
+    const setVal = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+    setVal('ap-empresa', exp.empresa);
+    setVal('ap-ruc', exp.ruc);
+    setVal('ap-periodo', exp.periodo);
+    setVal('ap-auditor', exp.auditor);
+    setVal('ap-expediente', exp.codigo);
+
+    // Mostrar badge
+    const badge = document.getElementById('ap-expediente-badge');
+    const panel = document.getElementById('ap-panel-principal');
+    if (badge) badge.style.display = 'block';
+    if (panel) panel.style.display = 'block';
+    const codEl = document.getElementById('ap-expediente-codigo');
+    const tipEl = document.getElementById('ap-tipo-label');
+    if (codEl) codEl.textContent = exp.codigo;
+    if (tipEl) tipEl.textContent = exp.tipo || 'financiera';
+
+    // Cargar cédulas
+    const cedulas = await FirebaseDB.get(`audit_pro/${ultimoCodigo}/cedulas_analiticas`);
+    window._apCedulas = cedulas || {};
+
+    // Cargar EEFF
+    const eeffVinculado = await FirebaseDB.get(`audit_pro/${ultimoCodigo}/eeff_vinculado`);
+    if (eeffVinculado?.raw && Object.keys(eeffVinculado.raw).length > 0) {
+      window._apEEFFSeleccionado = eeffVinculado;
+      const statusEl = document.getElementById('ap-datos-status');
+      if (statusEl) statusEl.innerHTML = `
+        <div style="padding:8px 12px;background:rgba(16,185,129,.08);border:1px solid var(--emerald);
+          border-radius:8px;font-size:.78rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <span>✅ EEFF: <strong>${eeffVinculado.nombreEmpresa||eeffVinculado.ruc||'—'}</strong> — ${eeffVinculado.year||'—'}</span>
+          <button onclick="usarDatosEstadosFinancieros()" style="font-size:.72rem;padding:3px 10px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:5px;cursor:pointer">🔄 Cambiar EEFF</button>
+        </div>`;
+    }
+
+    // Cargar sumarias
+    const sumarias = await FirebaseDB.get(`audit_pro/${ultimoCodigo}/sumarias`);
+    if (sumarias) _apExpediente.sumarias = sumarias;
+
+    renderFasesAuditoria && renderFasesAuditoria();
+    renderCedulasAnaliticasCompleto && renderCedulasAnaliticasCompleto();
+
+    // Banner discreto de restauración
+    setTimeout(() => {
+      const n = Object.keys(window._apCedulas||{}).length;
+      if (n > 0) toast(`📂 Expediente "${exp.codigo}" restaurado — ${n} cédula${n!==1?'s':''} cargada${n!==1?'s':''}`, 'success');
+    }, 1500);
+
+  } catch(e) { console.warn('Auto-restauración:', e); }
+}
+
+// Guardar expediente activo en localStorage al cambiar
+const _origIniciar = typeof iniciarExpedienteAuditoria === 'function' ? iniciarExpedienteAuditoria : null;
+
 async function cargarHistorialExpedientes() {
   const el = document.getElementById('ap-historial-expedientes');
   if (!el) return;
@@ -14426,6 +14507,9 @@ async function abrirExpediente(key) {
   renderFasesAuditoria && renderFasesAuditoria();
   renderCedulasAnaliticasCompleto && renderCedulasAnaliticasCompleto();
   renderCedulasSumarias && renderCedulasSumarias();
+
+  // Guardar en localStorage para auto-restaurar en próxima sesión
+  localStorage.setItem('financeOS-ultimo-expediente', key);
 
   // Restaurar todos los módulos guardados
   await restaurarModulosExpediente(key);
