@@ -9576,7 +9576,7 @@ function renderKPIsEF() {
   const ultimo = periodos[periodos.length - 1];
   const anterior = periodos.length > 1 ? periodos[periodos.length - 2] : null;
   const g = (p, k) => parseFloat((p.rawNorm||p.raw)[k]) || 0;
-  const fmtN = v => '$' + (parseFloat(v)||0).toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:0});
+  const fmtN = v => '$' + (parseFloat(v)||0).toLocaleString('es-EC', {minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtP = v => (parseFloat(v)||0).toFixed(1) + '%';
   const fmtR = v => (parseFloat(v)||0).toFixed(2) + 'x';
 
