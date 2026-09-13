@@ -9451,75 +9451,75 @@ function renderIndicesEF() {
 
   const cuerpo = [
     seccion('LIQUIDEZ',[ 
-      fila('Razón corriente', d=>d.corriente, fmtR, 'liquidez', 'Activo Corriente / Pasivo Corriente — óptimo: ≥1.5'),
-      fila('Prueba ácida', d=>d.pruebaAcida, fmtR, 'liquidez', '(Activo Corriente − Inventarios) / Pasivo Corriente — óptimo: ≥1.0'),
-      fila('Tesorería (índice de caja)', d=>d.tesoria, fmtR, 'liquidez', 'Efectivo / Pasivo Corriente — óptimo: ≥0.2'),
-      fila('Capital de trabajo neto (USD)', d=>d.capitalTrabajo, fmtN, 'liquidez', 'Activo Corriente − Pasivo Corriente'),
+      fila('Razón corriente', d=>d.corriente, fmtR, 'liquidez', 'Por cada dólar que la empresa debe pagar en el corto plazo, cuánto tiene disponible en activos que se convierten en efectivo dentro de un año. Óptimo: ≥1.5x.'),
+      fila('Prueba ácida', d=>d.pruebaAcida, fmtR, 'liquidez', 'Igual que la razón corriente, pero sin contar el inventario — mide la capacidad de pago inmediata sin depender de vender mercadería. Óptimo: ≥1.0x.'),
+      fila('Tesorería (índice de caja)', d=>d.tesoria, fmtR, 'liquidez', 'Qué porción de las deudas de corto plazo se podría cubrir hoy mismo, solo con el efectivo disponible en caja y bancos. Óptimo: ≥0.2x.'),
+      fila('Capital de trabajo neto (USD)', d=>d.capitalTrabajo, fmtN, 'liquidez', 'El colchón financiero de la operación diaria: lo que queda del activo corriente después de pagar todas las obligaciones de corto plazo. Un valor negativo es señal de alerta de liquidez.'),
     ]),
     seccion('ACTIVIDAD Y ROTACIÓN',[
-      fila('Rotación de CxC (veces/año)', d=>d.rotCxC, fmtR, 'rot', 'Ventas / Cuentas por Cobrar'),
-      fila('Período promedio de cobro', d=>d.diasCobro, fmtD, 'dias', 'CxC / Ventas × 365 — óptimo: ≤30 días'),
-      fila('Rotación de inventarios (veces/año)', d=>d.rotInv, fmtR, 'rot', 'Costo de Ventas / Inventarios'),
-      fila('Días de inventario', d=>d.diasInv, fmtD, 'dias', 'Inventarios / Costo Ventas × 365 — menor es mejor'),
-      fila('Rotación de CxP (veces/año)', d=>d.rotCxP, fmtR, 'rot', 'Costo de Ventas / Cuentas por Pagar'),
-      fila('Período promedio de pago', d=>d.diasPago, fmtD, 'dias', 'CxP / Costo Ventas × 365'),
-      fila('Ciclo de conversión de caja', d=>d.cicloCaja, fmtD, 'dias', 'Días cobro + Días inventario − Días pago — menor es mejor'),
-      fila('Rotación de activos totales', d=>d.rotActivos, fmtR, 'rot', 'Ventas / Total Activos — eficiencia en uso de activos'),
-      fila('Rotación de PPE', d=>d.rotPPE, fmtR, 'rot', 'Ventas / PPE Neto — productividad del activo fijo'),
+      fila('Rotación de CxC (veces/año)', d=>d.rotCxC, fmtR, 'rot', 'Cuántas veces al año la empresa cobra el total de su cartera de clientes. Mientras más veces rote, más rápido se convierte en efectivo lo que se vende a crédito.'),
+      fila('Período promedio de cobro', d=>d.diasCobro, fmtD, 'dias', 'En promedio, cuántos días tarda un cliente en pagar desde que se le vende a crédito. Plazos más largos inmovilizan más capital en la calle. Óptimo: ≤30 días.'),
+      fila('Rotación de inventarios (veces/año)', d=>d.rotInv, fmtR, 'rot', 'Cuántas veces al año se vende y repone todo el inventario. Una rotación baja sugiere mercadería que se mueve lento o exceso de stock.'),
+      fila('Días de inventario', d=>d.diasInv, fmtD, 'dias', 'Cuántos días, en promedio, permanece la mercadería en bodega antes de venderse. Menos días significa capital de trabajo liberado más rápido.'),
+      fila('Rotación de CxP (veces/año)', d=>d.rotCxP, fmtR, 'rot', 'Cuántas veces al año la empresa paga el total de lo que debe a sus proveedores.'),
+      fila('Período promedio de pago', d=>d.diasPago, fmtD, 'dias', 'En promedio, cuántos días tarda la empresa en pagarle a sus proveedores. Plazos más amplios (dentro de lo razonable) mejoran el flujo de caja propio.'),
+      fila('Ciclo de conversión de caja', d=>d.cicloCaja, fmtD, 'dias', 'Cuántos días pasan, en neto, desde que la empresa paga por sus insumos hasta que cobra por sus ventas. Mientras más corto (o incluso negativo), menos capital propio necesita para operar.'),
+      fila('Rotación de activos totales', d=>d.rotActivos, fmtR, 'rot', 'Cuántos dólares de venta genera la empresa por cada dólar invertido en activos. Mide qué tan bien se están aprovechando los recursos de la compañía para generar ingresos.'),
+      fila('Rotación de PPE', d=>d.rotPPE, fmtR, 'rot', 'Cuántos dólares de venta genera cada dólar invertido en propiedad, planta y equipo — indica si la capacidad instalada (maquinaria, local, vehículos) se está aprovechando bien.'),
     ]),
     seccion('ENDEUDAMIENTO Y SOLVENCIA',[
-      fila('Endeudamiento sobre activos', d=>d.endeudAct, fmtP, 'end', 'Pasivo Total / Activo Total — óptimo: <50%'),
-      fila('Endeudamiento sobre patrimonio', d=>d.endeudPat, fmtP, 'end', 'Pasivo Total / Patrimonio — óptimo: <100%'),
-      fila('Autonomía financiera', d=>d.autonomia, fmtP, 'liquidez', 'Patrimonio / Activo Total — mayor es mejor'),
-      fila('Deuda / EBITDA (veces)', d=>d.deudaEBITDA, fmtR, 'end', 'Deuda Financiera Total / EBITDA — óptimo: <3x'),
-      fila('Cobertura de intereses (veces)', d=>d.cobIntereses, fmtR, 'liquidez', 'EBIT / Gasto Financiero — óptimo: >3x'),
+      fila('Endeudamiento sobre activos', d=>d.endeudAct, fmtP, 'end', 'Qué porción de todo lo que posee la empresa fue financiado con deuda de terceros, en lugar de capital propio. Óptimo: <50%.'),
+      fila('Endeudamiento sobre patrimonio', d=>d.endeudPat, fmtP, 'end', 'Por cada dólar que los socios tienen invertido en la empresa, cuánto se debe a terceros. Un valor alto significa que la empresa depende mucho del financiamiento externo. Óptimo: <100%.'),
+      fila('Autonomía financiera', d=>d.autonomia, fmtP, 'liquidez', 'Qué porción de la empresa realmente le pertenece a los socios (patrimonio), en lugar de a los acreedores. Mayor autonomía da más independencia financiera.'),
+      fila('Deuda / EBITDA (veces)', d=>d.deudaEBITDA, fmtR, 'end', 'Cuántos años de generación de caja operativa (EBITDA) tomaría pagar toda la deuda financiera actual, si se destinara el 100% a ese fin. Óptimo: <3x.'),
+      fila('Cobertura de intereses (veces)', d=>d.cobIntereses, fmtR, 'liquidez', 'Cuántas veces la utilidad operativa (antes de intereses e impuestos) alcanza para cubrir el gasto financiero del período. Un valor bajo es señal de riesgo ante nuevas deudas. Óptimo: >3x.'),
     ]),
     seccion('RENTABILIDAD',[
-      fila('Margen bruto', d=>d.margenBruto, fmtP, 'rent', '(Ventas − Costo Ventas) / Ventas'),
-      fila('Margen operacional (EBIT)', d=>d.margenOper, fmtP, 'rent', 'EBIT / Ventas — rentabilidad antes de intereses e impuestos'),
-      fila('Margen EBITDA', d=>d.margenEBITDA, fmtP, 'rent', 'EBITDA / Ventas — proxy de generación de caja operacional'),
-      fila('Margen neto', d=>d.margenNeto, fmtP, 'rent', 'Utilidad Neta / Ventas'),
-      fila('ROA — Rentabilidad sobre activos', d=>d.roa, fmtP, 'rent', 'Utilidad Neta / Total Activos'),
-      fila('ROE — Rentabilidad sobre patrimonio', d=>d.roe, fmtP, 'rent', 'Utilidad Neta / Patrimonio — óptimo: >15%'),
-      fila('ROIC — Retorno sobre capital invertido', d=>d.roi, fmtP, 'rent', 'NOPAT / (Deuda + Patrimonio)'),
-      fila('EBIT (USD)', d=>d.ebit, fmtN, 'rent', 'Utilidad antes de intereses e impuestos'),
-      fila('EBITDA (USD)', d=>d.ebitda, fmtN, 'rent', 'EBIT + Depreciación/Amortización'),
+      fila('Margen bruto', d=>d.margenBruto, fmtP, 'rent', 'De cada dólar vendido, cuánto queda después de cubrir solo el costo directo del producto o servicio, antes de gastos administrativos u otros.'),
+      fila('Margen operacional (EBIT)', d=>d.margenOper, fmtP, 'rent', 'De cada dólar vendido, cuánto queda como utilidad puramente del negocio, antes de intereses de deuda e impuestos. Mide la rentabilidad del giro del negocio en sí.'),
+      fila('Margen EBITDA', d=>d.margenEBITDA, fmtP, 'rent', 'De cada dólar vendido, cuánto se convierte en generación de caja operativa, sin descontar depreciación (un gasto contable que no implica salida de efectivo).'),
+      fila('Margen neto', d=>d.margenNeto, fmtP, 'rent', 'De cada dólar vendido, cuánto queda finalmente como ganancia para los socios, después de todos los gastos, intereses e impuestos.'),
+      fila('ROA — Rentabilidad sobre activos', d=>d.roa, fmtP, 'rent', 'Qué tan eficiente es la empresa generando utilidad con todo lo que posee (activos), sin importar cómo se financió.'),
+      fila('ROE — Rentabilidad sobre patrimonio', d=>d.roe, fmtP, 'rent', 'El retorno que están recibiendo los socios sobre su inversión en la empresa. Es el indicador que más les interesa a los accionistas. Óptimo: >15%.'),
+      fila('ROIC — Retorno sobre capital invertido', d=>d.roi, fmtP, 'rent', 'El retorno que genera el negocio sobre todo el capital que financia su operación (deuda + patrimonio), después de impuestos — útil para comparar contra el costo de ese capital.'),
+      fila('EBIT (USD)', d=>d.ebit, fmtN, 'rent', 'La utilidad que genera el negocio antes de pagar intereses de deuda e impuesto a la renta — refleja el desempeño puro de la operación.'),
+      fila('EBITDA (USD)', d=>d.ebitda, fmtN, 'rent', 'La caja que genera la operación del negocio antes de intereses, impuestos y depreciación — el indicador más usado para valorar la capacidad de generación de efectivo de una empresa.'),
     ]),
     seccion('DUPONT Y EFICIENCIA',[
-      fila('Margen neto (Dupont)', d=>d.margenNeto, fmtP, 'rent', 'Utilidad Neta / Ventas — 1er factor del ROE'),
-      fila('Rotación de activos (Dupont)', d=>d.rotActivos, fmtR, 'rot', 'Ventas / Total Activos — 2do factor del ROE'),
-      fila('Multiplicador de apalancamiento', d=>d.multiplicadorApalancamiento, fmtR, 'end', 'Activo Total / Patrimonio — 3er factor del ROE (óptimo: 1.5x–2.5x)'),
-      fila('ROE verificado (Margen × Rotación × Apalanc.)', d=>d.margenNeto/100*d.rotActivos*d.multiplicadorApalancamiento*100, fmtP, 'rent', 'Debe coincidir con el ROE de Rentabilidad — confirma la descomposición Dupont'),
-      fila('Gasto Administrativo / Ventas', d=>d.gastoAdminVentas, fmtP, 'end', 'Menor es más eficiente — óptimo: <12%'),
-      fila('Gasto de Ventas / Ventas', d=>d.gastoVentaVentas, fmtP, 'end', 'Menor es más eficiente — óptimo: <10%'),
-      fila('Capital de trabajo / Ventas', d=>d.capitalTrabajoVentas, fmtP, 'liquidez', 'Capital de Trabajo Neto / Ventas — recursos inmovilizados por cada $100 vendidos'),
-      fila('Cobertura de deuda con EBITDA (veces)', d=>d.coberturaDeudaEbitda, fmtR, 'liquidez', 'EBITDA / Deuda Financiera Total — óptimo: >0.33x (deuda pagable en <3 años)'),
+      fila('Margen neto (Dupont)', d=>d.margenNeto, fmtP, 'rent', 'Primer motor de la rentabilidad del accionista: qué tan rentable es cada venta que hace la empresa.'),
+      fila('Rotación de activos (Dupont)', d=>d.rotActivos, fmtR, 'rot', 'Segundo motor de la rentabilidad del accionista: qué tan eficientemente se usan los activos para generar ventas.'),
+      fila('Multiplicador de apalancamiento', d=>d.multiplicadorApalancamiento, fmtR, 'end', 'Tercer motor de la rentabilidad del accionista: cuánto se está usando la deuda para potenciar el retorno sobre el patrimonio. Un valor muy alto añade riesgo. Rango típico saludable: 1.5x–2.5x.'),
+      fila('ROE verificado (Margen × Rotación × Apalanc.)', d=>d.margenNeto/100*d.rotActivos*d.multiplicadorApalancamiento*100, fmtP, 'rent', 'Recalcula el ROE combinando los tres motores anteriores — sirve para confirmar que el análisis Dupont cuadra con la rentabilidad real reportada.'),
+      fila('Gasto Administrativo / Ventas', d=>d.gastoAdminVentas, fmtP, 'end', 'Qué tan pesada es la estructura administrativa en relación con lo que la empresa factura. Un porcentaje alto sugiere oportunidad de hacer la operación más liviana. Óptimo: <12%.'),
+      fila('Gasto de Ventas / Ventas', d=>d.gastoVentaVentas, fmtP, 'end', 'Cuánto cuesta comercialmente generar cada dólar de venta (publicidad, comisiones, fuerza de ventas). Óptimo: <10%.'),
+      fila('Capital de trabajo / Ventas', d=>d.capitalTrabajoVentas, fmtP, 'liquidez', 'Cuántos dólares de capital de trabajo se necesitan inmovilizar por cada $100 que se factura — a mayor porcentaje, más capital "atrapado" requiere el crecimiento del negocio.'),
+      fila('Cobertura de deuda con EBITDA (veces)', d=>d.coberturaDeudaEbitda, fmtR, 'liquidez', 'Cuánto de la deuda financiera total se podría pagar con la caja operativa generada en un solo período. Óptimo: >0.33x (equivale a pagar la deuda en menos de 3 años).'),
     ]),
     seccion('ESTRUCTURA DE ACTIVOS Y PASIVOS',[
-      fila('Activo Corriente / Activo Total', d=>d.pesoActivoCorriente, fmtP, 'liquidez', 'Qué porción del activo es de corto plazo'),
-      fila('Activo No Corriente / Activo Total', d=>d.pesoActivoNoCorriente, fmtP, 'rot', 'Qué porción del activo es de largo plazo (fijo/inversiones)'),
-      fila('Pasivo Corriente / Pasivo Total', d=>d.pesoPasivoCorriente, fmtP, 'end', 'Qué porción de la deuda vence en el corto plazo'),
-      fila('Pasivo No Corriente / Pasivo Total', d=>d.pesoPasivoNoCorriente, fmtP, 'liquidez', 'Qué porción de la deuda es de largo plazo'),
-      fila('Índice de Solvencia', d=>d.solvencia, fmtR, 'liquidez', 'Activo Total / Pasivo Total — capacidad de cubrir toda la deuda con el activo — óptimo: >1.5x'),
-      fila('Capital de trabajo / Activo Total', d=>d.capitalTrabajoActivo, fmtP, 'liquidez', 'Qué porción del activo total es capital de trabajo neto'),
+      fila('Activo Corriente / Activo Total', d=>d.pesoActivoCorriente, fmtP, 'liquidez', 'Qué porción de todo lo que tiene la empresa es de fácil conversión en efectivo (caja, cuentas por cobrar, inventario) frente a activos de largo plazo.'),
+      fila('Activo No Corriente / Activo Total', d=>d.pesoActivoNoCorriente, fmtP, 'rot', 'Qué porción de la inversión total de la empresa está en activos de largo plazo, como maquinaria, edificios o inversiones — dinero comprometido para varios años.'),
+      fila('Pasivo Corriente / Pasivo Total', d=>d.pesoPasivoCorriente, fmtP, 'end', 'Qué porción de toda la deuda de la empresa vence dentro del próximo año — mientras más alto, mayor presión de caja en el corto plazo.'),
+      fila('Pasivo No Corriente / Pasivo Total', d=>d.pesoPasivoNoCorriente, fmtP, 'liquidez', 'Qué porción de la deuda total tiene plazos más cómodos, de largo plazo, dando más margen de maniobra financiera.'),
+      fila('Índice de Solvencia', d=>d.solvencia, fmtR, 'liquidez', 'Con todo lo que la empresa posee, cuántas veces podría cubrir el total de sus deudas — un colchón de seguridad ante escenarios adversos. Óptimo: >1.5x.'),
+      fila('Capital de trabajo / Activo Total', d=>d.capitalTrabajoActivo, fmtP, 'liquidez', 'Qué porción de todos los recursos de la empresa está destinada a sostener la operación diaria (capital de trabajo), en lugar de activos de largo plazo.'),
     ]),
     seccion('EFICIENCIA OPERATIVA',[
-      fila('Productividad laboral (veces)', d=>d.productividadLaboral, fmtR, 'rot', 'Ventas / Gasto de Personal — ventas generadas por cada $1 de nómina'),
-      fila('Gastos operativos / Ventas', d=>d.gastosOperVentas, fmtP, 'end', '(Gasto Admin. + Gasto Ventas) / Ventas — óptimo: <20%'),
-      fila('Costo de Ventas / Ventas', d=>d.costoVentasPct, fmtP, 'end', 'Peso del costo directo sobre el precio de venta'),
-      fila('Cuentas por Cobrar / Cuentas por Pagar', d=>d.relacionCxcCxp, fmtR, 'liquidez', '>1 = financias más a tus clientes de lo que te financian tus proveedores'),
+      fila('Productividad laboral (veces)', d=>d.productividadLaboral, fmtR, 'rot', 'Cuántos dólares de venta genera la empresa por cada dólar que paga en sueldos — un indicador clave de qué tan bien remunerado está retornando el equipo humano.'),
+      fila('Gastos operativos / Ventas', d=>d.gastosOperVentas, fmtP, 'end', 'Qué porción de cada venta se consume en gastos administrativos y de ventas combinados — mide qué tan liviana o pesada es la estructura de gastos del negocio. Óptimo: <20%.'),
+      fila('Costo de Ventas / Ventas', d=>d.costoVentasPct, fmtP, 'end', 'Qué porción del precio de venta corresponde al costo directo del producto o servicio — el complemento exacto del margen bruto.'),
+      fila('Cuentas por Cobrar / Cuentas por Pagar', d=>d.relacionCxcCxp, fmtR, 'liquidez', 'Compara cuánto le financia la empresa a sus clientes contra cuánto le financian a ella sus proveedores. Un valor mayor a 1x significa que la empresa está poniendo más capital propio en la calle del que recibe prestado.'),
     ]),
     seccion('CARGA FISCAL',[
-      fila('Tasa efectiva de Impuesto a la Renta', d=>d.tasaEfectivaIR, fmtP, 'end', 'IR causado / Utilidad antes de impuestos — referencia: tarifa societaria 22-25%'),
-      fila('Participación Trabajadores / Utilidad antes de Imp.', d=>d.participacionTrabPct, fmtP, 'end', 'Referencia legal Ecuador: 15%'),
-      fila('Carga fiscal total (IR + Trabajadores)', d=>d.cargaFiscalTotal, fmtP, 'end', 'Porción de la utilidad antes de impuestos que se destina a IR + participación trabajadores'),
+      fila('Tasa efectiva de Impuesto a la Renta', d=>d.tasaEfectivaIR, fmtP, 'end', 'El porcentaje real de la utilidad antes de impuestos que se destina a Impuesto a la Renta, una vez aplicadas todas las conciliaciones tributarias. Referencia: tarifa societaria vigente 22-25%.'),
+      fila('Participación Trabajadores / Utilidad antes de Imp.', d=>d.participacionTrabPct, fmtP, 'end', 'El porcentaje de la utilidad antes de impuestos que corresponde por ley a los trabajadores. Referencia legal en Ecuador: 15%.'),
+      fila('Carga fiscal total (IR + Trabajadores)', d=>d.cargaFiscalTotal, fmtP, 'end', 'De cada dólar de utilidad antes de impuestos, cuánto se destina en total entre Impuesto a la Renta y participación de trabajadores — lo que realmente le queda a la empresa es el complemento de este porcentaje.'),
     ]),
     seccion('PUNTO DE EQUILIBRIO Y APALANCAMIENTO',[
-      fila('Punto de equilibrio en ventas (USD)', d=>d.puntoEquilibrio, fmtN, 'end', 'Ventas mínimas para no perder ni ganar (aproximación costos fijos/variables)'),
-      fila('Margen de seguridad', d=>d.margenSeguridad, fmtP, 'rent', '(Ventas − Punto de Equilibrio) / Ventas — cuánto pueden caer las ventas antes de perder'),
-      fila('Grado de apalancamiento operativo (veces)', d=>d.grosOperativo, fmtR, 'end', 'Sensibilidad del EBIT ante cambios en ventas — mayor = más riesgo operativo'),
-      fila('Grado de apalancamiento financiero (veces)', d=>d.grosFinanciero, fmtR, 'end', 'Sensibilidad de la utilidad neta ante cambios en el EBIT — mayor = más riesgo financiero'),
-      fila('Grado de apalancamiento total (combinado)', d=>d.grosTotal, fmtR, 'end', 'Apalancamiento Operativo × Financiero — riesgo total del negocio'),
+      fila('Punto de equilibrio en ventas (USD)', d=>d.puntoEquilibrio, fmtN, 'end', 'El nivel mínimo de ventas que la empresa necesita alcanzar para cubrir todos sus costos, sin ganar ni perder (estimación basada en separar costos fijos y variables).'),
+      fila('Margen de seguridad', d=>d.margenSeguridad, fmtP, 'rent', 'Qué tanto podrían caer las ventas actuales antes de que la empresa empiece a perder dinero. Un margen amplio da más tranquilidad ante caídas de demanda.'),
+      fila('Grado de apalancamiento operativo (veces)', d=>d.grosOperativo, fmtR, 'end', 'Qué tan sensible es la utilidad operativa ante cambios en las ventas. Un valor alto significa que pequeñas caídas en ventas golpean fuerte la utilidad — típico de negocios con muchos costos fijos.'),
+      fila('Grado de apalancamiento financiero (veces)', d=>d.grosFinanciero, fmtR, 'end', 'Qué tan sensible es la utilidad neta ante cambios en la utilidad operativa, por efecto de la carga de deuda. Un valor alto indica que la empresa depende mucho del financiamiento externo.'),
+      fila('Grado de apalancamiento total (combinado)', d=>d.grosTotal, fmtR, 'end', 'El riesgo total del negocio combinando el riesgo operativo (estructura de costos) y el riesgo financiero (nivel de deuda) — mide cuánto se amplifica una variación en ventas hasta llegar a la utilidad final del accionista.'),
     ]),
     seccion('CRECIMIENTO (vs. período anterior)',
       periodos.length > 1 ? [
@@ -9728,29 +9728,29 @@ function renderKPIsEF() {
     <h4 style="color:var(--gold);margin-bottom:4px">Tablero de KPIs — ${ultimo.nombre}</h4>
     <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:16px">Indicadores clave de gestión, más allá de los índices financieros clásicos. ${!anterior?'Cargue un segundo período para ver tendencias de crecimiento.':''}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-bottom:20px">
-      ${tarjeta('📈','Crecimiento en Ventas', crecVentas!==null?(crecVentas>=0?'+':'')+crecVentas.toFixed(1)+'%':'—', crecVentas===null?'var(--text-muted)':colorPorRango(crecVentas,5,0), crecVentas===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
-      ${tarjeta('💵','Crecimiento en Utilidad', crecUtilidad!==null?(crecUtilidad>=0?'+':'')+crecUtilidad.toFixed(1)+'%':'—', crecUtilidad===null?'var(--text-muted)':colorPorRango(crecUtilidad,5,0), crecUtilidad===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
-      ${tarjeta('⚖️','Punto de Equilibrio (Ventas)', act.puntoEquilibrio>0?fmtN(act.puntoEquilibrio):'N/D', 'var(--gold)', 'Ventas mínimas para no perder ni ganar (aprox.)')}
-      ${tarjeta('🛟','Margen de Seguridad', fmtP(act.margenSeguridad), colorPorRango(act.margenSeguridad,20,10), 'Cuánto pueden caer las ventas antes de entrar en pérdida')}
-      ${tarjeta('🎚️','Apalancamiento Operativo', act.apalancOperativo?fmtR(act.apalancOperativo):'N/D', 'var(--gold)', 'Sensibilidad del EBIT ante cambios en ventas')}
-      ${tarjeta('🎛️','Apalancamiento Financiero', act.apalancFinanciero?fmtR(act.apalancFinanciero):'N/D', 'var(--gold)', 'Sensibilidad de la utilidad neta ante cambios en el EBIT')}
-      ${tarjeta('💎','EVA Aproximado', fmtN(act.evaAprox), act.evaAprox>=0?'var(--emerald)':'#ef4444', 'EBIT×(1-22%) − Activo×10% costo capital (asumido)')}
-      ${tarjeta('🏗️','Capital de Trabajo', fmtN(act.capitalTrabajo), act.capitalTrabajo>=0?'var(--emerald)':'#ef4444', 'Activo Corriente − Pasivo Corriente')}
-      ${tarjeta('🔄','Productividad del Activo', fmtR(act.rotActivos), colorPorRango(act.rotActivos,0.8,0.4), 'Ventas generadas por cada $1 de activo')}
-      ${tarjeta('🛡️','Autonomía Financiera', fmtP(act.autonomia), colorPorRango(act.autonomia,40,25), 'Patrimonio / Activo Total')}
-      ${tarjeta('📊','Margen Operacional', fmtP(act.margenOper), colorPorRango(act.margenOper,10,5), 'EBIT / Ventas')}
-      ${tarjeta('🏦','Índice de Solvencia', fmtR(act.solvencia), colorPorRango(act.solvencia,1.5,1.2), 'Activo Total / Pasivo Total')}
-      ${tarjeta('🧾','Tasa Efectiva de Impuesto a la Renta', fmtP(act.tasaEfectivaIR), 'var(--gold)', 'IR causado / Utilidad antes de impuestos')}
-      ${tarjeta('🔁','Ciclo de Conversión de Efectivo', Math.round(act.cicloConversion)+' días', colorPorRango(act.cicloConversion,30,60,true), 'Días cobro + Días inventario − Días pago — menor es mejor')}
-      ${tarjeta('💹','ROIC Aproximado', fmtP(act.roic), colorPorRango(act.roic,10,5), 'NOPAT / (Deuda + Patrimonio)')}
-      ${tarjeta('💧','Razón Corriente', fmtR(act.razonCorriente), colorPorRango(act.razonCorriente,1.5,1.0), 'Activo Corriente / Pasivo Corriente — capacidad de pago inmediata')}
-      ${tarjeta('🧪','Prueba Ácida', fmtR(act.pruebaAcida), colorPorRango(act.pruebaAcida,1.0,0.7), '(Activo Corriente − Inventarios) / Pasivo Corriente')}
-      ${tarjeta('⚠️','Endeudamiento sobre Patrimonio', fmtP(act.endeudPat), colorPorRango(act.endeudPat,100,150,true), 'Pasivo Total / Patrimonio — óptimo: <100%')}
-      ${tarjeta('📥','Días de Cobro', Math.round(act.diasCobro)+' días', colorPorRango(act.diasCobro,30,60,true), 'Tiempo promedio en cobrar a clientes')}
-      ${tarjeta('📤','Días de Pago', Math.round(act.diasPago)+' días', 'var(--gold)', 'Tiempo promedio en pagar a proveedores')}
-      ${tarjeta('📦','Días de Inventario', Math.round(act.diasInv)+' días', colorPorRango(act.diasInv,60,90,true), 'Tiempo promedio en vender el inventario')}
-      ${tarjeta('🏆','ROA — Retorno sobre Activos', fmtP(act.roa), colorPorRango(act.roa,5,2), 'Utilidad Neta / Total Activos')}
-      ${tarjeta('🔁','Rotación de Inventario', fmtR(act.rotInv), colorPorRango(act.rotInv,4,2), 'Costo de Ventas / Inventarios — veces al año')}
+      ${tarjeta('📈','Crecimiento en Ventas', crecVentas!==null?(crecVentas>=0?'+':'')+crecVentas.toFixed(1)+'%':'—', crecVentas===null?'var(--text-muted)':colorPorRango(crecVentas,5,0), crecVentas===null?'Requiere 2+ períodos':'Qué tanto crecieron los ingresos frente al período anterior — vs. '+anterior.nombre)}
+      ${tarjeta('💵','Crecimiento en Utilidad', crecUtilidad!==null?(crecUtilidad>=0?'+':'')+crecUtilidad.toFixed(1)+'%':'—', crecUtilidad===null?'var(--text-muted)':colorPorRango(crecUtilidad,5,0), crecUtilidad===null?'Requiere 2+ períodos':'Qué tanto creció la ganancia final frente al período anterior — vs. '+anterior.nombre)}
+      ${tarjeta('⚖️','Punto de Equilibrio (Ventas)', act.puntoEquilibrio>0?fmtN(act.puntoEquilibrio):'N/D', 'var(--gold)', 'El monto mínimo que la empresa necesita vender para no perder ni ganar dinero')}
+      ${tarjeta('🛟','Margen de Seguridad', fmtP(act.margenSeguridad), colorPorRango(act.margenSeguridad,20,10), 'Qué tanto colchón hay entre las ventas actuales y el punto donde la empresa empieza a perder')}
+      ${tarjeta('🎚️','Apalancamiento Operativo', act.apalancOperativo?fmtR(act.apalancOperativo):'N/D', 'var(--gold)', 'Qué tan expuesta está la utilidad del negocio a subidas o bajadas en las ventas, por su estructura de costos fijos')}
+      ${tarjeta('🎛️','Apalancamiento Financiero', act.apalancFinanciero?fmtR(act.apalancFinanciero):'N/D', 'var(--gold)', 'Qué tanto amplifica la deuda el efecto de los resultados del negocio sobre la ganancia final de los socios')}
+      ${tarjeta('💎','EVA Aproximado', fmtN(act.evaAprox), act.evaAprox>=0?'var(--emerald)':'#ef4444', 'Si el negocio realmente está creando valor una vez descontado el costo de oportunidad del capital invertido (positivo = sí crea valor)')}
+      ${tarjeta('🏗️','Capital de Trabajo', fmtN(act.capitalTrabajo), act.capitalTrabajo>=0?'var(--emerald)':'#ef4444', 'El respaldo financiero disponible para sostener la operación del día a día')}
+      ${tarjeta('🔄','Productividad del Activo', fmtR(act.rotActivos), colorPorRango(act.rotActivos,0.8,0.4), 'Cuántos dólares de venta produce cada dólar que la empresa tiene invertido')}
+      ${tarjeta('🛡️','Autonomía Financiera', fmtP(act.autonomia), colorPorRango(act.autonomia,40,25), 'Qué porción de la empresa es realmente de los socios, y no de los acreedores')}
+      ${tarjeta('📊','Margen Operacional', fmtP(act.margenOper), colorPorRango(act.margenOper,10,5), 'La rentabilidad pura del negocio, antes de intereses e impuestos')}
+      ${tarjeta('🏦','Índice de Solvencia', fmtR(act.solvencia), colorPorRango(act.solvencia,1.5,1.2), 'El respaldo patrimonial de la empresa frente a la totalidad de sus deudas')}
+      ${tarjeta('🧾','Tasa Efectiva de Impuesto a la Renta', fmtP(act.tasaEfectivaIR), 'var(--gold)', 'El porcentaje real que la empresa termina pagando de Impuesto a la Renta sobre su utilidad')}
+      ${tarjeta('🔁','Ciclo de Conversión de Efectivo', Math.round(act.cicloConversion)+' días', colorPorRango(act.cicloConversion,30,60,true), 'Cuántos días, en neto, el negocio tiene su dinero atrapado entre pagar a proveedores y cobrar a clientes')}
+      ${tarjeta('💹','ROIC Aproximado', fmtP(act.roic), colorPorRango(act.roic,10,5), 'El retorno que genera el negocio sobre todo el capital que lo financia, sin importar si es deuda o de los socios')}
+      ${tarjeta('💧','Razón Corriente', fmtR(act.razonCorriente), colorPorRango(act.razonCorriente,1.5,1.0), 'La capacidad de la empresa para cubrir sus obligaciones de corto plazo con lo que tiene disponible en el mismo plazo')}
+      ${tarjeta('🧪','Prueba Ácida', fmtR(act.pruebaAcida), colorPorRango(act.pruebaAcida,1.0,0.7), 'La capacidad de pago inmediata de la empresa, sin depender de vender el inventario')}
+      ${tarjeta('⚠️','Endeudamiento sobre Patrimonio', fmtP(act.endeudPat), colorPorRango(act.endeudPat,100,150,true), 'Cuánta deuda tiene la empresa frente a lo que realmente le pertenece a los socios')}
+      ${tarjeta('📥','Días de Cobro', Math.round(act.diasCobro)+' días', colorPorRango(act.diasCobro,30,60,true), 'Cuánto tarda en promedio un cliente en pagarle a la empresa')}
+      ${tarjeta('📤','Días de Pago', Math.round(act.diasPago)+' días', 'var(--gold)', 'Cuánto tarda en promedio la empresa en pagarle a sus proveedores')}
+      ${tarjeta('📦','Días de Inventario', Math.round(act.diasInv)+' días', colorPorRango(act.diasInv,60,90,true), 'Cuánto tiempo permanece la mercadería en bodega antes de venderse')}
+      ${tarjeta('🏆','ROA — Retorno sobre Activos', fmtP(act.roa), colorPorRango(act.roa,5,2), 'Qué tan bien está usando la empresa todo lo que posee para generar ganancias')}
+      ${tarjeta('🔁','Rotación de Inventario', fmtR(act.rotInv), colorPorRango(act.rotInv,4,2), 'Cuántas veces al año se renueva por completo el inventario del negocio')}
     </div>
 
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
