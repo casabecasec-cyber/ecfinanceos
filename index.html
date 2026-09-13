@@ -2053,129 +2053,36 @@ details[id^="ced-card-"] summary { outline:none; }
         </div>
       </div>
 
-      <!-- SELECCIÓN DE TIPO DE AUDITORÍA — INDEPENDIENTES -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px">
-
-        <!-- FINANCIERA -->
-        <div class="ap-tipo-card activo" id="tipo-card-financiera"
-          onclick="activarTipoAuditoria('financiera',this)"
-          style="cursor:pointer;position:relative">
+      <!-- TIPOS DE AUDITORÍA — CADA UNO INDEPENDIENTE -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="ap-tipo-card activo" id="tipo-card-financiera" onclick="cambiarTipoAudit('financiera',this)">
           <div class="ap-tipo-icon">📊</div>
           <div class="ap-tipo-nombre">Financiera</div>
-          <div class="ap-tipo-desc">Razonabilidad de EEFF · NIIF · Fichas analíticas · Confirmaciones externas</div>
-          <div id="tipo-badge-financiera" style="display:none;position:absolute;top:8px;right:8px;
-            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
-            ACTIVO
-          </div>
+          <div class="ap-tipo-desc">Razonabilidad de EEFF · NIIF · Fichas analíticas</div>
         </div>
-
-        <!-- TRIBUTARIA -->
-        <div class="ap-tipo-card" id="tipo-card-tributaria"
-          onclick="activarTipoAuditoria('tributaria',this)"
-          style="cursor:pointer;position:relative">
+        <div class="ap-tipo-card" id="tipo-card-tributaria" onclick="cambiarTipoAudit('tributaria',this)">
           <div class="ap-tipo-icon">🧾</div>
           <div class="ap-tipo-nombre">Tributaria</div>
-          <div class="ap-tipo-desc">Cumplimiento SRI · IVA · Retenciones · Impuesto a la Renta · Anexos ATS</div>
-          <div id="tipo-badge-tributaria" style="display:none;position:absolute;top:8px;right:8px;
-            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
-            ACTIVO
-          </div>
+          <div class="ap-tipo-desc">SRI · IVA · Retenciones · IR · Anexos ATS</div>
         </div>
-
-        <!-- FORENSE -->
-        <div class="ap-tipo-card" id="tipo-card-forense"
-          onclick="activarTipoAuditoria('forense',this)"
-          style="cursor:pointer;position:relative">
+        <div class="ap-tipo-card" id="tipo-card-forense" onclick="cambiarTipoAudit('forense',this)">
           <div class="ap-tipo-icon">🔍</div>
           <div class="ap-tipo-nombre">Forense</div>
-          <div class="ap-tipo-desc">Detección de fraude · Ley de Benford · Duplicados · Anomalías estadísticas</div>
-          <div id="tipo-badge-forense" style="display:none;position:absolute;top:8px;right:8px;
-            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
-            ACTIVO
-          </div>
+          <div class="ap-tipo-desc">Fraude · Ley de Benford · Duplicados</div>
         </div>
-
-        <!-- GESTIÓN -->
-        <div class="ap-tipo-card" id="tipo-card-gestion"
-          onclick="activarTipoAuditoria('gestion',this)"
-          style="cursor:pointer;position:relative">
+        <div class="ap-tipo-card" id="tipo-card-gestion" onclick="cambiarTipoAudit('gestion',this)">
           <div class="ap-tipo-icon">⚙️</div>
           <div class="ap-tipo-nombre">Gestión</div>
-          <div class="ap-tipo-desc">Eficiencia operativa · Control interno · 3E (Economía, Eficacia, Eficiencia)</div>
-          <div id="tipo-badge-gestion" style="display:none;position:absolute;top:8px;right:8px;
-            font-size:.6rem;padding:2px 6px;background:var(--emerald);color:#fff;border-radius:8px;font-weight:700">
-            ACTIVO
-          </div>
+          <div class="ap-tipo-desc">Eficiencia · Control interno · 3E</div>
         </div>
       </div>
 
-      <!-- PANEL DE INICIO — cambia según el tipo activo -->
-      <div class="card" id="ap-inicio-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-          <h3 style="margin:0" id="ap-inicio-titulo">📊 Auditoría Financiera</h3>
-          <button class="btn-secondary" onclick="cargarHistorialExpedientes()" style="font-size:.72rem">🔄 Actualizar historial</button>
-        </div>
-
-        <!-- Formulario nuevo expediente -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px" id="ap-form-nuevo">
-          <div class="form-group">
-            <label>Empresa / Entidad Auditada</label>
-            <input type="text" id="ap-empresa" placeholder="Nombre de la empresa">
-          </div>
-          <div class="form-group">
-            <label>RUC / Identificación</label>
-            <input type="text" id="ap-ruc" placeholder="RUC de la entidad" style="font-family:var(--font-mono)">
-          </div>
-          <div class="form-group">
-            <label>Período de Auditoría</label>
-            <input type="text" id="ap-periodo" placeholder="Ej: 01/01/2025 al 31/12/2025">
-          </div>
-          <div class="form-group">
-            <label>Auditor Responsable</label>
-            <input type="text" id="ap-auditor" placeholder="Nombre del auditor">
-          </div>
-          <div class="form-group">
-            <label>Código de Expediente</label>
-            <input type="text" id="ap-expediente" placeholder="Ej: AUD-FIN-2025-001" style="font-family:var(--font-mono)">
-          </div>
-        </div>
-        <button class="btn-calc" onclick="iniciarExpedienteAuditoria()"
-          style="background:linear-gradient(135deg,var(--gold),#b8960a);color:#000;margin-bottom:20px">
-          📂 Iniciar Expediente de Auditoría
-        </button>
-
-        <!-- Carga de información -->
-        <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px">
-          <h4 style="margin:0 0 10px;color:var(--gold)">📥 Carga de Información</h4>
-          <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">Suba los estados financieros o registros de transacciones para el análisis.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <label class="btn-secondary" style="cursor:pointer">
-              📁 Cargar CSV <input type="file" accept=".csv" style="display:none" onchange="cargarCSVTransacciones(this)">
-            </label>
-            <label class="btn-calc" style="cursor:pointer;background:linear-gradient(135deg,#059669,#0a9468)">
-              📊 Cargar Excel <input type="file" accept=".xlsx,.xls" style="display:none" onchange="cargarTransaccionesAuditoria(this)">
-            </label>
-            <button class="btn-calc" onclick="usarDatosEstadosFinancieros()"
-              style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
-              🔗 Usar datos de Estados Financieros
-            </button>
-            <button class="btn-secondary" onclick="cargarEjemploAuditoria()">📋 Datos de Ejemplo</button>
-          </div>
-          <div id="ap-datos-status" style="margin-top:10px;font-size:.78rem;color:var(--text-muted)"></div>
-          <div id="ap-eeff-selector" style="display:none;margin-top:8px"></div>
-        </div>
-
-        <!-- Historial filtrado por tipo -->
-        <div style="border-top:1px solid var(--border);padding-top:16px">
-          <h4 style="margin:0 0 10px;color:var(--gold)" id="ap-historial-titulo">📚 Expedientes — Auditoría Financiera</h4>
-          <div id="ap-historial-expedientes">
-            <p style="color:var(--text-muted);font-size:.78rem">Cargando expedientes...</p>
-          </div>
-        </div>
+      <!-- PANEL DINÁMICO POR TIPO — se reemplaza al cambiar tipo -->
+      <div id="ap-tipo-panel">
+        <!-- Se renderiza por cambiarTipoAudit() -->
       </div>
 
-
-            <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
+      <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
       <div id="ap-panel-principal" style="display:none">
 
         <!-- TABS DE TRABAJO -->
@@ -3837,7 +3744,7 @@ function filterBiblioteca(query) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); cargarHistorialExpedientes(); autoRestaurarUltimoExpediente(); });
+document.addEventListener('DOMContentLoaded', () => { initBiblioteca(); renderListaEEFFGuardados(); autoRestaurarUltimoExpediente(); renderPanelTipo('financiera'); });
 
 
 // ═══════════════ pizarra.js ═══════════════
@@ -13355,12 +13262,154 @@ const AP_FASES = {
 
 // ── Inicio de expediente ─────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════════════════
+// TIPOS DE AUDITORÍA — PANELES INDEPENDIENTES
+// ═══════════════════════════════════════════════════════════════════════
+
+const AUDIT_TIPOS = {
+  financiera: { icon:'📊', nombre:'Auditoría Financiera',   color:'var(--gold)' },
+  tributaria: { icon:'🧾', nombre:'Auditoría Tributaria',   color:'#6366f1' },
+  forense:    { icon:'🔍', nombre:'Auditoría Forense',       color:'#ef4444' },
+  gestion:    { icon:'⚙️', nombre:'Auditoría de Gestión',   color:'var(--emerald)' },
+};
+
+// Estado por tipo — cada tipo mantiene su propio expediente activo
+window._estadoPorTipo = window._estadoPorTipo || {
+  financiera: null,
+  tributaria: null,
+  forense:    null,
+  gestion:    null,
+};
+window._tipoActivo = window._tipoActivo || 'financiera';
+
+function cambiarTipoAudit(tipo, btnEl) {
+  // Guardar estado del tipo actual antes de cambiar
+  if (window._tipoActivo && _apExpediente) {
+    window._estadoPorTipo[window._tipoActivo] = {
+      expediente: _apExpediente,
+      cedulas:    window._apCedulas || {},
+      eeff:       window._apEEFFSeleccionado || null,
+    };
+  }
+
+  // Activar nuevo tipo
+  window._tipoActivo = tipo;
+  window._apTipoSeleccionado = tipo;
+
+  // UI — tarjetas
+  document.querySelectorAll('.ap-tipo-card').forEach(c => c.classList.remove('activo'));
+  (btnEl || document.getElementById(`tipo-card-${tipo}`))?.classList.add('activo');
+
+  // Restaurar estado del tipo seleccionado si existe en memoria
+  const estado = window._estadoPorTipo[tipo];
+  if (estado?.expediente) {
+    _apExpediente             = estado.expediente;
+    window._apCedulas         = estado.cedulas || {};
+    window._apEEFFSeleccionado= estado.eeff;
+  } else {
+    // Ningún expediente activo para este tipo
+    _apExpediente             = null;
+    window._apCedulas         = {};
+    window._apEEFFSeleccionado= null;
+  }
+
+  // Ocultar panel principal hasta que abran un expediente
+  const panel = document.getElementById('ap-panel-principal');
+  const badge = document.getElementById('ap-expediente-badge');
+  if (_apExpediente) {
+    if (panel) panel.style.display = 'block';
+    if (badge) badge.style.display = 'block';
+    document.getElementById('ap-expediente-codigo').textContent = _apExpediente.codigo || '';
+    document.getElementById('ap-tipo-label').textContent = tipo;
+  } else {
+    if (panel) panel.style.display = 'none';
+    if (badge) badge.style.display = 'none';
+  }
+
+  // Renderizar el panel del tipo
+  renderPanelTipo(tipo);
+}
+
+async function renderPanelTipo(tipo) {
+  const el = document.getElementById('ap-tipo-panel');
+  if (!el) return;
+
+  const t = AUDIT_TIPOS[tipo] || AUDIT_TIPOS.financiera;
+
+  el.innerHTML = `
+    <div class="card">
+      <!-- Encabezado del tipo -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0;color:${t.color}">${t.icon} ${t.nombre}</h3>
+        <button class="btn-secondary" onclick="renderPanelTipo('${tipo}')" style="font-size:.72rem">🔄 Actualizar</button>
+      </div>
+
+      <!-- Nuevo expediente -->
+      <div style="background:var(--bg-card2);border-radius:10px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+        <h4 style="margin:0 0 12px;color:var(--text-secondary);font-size:.82rem;text-transform:uppercase;letter-spacing:.05em">
+          + Nuevo expediente de ${t.nombre}
+        </h4>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:12px">
+          <div class="form-group">
+            <label style="font-size:.72rem">Empresa</label>
+            <input type="text" id="ap-empresa" placeholder="Nombre de la empresa"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.72rem">RUC</label>
+            <input type="text" id="ap-ruc" placeholder="RUC de la entidad"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-family:var(--font-mono)">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.72rem">Período</label>
+            <input type="text" id="ap-periodo" placeholder="Ej: 01/01/2025 al 31/12/2025"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.72rem">Auditor</label>
+            <input type="text" id="ap-auditor" placeholder="Nombre del auditor"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary)">
+          </div>
+          <div class="form-group">
+            <label style="font-size:.72rem">Código</label>
+            <input type="text" id="ap-expediente" placeholder="AUD-${tipo.toUpperCase().slice(0,3)}-2025-001"
+              style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-family:var(--font-mono)">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button onclick="iniciarExpedienteAuditoria()" class="btn-calc"
+            style="background:linear-gradient(135deg,${t.color},${t.color}cc)">
+            📂 Iniciar Expediente
+          </button>
+          <button onclick="usarDatosEstadosFinancieros()"
+            style="padding:7px 12px;background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);border-radius:6px;cursor:pointer;font-size:.78rem">
+            🔗 Vincular EEFF
+          </button>
+          <div id="ap-datos-status" style="font-size:.78rem;color:var(--text-muted)"></div>
+          <div id="ap-eeff-selector" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Expedientes activos de este tipo -->
+      <h4 style="margin:0 0 10px;color:${t.color};font-size:.82rem;text-transform:uppercase;letter-spacing:.05em">
+        📋 Expedientes de ${t.nombre}
+      </h4>
+      <div id="ap-historial-expedientes">
+        <p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando...</p>
+      </div>
+    </div>`;
+
+  // Load expedientes for this tipo
+  await cargarHistorialExpedientes(tipo);
+}
+
+
 function iniciarExpedienteAuditoria() {
-  const empresa = document.getElementById('ap-empresa')?.value;
-  const ruc = document.getElementById('ap-ruc')?.value;
-  const periodo = document.getElementById('ap-periodo')?.value;
-  const auditor = document.getElementById('ap-auditor')?.value || window._userDisplay || 'Auditor';
-  const tipo = window._apTipoSeleccionado || 'financiera';
+  const empresa = document.getElementById('ap-empresa')?.value?.trim();
+  const ruc     = document.getElementById('ap-ruc')?.value?.trim();
+  const periodo = document.getElementById('ap-periodo')?.value?.trim();
+  const auditor = document.getElementById('ap-auditor')?.value?.trim() || window._userDisplay || 'Auditor';
+  const tipo    = window._tipoActivo || window._apTipoSeleccionado || 'financiera';
   const tiposLabel = { financiera:'Auditoría Financiera', tributaria:'Auditoría Tributaria', forense:'Auditoría Forense', gestion:'Auditoría de Gestión' };
 
   if (!empresa || !periodo) { toast('Complete empresa y período antes de iniciar', 'warning'); return; }
@@ -14528,89 +14577,91 @@ async function migrarCedulasAntiguas(expKey, antiguas, outEl) {
 async function cargarHistorialExpedientes(filtroTipo) {
   const el = document.getElementById('ap-historial-expedientes');
   if (!el) return;
-  el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando expedientes...</p>';
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.78rem">⏳ Cargando...</p>';
 
-  // Usar el tipo activo si no se pasa filtro
-  const tipoActivo = filtroTipo || window._apTipoSeleccionado || 'financiera';
-
-
-    // Filtrar por tipo activo
-    const items = todosItems.filter(([, v]) => (v.tipo || 'financiera') === tipoActivo);
-    // Otros tipos para mostrar resumen
-    const otrosTipos = {};
-    todosItems.filter(([,v]) => (v.tipo||'financiera') !== tipoActivo).forEach(([,v]) => {
-      const t = v.tipo || 'financiera';
-      if (!otrosTipos[t]) otrosTipos[t] = 0;
-      otrosTipos[t]++;
-    });
+  const tipo = filtroTipo || window._tipoActivo || 'financiera';
 
   try {
     const data = await FirebaseDB.get('audit_pro') || {};
-    const items = Object.entries(data)
+    const todos = Object.entries(data)
       .filter(([, v]) => v && v.codigo)
       .sort((a, b) => (b[1].fecha || '').localeCompare(a[1].fecha || ''));
 
+    // Filtrar por tipo
+    const items = todos.filter(([, v]) => (v.tipo || 'financiera') === tipo);
+
     if (!items.length) {
-      el.innerHTML = `<div style="padding:16px;text-align:center">
-        <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">
-          No hay expedientes de <strong>${tipoActivo}</strong> guardados.
-          Use el formulario de arriba para crear el primero.
-        </p>
-        ${Object.keys(otrosTipos).length ? `<div style="font-size:.75rem;color:var(--text-muted);padding:8px;background:var(--bg-card2);border-radius:6px">
-          También tiene expedientes en: 
-          ${Object.entries(otrosTipos).map(([t,n])=>`<span onclick="activarTipoAuditoria('${t}',document.getElementById('tipo-card-${t}'))" style="cursor:pointer;color:var(--gold);text-decoration:underline">${t} (${n})</span>`).join(' · ')}
-        </div>` : ''}
-      </div>`;
+      // Show message + quick links to other types that have expedientes
+      const otrosConDatos = {};
+      todos.filter(([,v]) => (v.tipo||'financiera') !== tipo).forEach(([,v]) => {
+        const t = v.tipo || 'financiera';
+        if (!otrosConDatos[t]) otrosConDatos[t] = [];
+        otrosConDatos[t].push(v.empresa || v.codigo);
+      });
+
+      let otrosHtml = '';
+      if (Object.keys(otrosConDatos).length) {
+        otrosHtml = '<div style="margin-top:10px;font-size:.75rem;color:var(--text-muted)">' +
+          'Tiene expedientes en: ' +
+          Object.entries(otrosConDatos).map(([t, emps]) =>
+            `<span onclick="cambiarTipoAudit('${t}',document.getElementById('tipo-card-${t}'))"
+              style="cursor:pointer;color:var(--gold);text-decoration:underline;margin-right:8px">
+              ${AUDIT_TIPOS[t]?.nombre||t} (${emps.length})
+            </span>`
+          ).join('') +
+          '</div>';
+      }
+
+      el.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem">
+        No hay expedientes de ${AUDIT_TIPOS[tipo]?.nombre||tipo} aún.
+        Use el formulario de arriba para crear el primero.
+      </p>${otrosHtml}`;
       return;
     }
 
     const estadoBadge = e => {
-      const col = e === 'completada' ? 'var(--emerald)' : e === 'en-proceso' ? '#f59e0b' : 'var(--text-muted)';
-      const txt = e === 'completada' ? '✅ Completada' : e === 'en-proceso' ? '🔄 En proceso' : '⬜ Pendiente';
-      return `<span style="font-size:.68rem;padding:2px 8px;border-radius:10px;background:${col}22;color:${col};font-weight:600">${txt}</span>`;
+      const col = e==='completada'?'var(--emerald)':e==='en-proceso'?'#f59e0b':'var(--text-muted)';
+      const txt = e==='completada'?'✅ Completada':e==='en-proceso'?'🔄 En proceso':'⬜ Pendiente';
+      return `<span style="font-size:.68rem;padding:2px 8px;border-radius:10px;
+        background:${col}22;color:${col};font-weight:600;white-space:nowrap">${txt}</span>`;
     };
 
     el.innerHTML = `
       <div style="overflow-x:auto">
         <table class="ef-table">
           <thead><tr>
-            <th class="left">Código</th>
+            <th class="left" style="min-width:130px">Código</th>
             <th class="left">Empresa</th>
-            <th>Tipo</th>
-            <th>Período</th>
-            <th>Auditor</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Acciones</th>
+            <th style="text-align:center">Período</th>
+            <th style="text-align:center">Auditor</th>
+            <th style="text-align:center">Fecha</th>
+            <th style="text-align:center">Estado</th>
+            <th style="text-align:center;width:130px">Acciones</th>
           </tr></thead>
           <tbody>
             ${items.map(([key, exp]) => `
               <tr>
-                <td style="font-family:var(--font-mono);font-size:.74rem;color:var(--gold)">
-                  <strong>${exp.codigo || key}</strong>
+                <td>
+                  <span style="font-family:var(--font-mono);font-size:.74rem;color:var(--gold);font-weight:700">
+                    ${exp.codigo||key}
+                  </span>
                 </td>
-                <td class="account" style="font-size:.8rem">${exp.empresa || '—'}</td>
-                <td style="text-align:center;font-size:.74rem">${exp.tipo || '—'}</td>
-                <td style="font-size:.72rem;color:var(--text-muted)">${exp.periodo || '—'}</td>
-                <td style="font-size:.72rem;color:var(--text-muted)">${exp.auditor || '—'}</td>
-                <td style="font-size:.72rem;color:var(--text-muted)">
-                  ${exp.fecha ? new Date(exp.fecha).toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                <td class="account" style="font-size:.8rem">${exp.empresa||'—'}</td>
+                <td style="text-align:center;font-size:.75rem;color:var(--text-muted)">${exp.periodo||'—'}</td>
+                <td style="text-align:center;font-size:.75rem;color:var(--text-muted)">${exp.auditor||'—'}</td>
+                <td style="text-align:center;font-size:.72rem;color:var(--text-muted)">
+                  ${exp.fecha ? new Date(exp.fecha).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
                 </td>
                 <td style="text-align:center">${estadoBadge(exp.estado)}</td>
-                <td style="white-space:nowrap">
+                <td style="text-align:center;white-space:nowrap">
                   <button onclick="abrirExpediente('${key}')"
                     style="background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);
-                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
+                    border-radius:5px;padding:3px 10px;cursor:pointer;font-size:.72rem;margin-right:3px">
                     📂 Abrir
-                  </button>
-                  <button onclick="editarExpediente('${key}')"
-                    style="background:rgba(99,102,241,.1);color:#6366f1;border:1px solid rgba(99,102,241,.3);
-                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem;margin-right:3px">
-                    ✏️ Editar
                   </button>
                   <button onclick="borrarExpediente('${key}','${(exp.codigo||key).replace(/'/g,'')}','${(exp.empresa||'').replace(/'/g,'')}')"
                     style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);
-                    border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.7rem">
+                    border-radius:5px;padding:3px 7px;cursor:pointer;font-size:.72rem">
                     🗑
                   </button>
                 </td>
@@ -14619,7 +14670,7 @@ async function cargarHistorialExpedientes(filtroTipo) {
         </table>
       </div>`;
   } catch (err) {
-    el.innerHTML = `<p style="color:#ef4444;font-size:.78rem">Error al cargar expedientes: ${err.message}</p>`;
+    el.innerHTML = `<p style="color:#ef4444;font-size:.78rem">Error: ${err.message}</p>`;
     console.error('cargarHistorialExpedientes:', err);
   }
 }
@@ -14698,20 +14749,23 @@ async function abrirExpediente(key) {
   renderCedulasAnaliticasCompleto && renderCedulasAnaliticasCompleto();
   renderCedulasSumarias && renderCedulasSumarias();
 
-  // Guardar en localStorage para auto-restaurar en próxima sesión
-  localStorage.setItem('financeOS-ultimo-expediente', key);
-
   // Guardar en slot del tipo para independencia entre tipos
-  window._expedientesPorTipo = window._expedientesPorTipo || {};
-  window._expedientesPorTipo[exp.tipo || 'financiera'] = {
+  window._estadoPorTipo = window._estadoPorTipo || {};
+  window._estadoPorTipo[exp.tipo || 'financiera'] = {
     expediente: exp,
-    cedulas: window._apCedulas || {},
-    eeff: window._apEEFFSeleccionado || null,
+    cedulas:    window._apCedulas || {},
+    eeff:       window._apEEFFSeleccionado || null,
   };
 
-  // Actualizar badge del tipo card
-  const tipoBadge = document.getElementById(`tipo-badge-${exp.tipo||'financiera'}`);
-  if (tipoBadge) tipoBadge.style.display = 'block';
+  // Activar el tipo correcto si es diferente al actual
+  if (exp.tipo && exp.tipo !== window._tipoActivo) {
+    window._tipoActivo = exp.tipo;
+    document.querySelectorAll('.ap-tipo-card').forEach(c => c.classList.remove('activo'));
+    document.getElementById(`tipo-card-${exp.tipo}`)?.classList.add('activo');
+  }
+
+  // Guardar en localStorage para auto-restaurar en próxima sesión
+  localStorage.setItem('financeOS-ultimo-expediente', key);
 
   // Restaurar todos los módulos guardados
   await restaurarModulosExpediente(key);
@@ -15136,7 +15190,29 @@ async function crearCedulasDesdeSeleccion() {
   // Merge y guardar
   const todas = { ...existentes, ...nuevasCedulas };
   window._apCedulas = todas;
-  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`, todas);
+
+  // Guardar en Firebase con verificación
+  const statusEl = document.createElement('div');
+  statusEl.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:12px 18px;background:#1e293b;border:1px solid #f59e0b;border-radius:10px;color:#fcd34d;font-size:.82rem';
+  statusEl.textContent = '⏳ Guardando cédulas en Firebase...';
+  document.body.appendChild(statusEl);
+
+  try {
+    await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`, todas);
+    // Verify it was saved
+    const verify = await FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas`);
+    const savedCount = verify ? Object.keys(verify).length : 0;
+    statusEl.style.borderColor = '#059669';
+    statusEl.style.color = '#6ee7b7';
+    statusEl.textContent = `✅ ${savedCount} cédula${savedCount!==1?'s':''} guardada${savedCount!==1?'s':''} en Firebase`;
+    setTimeout(() => statusEl.remove(), 4000);
+  } catch(err) {
+    statusEl.style.borderColor = '#ef4444';
+    statusEl.style.color = '#fca5a5';
+    statusEl.textContent = `❌ Error al guardar: ${err.message}`;
+    setTimeout(() => statusEl.remove(), 6000);
+    console.error('Error guardando cédulas:', err);
+  }
 
   document.getElementById('ced-selector-modal')?.remove();
   renderCedulasAnaliticasCompleto();
@@ -15579,11 +15655,20 @@ async function guardarCedulaEditada(cedulaId) {
 
   cedulas[cedulaId] = updated;
   window._apCedulas = cedulas;
-  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`, updated);
-  document.getElementById('ced-edit-modal')?.remove();
-  window._cedulaEditando = null;
-  renderCedulasAnaliticasCompleto();
-  toast('Cédula guardada ✓', 'success');
+
+  try {
+    await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`, updated);
+    // Verify
+    const check = await FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/cedulas_analiticas/${cedulaId}`);
+    if (!check) throw new Error('Verificación fallida — no se encontró en Firebase tras guardar');
+    document.getElementById('ced-edit-modal')?.remove();
+    window._cedulaEditando = null;
+    renderCedulasAnaliticasCompleto();
+    toast(`✅ Cédula "${updated.ref}" guardada y verificada en Firebase`, 'success');
+  } catch(err) {
+    console.error('Error guardando cédula:', err);
+    toast(`❌ Error al guardar cédula: ${err.message} — Verifique conexión`, 'error');
+  }
 }
 
 async function borrarCedulaAnalitica(cedulaId) {
@@ -19305,6 +19390,38 @@ const _origActivar = typeof initNavegacion !== 'undefined' ? null : null;
 // El app.js ya maneja el routing dinámico por data-module
 
 
+
+// ── Auto-guardado de cédulas cada 2 minutos ───────────────────────────────
+setInterval(async () => {
+  try {
+    if (!_apExpediente?.codigo || !window._apCedulas ||
+        Object.keys(window._apCedulas).length === 0 || !_fbReady) return;
+    await FirebaseDB.set(
+      `audit_pro/${_apExpediente.codigo}/cedulas_analiticas`,
+      window._apCedulas
+    );
+    console.log(`✅ Auto-guardado: ${Object.keys(window._apCedulas).length} cédulas`);
+  } catch(e) {
+    console.warn('Auto-guardado cédulas falló:', e.message);
+  }
+}, 2 * 60 * 1000); // cada 2 minutos
+
+// Auto-guardado al cerrar/recargar la página
+window.addEventListener('beforeunload', () => {
+  if (!_apExpediente?.codigo || !window._apCedulas ||
+      Object.keys(window._apCedulas).length === 0 || !_fbReady) return;
+  // Usar sendBeacon para garantizar el envío antes de cerrar
+  const url = `https://casabecas-8afea-default-rtdb.firebaseio.com/audit_pro/${_apExpediente.codigo}/cedulas_analiticas.json`;
+  try {
+    navigator.sendBeacon(url, JSON.stringify(window._apCedulas));
+  } catch(e) {
+    // Fallback síncrono
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url, false);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(window._apCedulas));
+  }
+});
 </script>
 
 <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema claro/oscuro">🌙</button>
