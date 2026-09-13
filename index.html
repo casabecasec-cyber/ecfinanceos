@@ -7313,6 +7313,7 @@ function imprimirSeccionEF(tab, titulo) {
   const empresa = periodos[periodos.length-1]?.nombreEmpresa || '';
   const años = periodos.map(p=>p.nombre).join(', ');
   const win = window.open('','_blank');
+  if (!win) { toast('El navegador bloqueó la ventana emergente. Habilítala e intenta de nuevo.', 'error'); return; }
   win.document.write(`<html><head><title>${titulo} — ${empresa} ${años}</title><style>
     body{font-family:Georgia,serif;padding:30px 40px;color:#1a1a2e;font-size:9pt}
     h1{color:#1a1a2e;font-size:16pt}h2,h4,h5{color:#1a1a2e}
@@ -7325,12 +7326,16 @@ function imprimirSeccionEF(tab, titulo) {
     .positive{color:#059669}.negative{color:#dc2626}
     .card{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:14px}
     @page{size:A4;margin:15mm}
-  </style></head><body>
-    <h1>${titulo}</h1>
-    <p style="font-size:9pt;color:#555">${empresa||'Estados Financieros'} | Períodos: ${años} | Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
-    ${html}
-  </body></html>`);
+  </style></head><body></body></html>`);
   win.document.close();
+  const body = win.document.body;
+  const encabezado = win.document.createElement('div');
+  encabezado.innerHTML = `<h1>${titulo}</h1>
+    <p style="font-size:9pt;color:#555">${empresa||'Estados Financieros'} | Períodos: ${años} | Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>`;
+  body.appendChild(encabezado);
+  const cuerpo = win.document.createElement('div');
+  cuerpo.innerHTML = html;
+  body.appendChild(cuerpo);
   setTimeout(() => win.print(), 600);
 }
 
@@ -7339,7 +7344,15 @@ function imprimirTodosEEFF() {
   const empresa = periodos[periodos.length-1]?.nombreEmpresa || '';
   const años = periodos.map(p=>p.nombre).join(', ');
   const contenido = recolectarTodosLosEstados();
+  if (!contenido || contenido.trim().length < 20) {
+    toast(`⚠️ No se pudo recolectar contenido para imprimir (longitud: ${contenido?contenido.length:0}). Revisa la consola (F12) por errores.`, 'error');
+    console.error('recolectarTodosLosEstados() devolvió contenido vacío o muy corto:', contenido);
+    return;
+  }
   const win = window.open('','_blank');
+  if (!win) { toast('El navegador bloqueó la ventana emergente. Habilítala e intenta de nuevo.', 'error'); return; }
+  // Se separa el <head> (chico, vía document.write) del <body> (grande, vía DOM directo)
+  // porque document.write() con documentos muy largos puede fallar en silencio en algunos navegadores.
   win.document.write(`<html><head><title>EEFF ${empresa} ${años}</title><style>
     body{font-family:Georgia,serif;padding:30px 40px;color:#1a1a2e;font-size:9pt}
     h1{color:#1a1a2e;font-size:16pt}h2{color:#1a1a2e;font-size:13pt;margin-top:30px}
@@ -7355,13 +7368,20 @@ function imprimirTodosEEFF() {
     .card{border:1px solid #ddd;border-radius:6px;padding:14px;margin-bottom:14px}
     @page{size:A4;margin:15mm}
     @media print{.seccion-ef{page-break-before:always}}
-  </style></head><body>
-    <h1>${empresa||'Estados Financieros'}</h1>
-    <p style="font-size:9pt;color:#555">Períodos: ${años} | Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
-    ${contenido}
-    <p style="font-size:8pt;color:#888;margin-top:30px;border-top:1px solid #ccc;padding-top:8px">Generado por FinanceOS Ecuador · Las cifras están expresadas en dólares de los Estados Unidos (USD)</p>
-  </body></html>`);
+  </style></head><body></body></html>`);
   win.document.close();
+  const body = win.document.body;
+  const encabezado = win.document.createElement('div');
+  encabezado.innerHTML = `<h1>${empresa||'Estados Financieros'}</h1>
+    <p style="font-size:9pt;color:#555">Períodos: ${años} | Generado: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>`;
+  body.appendChild(encabezado);
+  const cuerpo = win.document.createElement('div');
+  cuerpo.innerHTML = contenido;
+  body.appendChild(cuerpo);
+  const pie = win.document.createElement('p');
+  pie.style.cssText = 'font-size:8pt;color:#888;margin-top:30px;border-top:1px solid #ccc;padding-top:8px';
+  pie.textContent = 'Generado por FinanceOS Ecuador · Las cifras están expresadas en dólares de los Estados Unidos (USD)';
+  body.appendChild(pie);
   setTimeout(() => win.print(), 600);
 }
 
@@ -7402,7 +7422,13 @@ function exportarPDFEEFF() {
   const empresa = periodos[periodos.length-1]?.nombreEmpresa || '';
   const años = periodos.map(p=>p.nombre).join(', ');
   const contenido = recolectarTodosLosEstados();
+  if (!contenido || contenido.trim().length < 20) {
+    toast(`⚠️ No se pudo recolectar contenido para el PDF (longitud: ${contenido?contenido.length:0}). Revisa la consola (F12).`, 'error');
+    console.error('recolectarTodosLosEstados() devolvió contenido vacío o muy corto:', contenido);
+    return;
+  }
   const win = window.open('','_blank');
+  if (!win) { toast('El navegador bloqueó la ventana emergente. Habilítala e intenta de nuevo.', 'error'); return; }
   win.document.write(`<html><head><title>EEFF ${empresa} ${años}</title><style>
     body{font-family:Georgia,serif;padding:30px 40px;color:#1a1a2e;font-size:9pt}
     h1{color:#1a1a2e;font-size:16pt}h2{color:#1a1a2e;font-size:13pt;margin-top:30px;border-bottom:1.5px solid #D4AF37;padding-bottom:4px}
@@ -7418,15 +7444,21 @@ function exportarPDFEEFF() {
     .no-print{display:none}
     @page{size:A4;margin:12mm 15mm}
     @media print{.seccion-ef{page-break-before:always;margin-top:0}}
-  </style></head><body>
-    <div class="no-print" style="background:#f0f0f0;padding:10px;margin-bottom:20px;border-radius:6px;font-size:10pt">
-      💡 Para guardar como PDF: <strong>Ctrl+P</strong> → Destino: <strong>Guardar como PDF</strong> → Guardar
-    </div>
-    <h1>${empresa||'Estados Financieros'}</h1>
-    <p style="font-size:9pt;color:#555">Períodos: ${años} | ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
-    ${contenido}
-  </body></html>`);
+  </style></head><body></body></html>`);
   win.document.close();
+  const body = win.document.body;
+  const aviso = win.document.createElement('div');
+  aviso.className = 'no-print';
+  aviso.style.cssText = 'background:#f0f0f0;padding:10px;margin-bottom:20px;border-radius:6px;font-size:10pt';
+  aviso.innerHTML = '💡 Para guardar como PDF: <strong>Ctrl+P</strong> → Destino: <strong>Guardar como PDF</strong> → Guardar';
+  body.appendChild(aviso);
+  const encabezado = win.document.createElement('div');
+  encabezado.innerHTML = `<h1>${empresa||'Estados Financieros'}</h1>
+    <p style="font-size:9pt;color:#555">Períodos: ${años} | ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>`;
+  body.appendChild(encabezado);
+  const cuerpo = win.document.createElement('div');
+  cuerpo.innerHTML = contenido;
+  body.appendChild(cuerpo);
   setTimeout(() => win.print(), 600);
 }
 
@@ -9304,6 +9336,16 @@ function renderIndicesEF() {
     const ebitda = ebit + gDep;
     // Capital de trabajo neto
     const ctn   = ac - pc;
+    const gVenta = g('GASTO VENTAS');
+    const partTrab = g('PARTICIPACION TRABAJADORES GASTO');
+    const utilAntesImp = utNeta + irPagar + partTrab;
+    // Aproximación de costos fijos/variables para punto de equilibrio y apalancamiento operativo
+    const costosFijos = gPers + gAdmin + gDep;
+    const costoVarRatio = vtas ? (costo+gVenta)/vtas : 0;
+    const puntoEquilibrio = costoVarRatio < 1 ? costosFijos/(1-costoVarRatio) : 0;
+    const margenContrib = vtas - (costo+gVenta);
+    const grosOperativo = (margenContrib-costosFijos) ? margenContrib/(margenContrib-costosFijos) : 0;
+    const grosFinanciero = (ebit-gFin) ? ebit/(ebit-gFin) : 0;
     // Activos promedios para rentabilidad (usamos el activo del período)
     return {
       // LIQUIDEZ
@@ -9338,9 +9380,28 @@ function renderIndicesEF() {
       // DUPONT Y EFICIENCIA ADICIONAL
       multiplicadorApalancamiento: pat ? ta/pat : 0,
       gastoAdminVentas: vtas ? gAdmin/vtas*100 : 0,
-      gastoVentaVentas: vtas ? g('GASTO VENTAS')/vtas*100 : 0,
+      gastoVentaVentas: vtas ? gVenta/vtas*100 : 0,
       capitalTrabajoVentas: vtas ? ctn/vtas*100 : 0,
       coberturaDeudaEbitda: deudaT ? ebitda/deudaT : 0,
+      // ESTRUCTURA DE ACTIVOS Y PASIVOS
+      pesoActivoCorriente: ta ? ac/ta*100 : 0,
+      pesoActivoNoCorriente: ta ? anc/ta*100 : 0,
+      pesoPasivoCorriente: tp ? pc/tp*100 : 0,
+      pesoPasivoNoCorriente: tp ? pnc/tp*100 : 0,
+      solvencia: tp ? ta/tp : 0,
+      capitalTrabajoActivo: ta ? ctn/ta*100 : 0,
+      // EFICIENCIA OPERATIVA
+      productividadLaboral: gPers ? vtas/gPers : 0,
+      gastosOperVentas: vtas ? (gAdmin+gVenta)/vtas*100 : 0,
+      costoVentasPct: vtas ? costo/vtas*100 : 0,
+      relacionCxcCxp: cxp ? cxc/cxp : 0,
+      // CARGA FISCAL
+      tasaEfectivaIR: utilAntesImp ? irPagar/utilAntesImp*100 : 0,
+      participacionTrabPct: utilAntesImp ? partTrab/utilAntesImp*100 : 0,
+      cargaFiscalTotal: utilAntesImp ? (irPagar+partTrab)/utilAntesImp*100 : 0,
+      // PUNTO DE EQUILIBRIO Y APALANCAMIENTO
+      puntoEquilibrio, margenSeguridad: vtas ? (vtas-puntoEquilibrio)/vtas*100 : 0,
+      grosOperativo, grosFinanciero, grosTotal: grosOperativo*grosFinanciero,
       ebit, ebitda, vtas, utNeta, ta, pat, tp,
     };
   };
@@ -9434,6 +9495,32 @@ function renderIndicesEF() {
       fila('Gasto de Ventas / Ventas', d=>d.gastoVentaVentas, fmtP, 'end', 'Menor es más eficiente — óptimo: <10%'),
       fila('Capital de trabajo / Ventas', d=>d.capitalTrabajoVentas, fmtP, 'liquidez', 'Capital de Trabajo Neto / Ventas — recursos inmovilizados por cada $100 vendidos'),
       fila('Cobertura de deuda con EBITDA (veces)', d=>d.coberturaDeudaEbitda, fmtR, 'liquidez', 'EBITDA / Deuda Financiera Total — óptimo: >0.33x (deuda pagable en <3 años)'),
+    ]),
+    seccion('ESTRUCTURA DE ACTIVOS Y PASIVOS',[
+      fila('Activo Corriente / Activo Total', d=>d.pesoActivoCorriente, fmtP, 'liquidez', 'Qué porción del activo es de corto plazo'),
+      fila('Activo No Corriente / Activo Total', d=>d.pesoActivoNoCorriente, fmtP, 'rot', 'Qué porción del activo es de largo plazo (fijo/inversiones)'),
+      fila('Pasivo Corriente / Pasivo Total', d=>d.pesoPasivoCorriente, fmtP, 'end', 'Qué porción de la deuda vence en el corto plazo'),
+      fila('Pasivo No Corriente / Pasivo Total', d=>d.pesoPasivoNoCorriente, fmtP, 'liquidez', 'Qué porción de la deuda es de largo plazo'),
+      fila('Índice de Solvencia', d=>d.solvencia, fmtR, 'liquidez', 'Activo Total / Pasivo Total — capacidad de cubrir toda la deuda con el activo — óptimo: >1.5x'),
+      fila('Capital de trabajo / Activo Total', d=>d.capitalTrabajoActivo, fmtP, 'liquidez', 'Qué porción del activo total es capital de trabajo neto'),
+    ]),
+    seccion('EFICIENCIA OPERATIVA',[
+      fila('Productividad laboral (veces)', d=>d.productividadLaboral, fmtR, 'rot', 'Ventas / Gasto de Personal — ventas generadas por cada $1 de nómina'),
+      fila('Gastos operativos / Ventas', d=>d.gastosOperVentas, fmtP, 'end', '(Gasto Admin. + Gasto Ventas) / Ventas — óptimo: <20%'),
+      fila('Costo de Ventas / Ventas', d=>d.costoVentasPct, fmtP, 'end', 'Peso del costo directo sobre el precio de venta'),
+      fila('Cuentas por Cobrar / Cuentas por Pagar', d=>d.relacionCxcCxp, fmtR, 'liquidez', '>1 = financias más a tus clientes de lo que te financian tus proveedores'),
+    ]),
+    seccion('CARGA FISCAL',[
+      fila('Tasa efectiva de Impuesto a la Renta', d=>d.tasaEfectivaIR, fmtP, 'end', 'IR causado / Utilidad antes de impuestos — referencia: tarifa societaria 22-25%'),
+      fila('Participación Trabajadores / Utilidad antes de Imp.', d=>d.participacionTrabPct, fmtP, 'end', 'Referencia legal Ecuador: 15%'),
+      fila('Carga fiscal total (IR + Trabajadores)', d=>d.cargaFiscalTotal, fmtP, 'end', 'Porción de la utilidad antes de impuestos que se destina a IR + participación trabajadores'),
+    ]),
+    seccion('PUNTO DE EQUILIBRIO Y APALANCAMIENTO',[
+      fila('Punto de equilibrio en ventas (USD)', d=>d.puntoEquilibrio, fmtN, 'end', 'Ventas mínimas para no perder ni ganar (aproximación costos fijos/variables)'),
+      fila('Margen de seguridad', d=>d.margenSeguridad, fmtP, 'rent', '(Ventas − Punto de Equilibrio) / Ventas — cuánto pueden caer las ventas antes de perder'),
+      fila('Grado de apalancamiento operativo (veces)', d=>d.grosOperativo, fmtR, 'end', 'Sensibilidad del EBIT ante cambios en ventas — mayor = más riesgo operativo'),
+      fila('Grado de apalancamiento financiero (veces)', d=>d.grosFinanciero, fmtR, 'end', 'Sensibilidad de la utilidad neta ante cambios en el EBIT — mayor = más riesgo financiero'),
+      fila('Grado de apalancamiento total (combinado)', d=>d.grosTotal, fmtR, 'end', 'Apalancamiento Operativo × Financiero — riesgo total del negocio'),
     ]),
     seccion('CRECIMIENTO (vs. período anterior)',
       periodos.length > 1 ? [
@@ -9586,18 +9673,31 @@ function renderKPIsEF() {
     const ta = g(p,'TOTAL ACTIVO') || (g(p,'TOTAL ACTIVO CORRIENTE')+g(p,'TOTAL ACTIVO NO CORRIENTE'));
     const pat = g(p,'TOTAL PATRIMONIO'), tp = g(p,'TOTAL PASIVO'), ac = g(p,'TOTAL ACTIVO CORRIENTE'), pc = g(p,'TOTAL PASIVO CORRIENTE');
     const utNeta = g(p,'UTILIDAD EJERCICIO'), ir = g(p,'IMPUESTO RENTA GASTO');
+    const partTrab = g(p,'PARTICIPACION TRABAJADORES GASTO');
     const ebit = utNeta + ir + gFin;
+    const cxc = g(p,'CUENTAS POR COBRAR'), cxp = g(p,'CUENTAS POR PAGAR'), inv = g(p,'INVENTARIOS');
     // Aproximación: costos fijos = personal + admin + depreciación; costo variable = costo de ventas + gasto de ventas
     const costosFijos = gPers + gAdmin + gDep;
     const costoVariableRatio = vtas ? (costo + gVenta) / vtas : 0;
     const puntoEquilibrio = costoVariableRatio < 1 ? costosFijos / (1 - costoVariableRatio) : 0;
     const margenContribucion = vtas - (costo + gVenta);
     const apalancOperativo = (margenContribucion - costosFijos) !== 0 ? margenContribucion / (margenContribucion - costosFijos) : 0;
+    const apalancFinanciero = (ebit - gFin) !== 0 ? ebit / (ebit - gFin) : 0;
     const wacc = 0.10; // costo de capital asumido para el EVA aproximado — ajustable según el caso
     const evaAprox = ebit*(1-0.22) - (ta*wacc);
     const capitalTrabajo = ac - pc;
-    return { vtas, utNeta, ebit, ta, pat, tp, puntoEquilibrio, apalancOperativo, evaAprox, capitalTrabajo,
-      rotActivos: ta?vtas/ta:0, margenOper: vtas?ebit/vtas*100:0, autonomia: ta?pat/ta*100:0 };
+    const utilAntesImp = utNeta + ir + partTrab;
+    const diasCobro = vtas&&cxc ? cxc/vtas*365 : 0;
+    const diasPago  = costo&&cxp ? cxp/costo*365 : 0;
+    const diasInv   = costo&&inv ? inv/costo*365 : 0;
+    return { vtas, utNeta, ebit, ta, pat, tp, puntoEquilibrio, apalancOperativo, apalancFinanciero, evaAprox, capitalTrabajo,
+      rotActivos: ta?vtas/ta:0, margenOper: vtas?ebit/vtas*100:0, autonomia: ta?pat/ta*100:0,
+      margenSeguridad: vtas ? (vtas-puntoEquilibrio)/vtas*100 : 0,
+      tasaEfectivaIR: utilAntesImp ? ir/utilAntesImp*100 : 0,
+      solvencia: tp ? ta/tp : 0,
+      roic: (tp+pat) ? ebit*(1-0.22)/(tp+pat)*100 : 0,
+      cicloConversion: diasCobro + diasInv - diasPago,
+    };
   };
 
   const act = calc(ultimo);
@@ -9625,12 +9725,18 @@ function renderKPIsEF() {
       ${tarjeta('📈','Crecimiento en Ventas', crecVentas!==null?(crecVentas>=0?'+':'')+crecVentas.toFixed(1)+'%':'—', crecVentas===null?'var(--text-muted)':colorPorRango(crecVentas,5,0), crecVentas===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
       ${tarjeta('💵','Crecimiento en Utilidad', crecUtilidad!==null?(crecUtilidad>=0?'+':'')+crecUtilidad.toFixed(1)+'%':'—', crecUtilidad===null?'var(--text-muted)':colorPorRango(crecUtilidad,5,0), crecUtilidad===null?'Requiere 2+ períodos':'vs. '+anterior.nombre)}
       ${tarjeta('⚖️','Punto de Equilibrio (Ventas)', act.puntoEquilibrio>0?fmtN(act.puntoEquilibrio):'N/D', 'var(--gold)', 'Ventas mínimas para no perder ni ganar (aprox.)')}
-      ${tarjeta('🎚️','Apalancamiento Operativo', act.apalancOperativo?fmtR(act.apalancOperativo):'N/D', 'var(--gold)', 'Sensibilidad de la utilidad ante cambios en ventas')}
+      ${tarjeta('🛟','Margen de Seguridad', fmtP(act.margenSeguridad), colorPorRango(act.margenSeguridad,20,10), 'Cuánto pueden caer las ventas antes de entrar en pérdida')}
+      ${tarjeta('🎚️','Apalancamiento Operativo', act.apalancOperativo?fmtR(act.apalancOperativo):'N/D', 'var(--gold)', 'Sensibilidad del EBIT ante cambios en ventas')}
+      ${tarjeta('🎛️','Apalancamiento Financiero', act.apalancFinanciero?fmtR(act.apalancFinanciero):'N/D', 'var(--gold)', 'Sensibilidad de la utilidad neta ante cambios en el EBIT')}
       ${tarjeta('💎','EVA Aproximado', fmtN(act.evaAprox), act.evaAprox>=0?'var(--emerald)':'#ef4444', 'EBIT×(1-22%) − Activo×10% costo capital (asumido)')}
       ${tarjeta('🏗️','Capital de Trabajo', fmtN(act.capitalTrabajo), act.capitalTrabajo>=0?'var(--emerald)':'#ef4444', 'Activo Corriente − Pasivo Corriente')}
       ${tarjeta('🔄','Productividad del Activo', fmtR(act.rotActivos), colorPorRango(act.rotActivos,0.8,0.4), 'Ventas generadas por cada $1 de activo')}
       ${tarjeta('🛡️','Autonomía Financiera', fmtP(act.autonomia), colorPorRango(act.autonomia,40,25), 'Patrimonio / Activo Total')}
       ${tarjeta('📊','Margen Operacional', fmtP(act.margenOper), colorPorRango(act.margenOper,10,5), 'EBIT / Ventas')}
+      ${tarjeta('🏦','Índice de Solvencia', fmtR(act.solvencia), colorPorRango(act.solvencia,1.5,1.2), 'Activo Total / Pasivo Total')}
+      ${tarjeta('🧾','Tasa Efectiva de Impuesto a la Renta', fmtP(act.tasaEfectivaIR), 'var(--gold)', 'IR causado / Utilidad antes de impuestos')}
+      ${tarjeta('🔁','Ciclo de Conversión de Efectivo', Math.round(act.cicloConversion)+' días', colorPorRango(act.cicloConversion,30,60,true), 'Días cobro + Días inventario − Días pago — menor es mejor')}
+      ${tarjeta('💹','ROIC Aproximado', fmtP(act.roic), colorPorRango(act.roic,10,5), 'NOPAT / (Deuda + Patrimonio)')}
     </div>
 
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
