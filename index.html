@@ -2095,6 +2095,7 @@ details[id^="ced-card-"] summary { outline:none; }
           <button class="bib-tab" onclick="showApTab('cedulas')">📄 Cédulas Analíticas</button>
           <button class="bib-tab" onclick="showApTab('sumarias')">📑 Cédulas Sumarias</button>
           <button class="bib-tab" id="ap-tab-btn-hoja-iva" onclick="showApTab('hoja-iva')" style="display:none">🧾 Hoja de Trabajo IVA</button>
+          <button class="bib-tab" id="ap-tab-btn-hoja-fuente" onclick="showApTab('hoja-fuente')" style="display:none">🧾 Hoja de Trabajo Retenciones (F103)</button>
           <button class="bib-tab" onclick="showApTab('programa')">📋 Programa de Auditoría</button>
           <button class="bib-tab" onclick="showApTab('pruebas-sust')">🔍 Pruebas Sustantivas</button>
           <button class="bib-tab" onclick="showApTab('coso')">🛡️ Sistema COSO</button>
@@ -2195,6 +2196,37 @@ details[id^="ced-card-"] summary { outline:none; }
             </p>
             <div id="hiva-pdf-status" style="font-size:.78rem;margin-bottom:10px"></div>
             <div id="hiva-tabla-wrap" style="overflow-x:auto"></div>
+          </div>
+        </div>
+
+        <!-- HOJA DE TRABAJO RETENCIONES EN LA FUENTE — FORM. 103 (Auditoría Tributaria) -->
+        <div class="bib-content" id="ap-hoja-fuente">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🧾 Hoja de Trabajo — Retenciones en la Fuente (F103)</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.72rem;color:var(--text-muted)">Año fiscal:
+                  <input type="text" id="hfte-anio" style="width:70px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);margin-left:4px" placeholder="2025" onchange="cambiarAnioFuente(this.value)">
+                </label>
+                <label style="font-size:.72rem;color:var(--text-muted)">Tipo:
+                  <select id="hfte-tipo-decl" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);margin-left:4px;font-size:.75rem">
+                    <option value="original">Original</option>
+                    <option value="sustitutiva">Sustitutiva</option>
+                  </select>
+                </label>
+                <label class="btn-calc" style="background:linear-gradient(135deg,#6366f1,#4f46e5);cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                  📄 Subir Declaración F103 (mes)
+                  <input type="file" accept="application/pdf" style="display:none" onchange="subirDeclaracionFuente(this)">
+                </label>
+                <button class="btn-secondary" onclick="guardarHojaFuente(true)">💾 Guardar</button>
+                <button class="btn-calc" onclick="generarInformeEjecutivoFuente()" style="background:linear-gradient(135deg,var(--emerald),#0a9468)">🖨 Informe Ejecutivo</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">
+              Ingrese las bases mensuales según libros/comprobantes (celdas en <span style="color:#93c5fd">azul</span> = digitación manual). Las columnas en gris (retenido) se calculan con la tasa correspondiente. Cada columna con un código de <strong>casillero SRI</strong> puede compararse contra la declaración F103: elija "Original" o "Sustitutiva" antes de subir el PDF. La fila "↳ Sustitutiva" (naranja) muestra la diferencia automática. Cada casillero tiene una marca 📄/📗 — clic para señalar que ya lo revisó contra los mayores contables.
+            </p>
+            <div id="hfte-pdf-status" style="font-size:.78rem;margin-bottom:10px"></div>
+            <div id="hfte-tabla-wrap" style="overflow-x:auto"></div>
           </div>
         </div>
 
@@ -13367,10 +13399,12 @@ function cambiarTipoAudit(tipo, btnEl) {
   actualizarTabHojaIVA();
 }
 
-// Muestra/oculta el tab "Hoja de Trabajo IVA" — solo aplica a Auditoría Tributaria
+// Muestra/oculta el tab "Hoja de Trabajo IVA" y "Hoja de Trabajo Retenciones (F103)" — solo aplica a Auditoría Tributaria
 function actualizarTabHojaIVA() {
   const btn = document.getElementById('ap-tab-btn-hoja-iva');
   if (btn) btn.style.display = (window._tipoActivo === 'tributaria') ? '' : 'none';
+  const btn2 = document.getElementById('ap-tab-btn-hoja-fuente');
+  if (btn2) btn2.style.display = (window._tipoActivo === 'tributaria') ? '' : 'none';
 }
 
 async function renderPanelTipo(tipo) {
@@ -13548,6 +13582,7 @@ function showApTab(tab) {
   }
   if (tab === 'sumarias') renderCedulasSumarias();
   if (tab === 'hoja-iva') cargarHojaIVA();
+  if (tab === 'hoja-fuente') cargarHojaFuente();
   if (tab === 'programa') generarProgramaAuditoria();
   if (tab === 'pruebas-sust') generarPruebasSustantivas();
   if (tab === 'coso') initCoso();
@@ -14126,6 +14161,470 @@ function generarInformeEjecutivoHojaIVA() {
   win.document.close();
   setTimeout(() => { win.print(); }, 400);
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// HOJA DE TRABAJO RETENCIONES EN LA FUENTE — FORMULARIO 103 — Auditoría Tributaria
+// Misma arquitectura que la Hoja de Trabajo IVA: columnas sin fórmula en el
+// Excel del usuario son de digitación manual; columnas con fórmula se
+// mantienen como fórmula. No hay arrastre entre meses (cada mes es
+// independiente en el F103, a diferencia del F104).
+// ══════════════════════════════════════════════════════════════════════════
+const HFTE_COLS = [
+  { c:'C',  l:'Base #302',                 k:302,  m:1 },
+  { c:'D',  l:'V. Retenido #302',          k:302,  m:1 },
+  { c:'E',  l:'Base #303',                 k:303,  m:1 },
+  { c:'F',  l:'Retenido #303 (10%)',       k:303,  f:r=>r.E*0.10 },
+  { c:'G',  l:'Base #304',                 k:304,  m:1 },
+  { c:'H',  l:'Retenido #304 (10%)',       k:304,  f:r=>r.G*0.10 },
+  { c:'I',  l:'Base #307',                 k:307,  m:1 },
+  { c:'J',  l:'Retenido #307 (2%)',        k:307,  f:r=>r.I*0.02 },
+  { c:'K',  l:'Base #3030',                k:3030, m:1 },
+  { c:'L',  l:'Retenido #3030 (3%)',       k:3030, f:r=>r.K*0.03 },
+  { c:'M',  l:'Base #309',                 k:309,  m:1 },
+  { c:'N',  l:'Retenido #309 (1.75%)',     k:309,  f:r=>r.M*0.0175 },
+  { c:'O',  l:'Base #310',                 k:310,  m:1 },
+  { c:'P',  l:'Retenido #310 (1%)',        k:310,  f:r=>r.O*0.01 },
+  { c:'Q',  l:'Base #311',                 k:311,  m:1 },
+  { c:'R',  l:'Retenido #311 (2%)',        k:311,  f:r=>r.Q*0.02 },
+  { c:'S',  l:'Base #312',                 k:312,  m:1 },
+  { c:'T',  l:'Retenido #312 (1.75%)',     k:312,  f:r=>r.S*0.0175 },
+  { c:'U',  l:'Base #320',                 k:320,  m:1 },
+  { c:'V',  l:'Retenido #320 (8%)',        k:320,  f:r=>r.U*0.08 },
+  { c:'W',  l:'Base #322',                 k:322,  m:1 },
+  { c:'X',  l:'Retenido #322 (1%)',        k:322,  f:r=>r.W*0.01 },
+  { c:'Y',  l:'Base #323',                 k:323,  m:1 },
+  { c:'Z',  l:'Retenido #323 (2%)',        k:323,  f:r=>r.Y*0.02 },
+  { c:'AA', l:'Base/Valor #332',           k:332,  m:1 },
+  { c:'AB', l:'Base #340',                 k:340,  m:1 },
+  { c:'AC', l:'Retenido #340',             k:340,  m:1 },
+  { c:'AD', l:'Base #3440',                k:3440, m:1 },
+  { c:'AE', l:'Retenido #3440 (2.75%)',    k:3440, f:r=>r.AD*0.0275 },
+  { c:'AF', l:'Base #343',                 k:343,  m:1 },
+  { c:'AG', l:'Retenido #343 (1%)',        k:343,  f:r=>r.AF*0.01 },
+  { c:'AH', l:'Total Base',                        f:r=>r.E+r.G+r.O+r.S+r.W+r.AA+r.AB+r.AD+r.U+r.Y+r.M+r.K+r.I+r.Q+r.AF },
+  { c:'AI', l:'Total Retenido',            k:399,  f:r=>r.D+r.F+r.H+r.P+r.T+r.V+r.X+r.AC+r.AE+r.Z+r.N+r.J+r.L+r.R+r.AG },
+  { c:'AJ', l:'Pago Previo',               k:401,  m:1 },
+  { c:'AK', l:'Interés',                   k:403,  m:1 },
+  { c:'AL', l:'Multa',                     k:405,  m:1 },
+  { c:'AM', l:'Pago Final',                k:499,  m:1 },
+  { c:'AN', l:'Diferencia',                        f:r=>r.AI-r.AJ-r.AM },
+];
+
+function calcularFilaFuente(manualVals) {
+  const r = {};
+  HFTE_COLS.forEach(col => {
+    if (col.m) r[col.c] = hivaNum(manualVals[col.c]);
+    else if (col.f) r[col.c] = col.f(r);
+  });
+  return r;
+}
+
+function recalcularFuenteCompleta() {
+  window._apHojaFuente = window._apHojaFuente || {};
+  const filas = {};
+  for (let mes = 1; mes <= 12; mes++) {
+    filas[mes] = calcularFilaFuente(window._apHojaFuente[mes] || {});
+  }
+  window._apHojaFuenteCalculado = filas;
+  return filas;
+}
+
+function cargarHojaFuente() {
+  const el = document.getElementById('hfte-tabla-wrap');
+  if (!el || !_apExpediente) return;
+  if (window._apHojaFuente) { renderFuenteTabla(); return; }
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">⏳ Cargando hoja de trabajo...</p>';
+  FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/hoja_fuente`).then(d => {
+    window._apHojaFuente = (d && d.meses) || {};
+    const decRaw = (d && d.declarados) || {};
+    const decMigrado = {};
+    Object.keys(decRaw).forEach(mes => {
+      const v = decRaw[mes];
+      if (v && (v.original || v.sustitutiva)) decMigrado[mes] = v;
+      else decMigrado[mes] = { original: v || {}, sustitutiva: {} };
+    });
+    window._apHojaFuenteDeclarados = decMigrado;
+    window._apHojaFuenteSust = (d && d.sustitutivaManual) || {};
+    window._apHojaFuenteRevisado = (d && d.revisado) || {};
+    window._apHojaFuenteAnio = (d && d.meta && d.meta.anio) || '';
+    const anioEl = document.getElementById('hfte-anio');
+    if (anioEl) anioEl.value = window._apHojaFuenteAnio;
+    renderFuenteTabla();
+  }).catch(() => {
+    window._apHojaFuente = {}; window._apHojaFuenteDeclarados = {}; window._apHojaFuenteSust = {}; window._apHojaFuenteRevisado = {};
+    renderFuenteTabla();
+  });
+}
+
+function cambiarAnioFuente(v) {
+  window._apHojaFuenteAnio = v;
+  guardarHojaFuente();
+}
+
+function renderFuenteTabla() {
+  const el = document.getElementById('hfte-tabla-wrap');
+  if (!el) return;
+  const filas = recalcularFuenteCompleta();
+  const declarados = window._apHojaFuenteDeclarados || {};
+  const sustManual = window._apHojaFuenteSust || {};
+  const revisado = window._apHojaFuenteRevisado || {};
+
+  const theadCols = ['<th style="min-width:90px;position:sticky;left:0;background:var(--bg-card2);z-index:2">MES</th>']
+    .concat(HFTE_COLS.map(col => `
+      <th style="min-width:98px;font-size:.65rem;padding:4px;background:${col.m?'rgba(147,197,253,.08)':'var(--bg-card2)'};color:var(--text-secondary);white-space:normal;line-height:1.15">
+        ${col.l}${col.k ? `<br><span style="color:var(--gold);font-weight:700">${hivaKeys(col).map(k=>'#'+k).join(' + ')}</span>` : ''}
+      </th>`));
+
+  const filasHtml = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const manual = window._apHojaFuente[mes] || {};
+    const r = filas[mes];
+    const dec = declarados[mes] || null;
+    const decOriginal = (dec && dec.original) || null;
+    const sustFila = sustManual[mes] || {};
+    const revFila = revisado[mes] || {};
+
+    const tds = HFTE_COLS.map(col => {
+      const val = r[col.c] || 0;
+      const editable = !!col.m;
+      let cmp = '';
+      if (col.k && decOriginal && decOriginal[hivaKeyId(col)] !== undefined && !editable) {
+        const declarado = decOriginal[hivaKeyId(col)];
+        const diff = Math.round((val - declarado) * 100) / 100;
+        const codLabel = hivaKeys(col).map(k=>'#'+k).join('+');
+        if (Math.abs(diff) < 0.02) {
+          cmp = ` <span title="Declarado F103 ${codLabel}: $${declarado.toFixed(2)}${diff!==0?' — Diferencia: $'+diff.toFixed(2)+' (redondeo)':' — Coincide'}" style="color:var(--emerald);cursor:help">⚠</span>`;
+        } else {
+          cmp = ` <span title="Declarado F103 ${codLabel}: $${declarado.toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
+        }
+      }
+      const revChecked = !!revFila[col.c];
+      const marcaRevisado = col.k ? `<span onclick="toggleRevisadoFuente(${mes},'${col.c}')" title="${revChecked?'Revisado contra mayores contables ✓ (clic para quitar)':'Marcar como revisado contra mayores contables'}" style="cursor:pointer;margin-left:3px;font-size:.68rem;opacity:${revChecked?1:.35}">${revChecked?'📗':'📄'}</span>` : '';
+      if (editable) {
+        const raw = manual[col.c];
+        return `<td style="padding:2px;background:rgba(147,197,253,.05)">
+          <input type="number" step="0.01" value="${raw !== undefined && raw !== null ? raw : ''}" placeholder="0.00"
+            onchange="actualizarCeldaFuente(${mes},'${col.c}',this.value)"
+            style="width:80px;background:var(--bg-card);border:1px solid #93c5fd55;border-radius:4px;padding:3px 5px;color:#93c5fd;font-size:.72rem;text-align:right">${marcaRevisado}
+        </td>`;
+      }
+      return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;color:var(--text-secondary);white-space:nowrap">${val.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}${cmp}${marcaRevisado}</td>`;
+    }).join('');
+    filasHtml.push(`<tr>
+      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:600;padding:4px 8px;white-space:nowrap">${HIVA_MESES[mes-1].slice(0,3)}<br><span style="font-weight:400;color:var(--text-muted);font-size:.62rem">Original</span></td>
+      ${tds}
+    </tr>`);
+
+    const tdsSust = HFTE_COLS.map(col => {
+      if (!col.k) return `<td style="padding:4px 6px;text-align:center;color:var(--text-muted);font-size:.7rem">—</td>`;
+      const sustVal = sustFila[col.c];
+      const original = r[col.c] || 0;
+      let diffHtml = '';
+      if (sustVal !== undefined && sustVal !== null) {
+        const diff = Math.round((sustVal - original) * 100) / 100;
+        diffHtml = diff === 0
+          ? ` <span style="color:var(--text-muted)">(sin cambio)</span>`
+          : ` <span style="color:${diff>0?'#f59e0b':'#60a5fa'}">(Δ ${diff>0?'+':''}$${diff.toFixed(2)})</span>`;
+      }
+      return `<td style="padding:2px;background:rgba(245,158,11,.05)">
+        <input type="number" step="0.01" value="${sustVal !== undefined && sustVal !== null ? sustVal : ''}" placeholder="—"
+          onchange="actualizarCeldaSustFuente(${mes},'${col.c}',this.value)"
+          style="width:80px;background:var(--bg-card);border:1px solid #f59e0b55;border-radius:4px;padding:3px 5px;color:#f59e0b;font-size:.72rem;text-align:right">${diffHtml}
+      </td>`;
+    }).join('');
+    filasHtml.push(`<tr style="border-bottom:2px solid var(--border)">
+      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.68rem;font-style:italic;padding:2px 8px;color:#f59e0b;white-space:nowrap">↳ Sustitutiva</td>
+      ${tdsSust}
+    </tr>`);
+  }
+
+  const totales = HFTE_COLS.map(col => {
+    const suma = Object.values(filas).reduce((s, r) => s + (r[col.c] || 0), 0);
+    return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;font-weight:700;color:var(--gold);white-space:nowrap;border-top:2px solid var(--border)">${suma.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
+  }).join('');
+
+  el.innerHTML = `
+    <table style="border-collapse:collapse;font-family:var(--font-mono)">
+      <thead><tr>${theadCols.join('')}</tr></thead>
+      <tbody>${filasHtml.join('')}</tbody>
+      <tfoot><tr>
+        <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:700;padding:4px 8px;border-top:2px solid var(--border)">TOTAL</td>
+        ${totales}
+      </tr></tfoot>
+    </table>`;
+}
+
+let _hfteSaveTimer = null;
+function actualizarCeldaFuente(mes, col, valor) {
+  window._apHojaFuente = window._apHojaFuente || {};
+  window._apHojaFuente[mes] = window._apHojaFuente[mes] || {};
+  window._apHojaFuente[mes][col] = valor === '' ? null : parseFloat(valor);
+  renderFuenteTabla();
+  clearTimeout(_hfteSaveTimer);
+  _hfteSaveTimer = setTimeout(() => guardarHojaFuente(), 900);
+}
+
+function actualizarCeldaSustFuente(mes, col, valor) {
+  window._apHojaFuenteSust = window._apHojaFuenteSust || {};
+  window._apHojaFuenteSust[mes] = window._apHojaFuenteSust[mes] || {};
+  window._apHojaFuenteSust[mes][col] = valor === '' ? null : parseFloat(valor);
+  renderFuenteTabla();
+  clearTimeout(_hfteSaveTimer);
+  _hfteSaveTimer = setTimeout(() => guardarHojaFuente(), 900);
+}
+
+function toggleRevisadoFuente(mes, col) {
+  window._apHojaFuenteRevisado = window._apHojaFuenteRevisado || {};
+  window._apHojaFuenteRevisado[mes] = window._apHojaFuenteRevisado[mes] || {};
+  window._apHojaFuenteRevisado[mes][col] = !window._apHojaFuenteRevisado[mes][col];
+  renderFuenteTabla();
+  guardarHojaFuente();
+}
+
+async function guardarHojaFuente(manual) {
+  if (!_apExpediente) return;
+  const payload = {
+    meta: { anio: window._apHojaFuenteAnio || '', actualizado: new Date().toISOString() },
+    meses: window._apHojaFuente || {},
+    declarados: window._apHojaFuenteDeclarados || {},
+    sustitutivaManual: window._apHojaFuenteSust || {},
+    revisado: window._apHojaFuenteRevisado || {},
+  };
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/hoja_fuente`, payload);
+  if (manual) toast('Hoja de trabajo Retenciones (F103) guardada ✓', 'success');
+}
+
+// ── Auto-llenado desde declaración PDF F103 del SRI ─────────────────────────
+async function subirDeclaracionFuente(input) {
+  const file = input.files[0];
+  const status = document.getElementById('hfte-pdf-status');
+  const tipoDecl = document.getElementById('hfte-tipo-decl')?.value || 'original';
+  if (!file || !_apExpediente) return;
+  if (!status) return;
+  status.innerHTML = '🔍 Leyendo declaración PDF del SRI...';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      if (typeof pdfjsLib === 'undefined') { status.innerHTML = '⚠️ Librería PDF no disponible.'; return; }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+
+      let texto = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        let lastY = null;
+        content.items.forEach(item => {
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 3) texto += ' ';
+          texto += item.str + ' ';
+          lastY = item.transform[5];
+        });
+        texto += '\n';
+      }
+      if (!texto.trim()) { status.innerHTML = '⚠️ PDF sin texto extraíble.'; return; }
+
+      const mMatch = texto.toUpperCase().match(HIVA_MES_REGEX);
+      if (!mMatch) { status.innerHTML = '⚠️ No se detectó "Período Fiscal" en el PDF (mes/año).'; return; }
+      const mesNombre = mMatch[1].toUpperCase();
+      const anio = mMatch[2];
+      const mes = HIVA_MESES.indexOf(mesNombre) + 1;
+      if (mes < 1) { status.innerHTML = '⚠️ Mes no reconocido: ' + mesNombre; return; }
+
+      const parseSRI = s => parseFloat((s || '').replace(/,/g, ''));
+      const todosLosPares = {};
+      const regex = /(?:^|\s)(\d{3,4})\s+(-?\d[\d,]*\.\d+|-?\d+)/gm;
+      let m;
+      while ((m = regex.exec(texto)) !== null) {
+        const cod = parseInt(m[1], 10);
+        const val = parseSRI(m[2]);
+        if (!isNaN(val) && !(cod in todosLosPares)) todosLosPares[cod] = val;
+      }
+
+      window._apHojaFuente = window._apHojaFuente || {};
+      window._apHojaFuenteDeclarados = window._apHojaFuenteDeclarados || {};
+      window._apHojaFuenteSust = window._apHojaFuenteSust || {};
+      window._apHojaFuenteAnio = window._apHojaFuenteAnio || anio;
+      const anioEl = document.getElementById('hfte-anio');
+      if (anioEl && !anioEl.value) anioEl.value = anio;
+
+      let llenados = 0, comparados = 0;
+
+      if (tipoDecl === 'sustitutiva') {
+        window._apHojaFuenteSust[mes] = window._apHojaFuenteSust[mes] || {};
+        HFTE_COLS.forEach(col => {
+          if (!col.k) return;
+          const keys = hivaKeys(col).filter(k => k in todosLosPares);
+          if (keys.length) {
+            window._apHojaFuenteSust[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+            llenados++;
+          }
+        });
+      } else {
+        window._apHojaFuente[mes] = window._apHojaFuente[mes] || {};
+        HFTE_COLS.forEach(col => {
+          if (col.m && col.k) {
+            const keys = hivaKeys(col).filter(k => k in todosLosPares);
+            if (keys.length) {
+              window._apHojaFuente[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+              llenados++;
+            }
+          }
+        });
+        window._apHojaFuenteDeclarados[mes] = window._apHojaFuenteDeclarados[mes] || { original: {}, sustitutiva: {} };
+        HFTE_COLS.forEach(col => {
+          if (!col.m && col.k) {
+            const keys = hivaKeys(col).filter(k => k in todosLosPares);
+            if (keys.length) {
+              window._apHojaFuenteDeclarados[mes].original[hivaKeyId(col)] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+              comparados++;
+            }
+          }
+        });
+      }
+
+      renderFuenteTabla();
+      await guardarHojaFuente();
+      const tipoLabel = tipoDecl === 'sustitutiva' ? 'SUSTITUTIVA' : 'ORIGINAL';
+      status.innerHTML = `✅ ${mesNombre} ${anio} (${tipoLabel}): ${llenados} casillero(s) cargados${tipoDecl==='sustitutiva'?' en la fila Sustitutiva':' en celdas manuales'}${comparados?`, ${comparados} guardados para comparación`:''} (${Object.keys(todosLosPares).length} pares detectados en el PDF).`;
+      toast(`Declaración F103 ${tipoLabel} de ${mesNombre} ${anio} procesada ✓`, 'success');
+    } catch (err) {
+      status.innerHTML = '⚠️ Error al procesar el PDF: ' + err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+// ── Informe Ejecutivo — Hoja de Trabajo Retenciones (F103) ──────────────────
+function generarInformeEjecutivoFuente() {
+  if (!_apExpediente) { toast('Abra un expediente primero', 'warning'); return; }
+  const filas = recalcularFuenteCompleta();
+  const declarados = window._apHojaFuenteDeclarados || {};
+  const sustManual = window._apHojaFuenteSust || {};
+  const revisado = window._apHojaFuenteRevisado || {};
+  const colsConCasillero = HFTE_COLS.filter(c => c.k);
+  const fmtN = v => '$'+(v||0).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const diferenciasDeclarado = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const r = filas[mes];
+    const dec = (declarados[mes] && declarados[mes].original) || null;
+    if (!dec) continue;
+    colsConCasillero.forEach(col => {
+      if (col.m) return;
+      const key = hivaKeyId(col);
+      if (dec[key] === undefined) return;
+      const val = r[col.c] || 0;
+      const diff = Math.round((val - dec[key]) * 100) / 100;
+      if (Math.abs(diff) >= 0.02) diferenciasDeclarado.push({ mes, col, calculado: val, declarado: dec[key], diff });
+    });
+  }
+
+  const diferenciasSust = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const r = filas[mes];
+    const sustFila = sustManual[mes] || {};
+    colsConCasillero.forEach(col => {
+      const sustVal = sustFila[col.c];
+      if (sustVal === undefined || sustVal === null) return;
+      const original = r[col.c] || 0;
+      const diff = Math.round((sustVal - original) * 100) / 100;
+      diferenciasSust.push({ mes, col, original, sustitutiva: sustVal, diff });
+    });
+  }
+
+  const mesesConDatos = Object.keys(window._apHojaFuente || {}).filter(m => Object.keys(window._apHojaFuente[m]||{}).length).length || 12;
+  const totalCeldasAuditable = colsConCasillero.length * 12;
+  let revisadas = 0;
+  for (let mes = 1; mes <= 12; mes++) {
+    const revFila = revisado[mes] || {};
+    colsConCasillero.forEach(col => { if (revFila[col.c]) revisadas++; });
+  }
+  const pctRevisado = totalCeldasAuditable ? ((revisadas/totalCeldasAuditable)*100).toFixed(1) : '0.0';
+  const mesesConSustitutiva = [...new Set(diferenciasSust.map(d => d.mes))];
+  const totalDiffDeclaradoAbs = diferenciasDeclarado.reduce((s,d)=>s+Math.abs(d.diff),0);
+  const totalDiffSustAbs = diferenciasSust.reduce((s,d)=>s+Math.abs(d.diff),0);
+
+  const exp = _apExpediente;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Informe Ejecutivo — Retenciones F103 — ${exp.empresa||''}</title>
+    <style>${PRINT_CSS}
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10pt; margin:14pt 0; }
+    .kpi { border:0.5pt solid #CBD5E1; border-radius:6pt; padding:8pt 10pt; text-align:center; }
+    .kpi .num { font-size:14pt; font-weight:700; color:#0F172A; }
+    .kpi .lbl { font-size:7.5pt; color:#64748B; text-transform:uppercase; letter-spacing:.03em; }
+    </style></head><body>`);
+
+  win.document.write(`
+    <div class="encabezado">
+      <div class="empresa">${exp.empresa||'—'}</div>
+      <div class="meta">RUC: ${exp.ruc||'—'} | Expediente: ${exp.codigo||'—'} | Período: ${exp.periodo||'—'} | Auditor: ${exp.auditor||'—'}</div>
+    </div>
+    <h1>Informe Ejecutivo — Retenciones en la Fuente (F103)</h1>
+    <p style="font-size:8.5pt;color:#475569">Año fiscal: ${window._apHojaFuenteAnio||'—'} | Emitido: ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}</p>
+
+    <h2>Resumen General</h2>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num ${diferenciasDeclarado.length?'red':'emerald'}">${diferenciasDeclarado.length}</div><div class="lbl">Diferencias &gt; 2¢ vs. Declarado</div></div>
+      <div class="kpi"><div class="num">${fmtN(totalDiffDeclaradoAbs)}</div><div class="lbl">Monto Total en Diferencia</div></div>
+      <div class="kpi"><div class="num">${mesesConSustitutiva.length}</div><div class="lbl">Meses con Sustitutiva</div></div>
+      <div class="kpi"><div class="num">${pctRevisado}%</div><div class="lbl">Casilleros Revisados (${revisadas}/${totalCeldasAuditable})</div></div>
+    </div>
+    <p style="font-size:8.5pt">
+      Se revisaron ${mesesConDatos} mes(es) de la Hoja de Trabajo de Retenciones contra las declaraciones F103 cargadas.
+      ${diferenciasDeclarado.length
+        ? `Se identificaron <strong class="red">${diferenciasDeclarado.length} diferencia(s)</strong> mayores a 2 centavos entre el valor calculado a partir de libros y el valor declarado, por un monto absoluto acumulado de <strong>${fmtN(totalDiffDeclaradoAbs)}</strong>.`
+        : `No se identificaron diferencias mayores a 2 centavos entre los valores calculados y los declarados en los meses comparados.`}
+      ${mesesConSustitutiva.length
+        ? ` Adicionalmente, se registraron declaraciones sustitutivas en ${mesesConSustitutiva.length} mes(es) (${mesesConSustitutiva.map(m=>HIVA_MESES[m-1]).join(', ')}), con un efecto neto acumulado de ${fmtN(totalDiffSustAbs)}.`
+        : ''}
+    </p>
+
+    <h2>Diferencias Significativas (&gt; 2 centavos) — Calculado vs. Declarado F103</h2>
+    ${diferenciasDeclarado.length ? `
+    <table>
+      <thead><tr><th>Mes</th><th>Concepto</th><th>Casillero</th><th style="text-align:right">Calculado</th><th style="text-align:right">Declarado</th><th style="text-align:right">Diferencia</th></tr></thead>
+      <tbody>${diferenciasDeclarado.map(d => `<tr>
+          <td>${HIVA_MESES[d.mes-1]}</td>
+          <td>${d.col.l}</td>
+          <td class="gold">${hivaKeys(d.col).map(k=>'#'+k).join('+')}</td>
+          <td style="text-align:right">${fmtN(d.calculado)}</td>
+          <td style="text-align:right">${fmtN(d.declarado)}</td>
+          <td style="text-align:right" class="red">${d.diff>0?'+':''}${fmtN(d.diff)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : `<p class="muted" style="font-size:8.5pt">Sin diferencias significativas que reportar.</p>`}
+
+    ${diferenciasSust.length ? `
+    <h2>Declaraciones Sustitutivas — Efecto por Casillero</h2>
+    <table>
+      <thead><tr><th>Mes</th><th>Concepto</th><th>Casillero</th><th style="text-align:right">Original</th><th style="text-align:right">Sustitutiva</th><th style="text-align:right">Diferencia</th></tr></thead>
+      <tbody>${diferenciasSust.map(d => `<tr>
+          <td>${HIVA_MESES[d.mes-1]}</td>
+          <td>${d.col.l}</td>
+          <td class="gold">${hivaKeys(d.col).map(k=>'#'+k).join('+')}</td>
+          <td style="text-align:right">${fmtN(d.original)}</td>
+          <td style="text-align:right">${fmtN(d.sustitutiva)}</td>
+          <td style="text-align:right" class="${d.diff>=0?'red':'emerald'}">${d.diff>0?'+':''}${fmtN(d.diff)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>` : ''}
+
+    <h2>Estado de Revisión de Evidencia</h2>
+    <p style="font-size:8.5pt">Se marcaron como revisados contra los mayores contables <strong>${revisadas}</strong> de <strong>${totalCeldasAuditable}</strong> casilleros posibles (${pctRevisado}%). ${pctRevisado<100 ? 'Los casilleros pendientes de marcar deben verificarse antes de concluir el trabajo de campo.' : 'Todos los casilleros auditables cuentan con evidencia de revisión.'}</p>
+
+    <div class="firma-grid">
+      <div class="firma">Elaborado por: ${exp.auditor||'—'}</div>
+      <div class="firma">Revisado por / Fecha</div>
+    </div>
+  </body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 400);
+}
+
 
 
 // ── Fases del trabajo ────────────────────────────────────────────
@@ -15377,6 +15876,7 @@ async function abrirExpediente(key) {
   }
   actualizarTabHojaIVA();
   window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVAAnio = null; // reset — se carga al abrir el tab
+  window._apHojaFuente = null; window._apHojaFuenteDeclarados = null; window._apHojaFuenteAnio = null;
 
   // Guardar en localStorage para auto-restaurar en próxima sesión
   localStorage.setItem('financeOS-ultimo-expediente', key);
