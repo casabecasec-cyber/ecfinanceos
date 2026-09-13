@@ -863,7 +863,7 @@ details[id^="ced-card-"] summary { outline:none; }
       <span class="nav-icon">🏛️</span>
       <span>GEA</span>
     </a>
-    <a href="#" class="nav-item" data-module="niif">
+    <a href="#" class="nav-item" data-module="audit-niif">
       <span class="nav-icon">📚</span>
       <span>Auditoría NIIF</span>
     </a>
@@ -2091,6 +2091,7 @@ details[id^="ced-card-"] summary { outline:none; }
           <button class="bib-tab" onclick="showApTab('eeff-audit')">📊 EEFF Vinculado</button>
           <button class="bib-tab" onclick="showApTab('cedulas')">📄 Cédulas Analíticas</button>
           <button class="bib-tab" onclick="showApTab('sumarias')">📑 Cédulas Sumarias</button>
+          <button class="bib-tab" id="ap-tab-btn-hoja-iva" onclick="showApTab('hoja-iva')" style="display:none">🧾 Hoja de Trabajo IVA</button>
           <button class="bib-tab" onclick="showApTab('programa')">📋 Programa de Auditoría</button>
           <button class="bib-tab" onclick="showApTab('pruebas-sust')">🔍 Pruebas Sustantivas</button>
           <button class="bib-tab" onclick="showApTab('coso')">🛡️ Sistema COSO</button>
@@ -2159,6 +2160,31 @@ details[id^="ced-card-"] summary { outline:none; }
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px">Las cédulas sumarias agrupan las cuentas del balance por ciclo (Activo Corriente, Pasivo, etc.) y referencian las cédulas analíticas individuales. Son la columna vertebral de la referenciación cruzada del expediente.</p>
             <div id="ap-sumarias-contenido"></div>
+          </div>
+        </div>
+
+        <!-- HOJA DE TRABAJO IVA (Auditoría Tributaria) -->
+        <div class="bib-content" id="ap-hoja-iva">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <h3 style="margin:0">🧾 Hoja de Trabajo — Revisión Mensual de IVA</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:.72rem;color:var(--text-muted)">Año fiscal:
+                  <input type="text" id="hiva-anio" style="width:70px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);margin-left:4px" placeholder="2025" onchange="cambiarAnioHojaIVA(this.value)">
+                </label>
+                <label class="btn-calc" style="background:linear-gradient(135deg,#6366f1,#4f46e5);cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                  📄 Subir Declaración F104 (mes)
+                  <input type="file" accept="application/pdf" style="display:none" onchange="subirDeclaracionHojaIVA(this)">
+                </label>
+                <button class="btn-secondary" onclick="guardarHojaIVA(true)">💾 Guardar</button>
+              </div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">
+              Ingrese los valores mensuales según libros/comprobantes (celdas en <span style="color:#93c5fd">azul</span> = digitación manual). Las columnas en gris se calculan automáticamente.
+              Cada columna con un código de <strong>casillero SRI</strong> puede compararse contra la declaración F104: suba el PDF del mes y el sistema detecta el período, llena los casilleros de entrada manual, y marca ✅/⚠️ en las columnas calculadas frente a lo declarado.
+            </p>
+            <div id="hiva-pdf-status" style="font-size:.78rem;margin-bottom:10px"></div>
+            <div id="hiva-tabla-wrap" style="overflow-x:auto"></div>
           </div>
         </div>
 
@@ -3009,7 +3035,7 @@ details[id^="ced-card-"] summary { outline:none; }
 
   </div><!-- end module-wrapper -->
     <!-- ═══ AUDITORÍA NIIF ═══════════════════════════════════════════════════ -->
-    <section class="module" id="mod-niif">
+    <section class="module" id="mod-audit-niif">
       <div class="module-hero" style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%)">
         <h1>📚 Auditoría NIIF</h1>
         <p>Marco normativo completo — Normas Internacionales de Auditoría e Información Financiera</p>
@@ -9953,13 +9979,13 @@ function initNavegacion() {
       window._niifInited = true;
       if (window.initNIIF) initNIIF();
     }
+    if (id === 'audit-niif' && !window._auditNiifInited) {
+      window._auditNiifInited = true;
+      if (window.initNIIF) initNIIF();
+    }
     if (id === 'noticias' && !window._noticiasInited) {
       window._noticiasInited = true;
       if (window.initNoticias) initNoticias();
-    }
-    if (id === 'niif' && !window._niifInited) {
-      window._niifInited = true;
-      if (window.initNIIF) initNIIF();
     }
     if (id === 'seguimiento' && window.Seguimiento) {
       Seguimiento.init();
@@ -13328,6 +13354,13 @@ function cambiarTipoAudit(tipo, btnEl) {
 
   // Renderizar el panel del tipo
   renderPanelTipo(tipo);
+  actualizarTabHojaIVA();
+}
+
+// Muestra/oculta el tab "Hoja de Trabajo IVA" — solo aplica a Auditoría Tributaria
+function actualizarTabHojaIVA() {
+  const btn = document.getElementById('ap-tab-btn-hoja-iva');
+  if (btn) btn.style.display = (window._tipoActivo === 'tributaria') ? '' : 'none';
 }
 
 async function renderPanelTipo(tipo) {
@@ -13448,6 +13481,7 @@ function iniciarExpedienteAuditoria() {
   renderCedulasAnaliticasCompleto(); // Inicializar vista de cédulas vacía
   window._apCedulas = {}; // Reset cédulas para nuevo expediente
   cargarHistorialExpedientes(); // Actualizar historial
+  actualizarTabHojaIVA();
   toast(`Expediente ${codigo} iniciado`, 'success');
 }
 
@@ -13503,6 +13537,7 @@ function showApTab(tab) {
     }
   }
   if (tab === 'sumarias') renderCedulasSumarias();
+  if (tab === 'hoja-iva') cargarHojaIVA();
   if (tab === 'programa') generarProgramaAuditoria();
   if (tab === 'pruebas-sust') generarPruebasSustantivas();
   if (tab === 'coso') initCoso();
@@ -13514,6 +13549,348 @@ function showApTab(tab) {
   if (tab === 'indices-audit') generarIndicesAudit();
   if (tab === 'carta-rep') generarCartaRepresentacion();
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// HOJA DE TRABAJO IVA — Auditoría Tributaria
+// Réplica fiel de la matriz mensual "Revisión IVA": columnas con fórmula se
+// mantienen como fórmula (fondo gris, solo lectura); columnas sin fórmula en
+// el archivo original son de digitación manual (fondo azul claro, editable).
+// Cada columna con código de casillero SRI permite auto-llenado/comparación
+// al subir el PDF de la declaración F104 del mes correspondiente.
+// ══════════════════════════════════════════════════════════════════════════
+const HIVA_MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+// col: letra de referencia interna | l: etiqueta corta | k: casillero SRI (si aplica)
+// m:1 => manual siempre | rolling:1 => manual solo en enero, fórmula (roll) el resto
+// f(r) => fórmula fila actual | f2(r,mes) => fórmula con caso especial por mes
+const HIVA_COLS = [
+  { grupo:'VENTAS' },
+  { c:'C',  l:'Ventas Brutas 15%',              k:401, m:1 },
+  { c:'D',  l:'IVA Ventas 15%',                        f:r=>r.C*0.15 },
+  { c:'E',  l:'N/C Ventas 15%',                        m:1 },
+  { c:'F',  l:'IVA N/C 15%',                           f:r=>r.E*0.15 },
+  { c:'G',  l:'Ventas Netas 15%',               k:411,  f:r=>r.C-r.E },
+  { c:'H',  l:'IVA Ventas (Neto) 15%',          k:421,  f:r=>r.D-r.F },
+  { c:'I',  l:'IVA Liquidar Mes Anterior',             m:1 },
+  { c:'J',  l:'IVA Liquidar Próx. Mes',                m:1 },
+  { c:'K',  l:'Ventas Brutas 0%',                      m:1 },
+  { c:'L',  l:'N/C Ventas 0%',                         m:1 },
+  { c:'M',  l:'Ventas Netas 0%',                       f:r=>r.K-r.L },
+  { c:'N',  l:'Reembolso Ventas 0%',            k:434,  m:1 },
+  { c:'O',  l:'Reembolso Ventas 15%',                  m:1 },
+  { c:'P',  l:'IVA en Reembolso 15%',                  f:r=>r.O*0.15 },
+  { c:'Q',  l:'A Pagar (Ventas)',               k:601,  f:r=>r.H+r.I-r.J },
+  { grupo:'COMPRAS Y CRÉDITO TRIBUTARIO' },
+  { c:'S',  l:'Compras Brutas 15% c/CT',        k:500,  m:1 },
+  { c:'T',  l:'IVA Compras 15%',                       f:r=>r.S*0.15 },
+  { c:'U',  l:'N/C Compra 15%',                        m:1 },
+  { c:'V',  l:'IVA N/C Compra 15%',                    f:r=>r.U*0.15 },
+  { c:'W',  l:'Compras Netas 15% c/CT',         k:510,  f:r=>r.S-r.U },
+  { c:'X',  l:'IVA Neto Compras 15%',           k:520,  f:r=>r.W*0.15 },
+  { c:'Y',  l:'Compras Brutas 5% c/CT',         k:540,  m:1 },
+  { c:'Z',  l:'IVA Compras 5%',                        f:r=>r.Y*0.05 },
+  { c:'AA', l:'N/C Compra 5%',                         m:1 },
+  { c:'AB', l:'IVA N/C Compra 5%',                     f:r=>r.AA*0.05 },
+  { c:'AC', l:'Compras Netas 5%',               k:550,  f:r=>r.Y-r.AA },
+  { c:'AD', l:'IVA Neto 5%',                    k:560,  f:r=>r.Z-r.AB },
+  { c:'AE', l:'Compras Brutas 0%',              k:508,  m:1 },
+  { c:'AF', l:'N/C Compra 0%',                         m:1 },
+  { c:'AG', l:'Compras Netas 0%',               k:518,  f:r=>r.AE-r.AF },
+  { c:'AH', l:'Compras Sin Derecho a CT',              m:1 },
+  { c:'AI', l:'IVA 15% Sin Der. CT',                   f:r=>r.AH*0.15 },
+  { c:'AJ', l:'Importaciones 15%',              k:504,  m:1 },
+  { c:'AK', l:'IVA Importaciones 15%',                 f:r=>r.AJ*0.15 },
+  { c:'AL', l:'Reembolso Compras 0%',                  m:1 },
+  { c:'AM', l:'Reembolso Compras 15%',                 m:1 },
+  { c:'AN', l:'IVA Reembolso Compras 15%',             f:r=>r.AM*0.15 },
+  { c:'AO', l:'Ajuste IVA',                     k:527,  m:1 },
+  { c:'AP', l:'Total Tarifa 0% ATS',                   f:r=>r.AE },
+  { c:'AQ', l:'Total Tarifa 15% ATS',                  f:r=>r.S+r.Y-r.AM },
+  { c:'AR', l:'N/C 15% x Compensar Próx.',      k:544,  m:1 },
+  { c:'AS', l:'IVA N/C 15%',                    k:554,  f:r=>r.AR*0.15 },
+  { c:'AT', l:'A Cobrar (CT Compras)',                 f:r=>r.X+r.AD+r.AK },
+  { grupo:'LIQUIDACIÓN Y CRÉDITO TRIBUTARIO' },
+  { c:'AV', l:'A Pagar (Neto)',                        f:r=>r.Q-r.AT+r.AO },
+  { c:'AX', l:'CT Este Mes',                    k:602,  f:r=>r.AV<0?-r.AV:0 },
+  { c:'AY', l:'CT Mes Anterior x Adquisiciones',k:605,  rolling:1, roll:p=>p.BB<0?-p.BB:p.BA },
+  { c:'AZ', l:'CT por Adquisiciones',           k:615,  f:r=>r.AX+r.AY },
+  { c:'BA', l:'CT Adquisiciones Próx. Mes',            f:r=>r.AV<0?r.AZ:0 },
+  { c:'BB', l:'A Pagar (Parcial)',                     f2:(r,mes)=> mes===1 ? (r.AV>0?r.AV-r.AZ-r.AY:0) : (r.AV>0?r.AV-r.AZ:0) },
+  { c:'BC', l:'CT Retenciones Mes Anterior',    k:606,  rolling:1, roll:p=>p.BH },
+  { c:'BD', l:'Retenciones IVA Recibidas',      k:609,  m:1 },
+  { c:'BE', l:'CT Retenciones',                 k:617,  f:r=>r.BC+r.BD },
+  { c:'BF', l:'Subtotal a Pagar 2',                    f:r=>r.BB>0?r.BB-r.BE:0 },
+  { c:'BG', l:'CT Adquisiciones Próx.(2)',             f:r=>r.BB<0?-r.BB:r.BA },
+  { c:'BH', l:'CT Retenciones Próx. Mes',              f:r=>r.BB>0?r.BE-r.BB:r.BE },
+  { c:'BI', l:'Total Crédito Tributario',              f:r=>r.BG+r.BH },
+  { c:'BJ', l:'A Pagar Final',                         f:r=>r.BF>0?r.BF:0 },
+  { c:'BK', l:'Próx. Mes (IVA a Liquidar)',            f:r=>r.J },
+  { grupo:'RETENCIONES Y PAGO' },
+  { c:'BL', l:'Retención 10%',                  k:721,  m:1 },
+  { c:'BM', l:'Retención 20%',                  k:723,  m:1 },
+  { c:'BN', l:'Retención 30%',                  k:725,  m:1 },
+  { c:'BO', l:'Retención 50%',                         m:1 },
+  { c:'BP', l:'Retención 70%',                  k:729,  m:1 },
+  { c:'BQ', l:'Retención 100%',                 k:731,  m:1 },
+  { c:'BR', l:'Total Impuesto a Pagar',         k:902,  m:1 },
+  { c:'BS', l:'Interés',                        k:903,  m:1 },
+  { c:'BT', l:'Multa',                          k:904,  m:1 },
+  { c:'BU', l:'Total Retenciones',                     f:r=>['BL','BM','BN','BO','BP','BQ'].reduce((s,cc)=>s+(r[cc]||0),0) },
+  { c:'BV', l:'Pagado Form.104',                k:801,  m:1 },
+  { c:'BW', l:'Diferencia a Pagar',                    f:r=>r.BU-r.BV },
+  { grupo:'COMPARACIÓN ATS' },
+  { c:'BX', l:'Total Compras (ATS)',                   f:r=>r.AH+r.S+r.AE+r.Y },
+  { c:'BZ', l:'Comparación ATS (Form.103)',     km:103, m:1 },
+  { c:'CB', l:'Diferencia ATS',                        f:r=>r.BX-r.BZ },
+  { c:'CD', l:'Reembolso BI Tarifa 15%',               m:1 },
+  { c:'CF', l:'Reembolso BI Tarifa 0%',                m:1 },
+  { c:'CG', l:'Diferencia Neta',                       f:r=>r.CB-r.CD-r.CF },
+];
+const HIVA_COLS_FLAT = HIVA_COLS.filter(c => c.c);
+
+function hivaNum(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+
+// Calcula todas las columnas de un mes a partir de los valores manuales ingresados
+// y la fila (ya calculada) del mes anterior.
+function calcularFilaHojaIVA(mes, manualVals, filaAnterior) {
+  const r = {};
+  HIVA_COLS_FLAT.forEach(col => {
+    if (col.rolling) {
+      r[col.c] = (mes === 1) ? hivaNum(manualVals[col.c]) : col.roll(filaAnterior || {});
+    } else if (col.m || col.km) {
+      r[col.c] = hivaNum(manualVals[col.c]);
+    } else if (col.f2) {
+      r[col.c] = col.f2(r, mes);
+    } else if (col.f) {
+      r[col.c] = col.f(r);
+    }
+  });
+  return r;
+}
+
+// Recalcula las 12 filas en cadena (cada una depende de la anterior por AY/BC)
+function recalcularHojaIVACompleta() {
+  window._apHojaIVA = window._apHojaIVA || {};
+  const filas = {};
+  let anterior = null;
+  for (let mes = 1; mes <= 12; mes++) {
+    const manual = window._apHojaIVA[mes] || {};
+    const fila = calcularFilaHojaIVA(mes, manual, anterior);
+    filas[mes] = fila;
+    anterior = fila;
+  }
+  window._apHojaIVACalculado = filas;
+  return filas;
+}
+
+function cargarHojaIVA() {
+  const el = document.getElementById('hiva-tabla-wrap');
+  if (!el || !_apExpediente) return;
+  if (window._apHojaIVA) { renderHojaIVATabla(); return; }
+  el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">⏳ Cargando hoja de trabajo...</p>';
+  FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/hoja_iva`).then(d => {
+    window._apHojaIVA = (d && d.meses) || {};
+    window._apHojaIVADeclarados = (d && d.declarados) || {};
+    window._apHojaIVAAnio = (d && d.meta && d.meta.anio) || '';
+    const anioEl = document.getElementById('hiva-anio');
+    if (anioEl) anioEl.value = window._apHojaIVAAnio;
+    renderHojaIVATabla();
+  }).catch(() => {
+    window._apHojaIVA = {}; window._apHojaIVADeclarados = {};
+    renderHojaIVATabla();
+  });
+}
+
+function cambiarAnioHojaIVA(v) {
+  window._apHojaIVAAnio = v;
+  guardarHojaIVA();
+}
+
+function renderHojaIVATabla() {
+  const el = document.getElementById('hiva-tabla-wrap');
+  if (!el) return;
+  const filas = recalcularHojaIVACompleta();
+  const declarados = window._apHojaIVADeclarados || {};
+
+  // Encabezado de grupos
+  let colspanActual = 0, gruposHtml = [];
+  let grupoNombre = 'MES';
+  gruposHtml.push({ nombre: 'MES', span: 1 });
+  HIVA_COLS.forEach(item => {
+    if (item.grupo) { gruposHtml.push({ nombre: item.grupo, span: 0 }); }
+    else { gruposHtml[gruposHtml.length - 1].span++; }
+  });
+
+  const theadGrupos = gruposHtml.map(g => `<th colspan="${g.span}" style="background:var(--bg-card2);color:var(--gold);font-size:.68rem;padding:4px;border-bottom:1px solid var(--border)">${g.nombre}</th>`).join('');
+
+  const theadCols = ['<th style="min-width:90px;position:sticky;left:0;background:var(--bg-card2);z-index:2">MES</th>']
+    .concat(HIVA_COLS_FLAT.map(col => `
+      <th style="min-width:98px;font-size:.65rem;padding:4px;background:${col.m||col.km?'rgba(147,197,253,.08)':'var(--bg-card2)'};color:var(--text-secondary);white-space:normal;line-height:1.15">
+        ${col.l}${col.k ? `<br><span style="color:var(--gold);font-weight:700">#${col.k}</span>` : (col.km ? `<br><span style="color:#94a3b8">F103 #${col.km}</span>` : '')}
+      </th>`));
+
+  const filasHtml = [];
+  for (let mes = 1; mes <= 12; mes++) {
+    const manual = window._apHojaIVA[mes] || {};
+    const r = filas[mes];
+    const dec = declarados[mes] || null;
+    const tds = HIVA_COLS_FLAT.map(col => {
+      const val = r[col.c] || 0;
+      const editable = (col.m || col.km || (col.rolling && mes === 1));
+      let cmp = '';
+      if (col.k && dec && dec[col.k] !== undefined && !editable) {
+        const diff = Math.round((val - dec[col.k]) * 100) / 100;
+        cmp = Math.abs(diff) < 0.01
+          ? ` <span title="Coincide con declarado F104 #${col.k}" style="color:var(--emerald)">✓</span>`
+          : ` <span title="Declarado F104 #${col.k}: $${dec[col.k].toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
+      }
+      if (editable) {
+        const raw = (col.rolling ? manual[col.c] : manual[col.c]);
+        return `<td style="padding:2px;background:rgba(147,197,253,.05)">
+          <input type="number" step="0.01" value="${raw !== undefined && raw !== null ? raw : ''}" placeholder="0.00"
+            onchange="actualizarCeldaHojaIVA(${mes},'${col.c}',this.value)"
+            style="width:88px;background:var(--bg-card);border:1px solid #93c5fd55;border-radius:4px;padding:3px 5px;color:#93c5fd;font-size:.72rem;text-align:right">
+        </td>`;
+      }
+      return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;color:var(--text-secondary);white-space:nowrap">${val.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}${cmp}</td>`;
+    }).join('');
+    filasHtml.push(`<tr>
+      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:600;padding:4px 8px;white-space:nowrap">${HIVA_MESES[mes-1].slice(0,3)}</td>
+      ${tds}
+    </tr>`);
+  }
+
+  // Totales
+  const totales = HIVA_COLS_FLAT.map(col => {
+    const suma = Object.values(filas).reduce((s, r) => s + (r[col.c] || 0), 0);
+    return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;font-weight:700;color:var(--gold);white-space:nowrap;border-top:2px solid var(--border)">${suma.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
+  }).join('');
+
+  el.innerHTML = `
+    <table style="border-collapse:collapse;font-family:var(--font-mono)">
+      <thead>
+        <tr>${theadGrupos}</tr>
+        <tr>${theadCols.join('')}</tr>
+      </thead>
+      <tbody>${filasHtml.join('')}</tbody>
+      <tfoot><tr>
+        <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:700;padding:4px 8px;border-top:2px solid var(--border)">TOTAL</td>
+        ${totales}
+      </tr></tfoot>
+    </table>`;
+}
+
+let _hivaSaveTimer = null;
+function actualizarCeldaHojaIVA(mes, col, valor) {
+  window._apHojaIVA = window._apHojaIVA || {};
+  window._apHojaIVA[mes] = window._apHojaIVA[mes] || {};
+  window._apHojaIVA[mes][col] = valor === '' ? null : parseFloat(valor);
+  renderHojaIVATabla();
+  clearTimeout(_hivaSaveTimer);
+  _hivaSaveTimer = setTimeout(() => guardarHojaIVA(), 900);
+}
+
+async function guardarHojaIVA(manual) {
+  if (!_apExpediente) return;
+  const payload = {
+    meta: { anio: window._apHojaIVAAnio || '', actualizado: new Date().toISOString() },
+    meses: window._apHojaIVA || {},
+    declarados: window._apHojaIVADeclarados || {},
+  };
+  await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/hoja_iva`, payload);
+  if (manual) toast('Hoja de trabajo IVA guardada ✓', 'success');
+}
+
+// ── Auto-llenado desde declaración PDF F104 del SRI ─────────────────────────
+const HIVA_MES_REGEX = new RegExp('PER[IÍ]ODO FISCAL:?\\s*(' + HIVA_MESES.join('|') + ')\\s+(\\d{4})', 'i');
+
+async function subirDeclaracionHojaIVA(input) {
+  const file = input.files[0];
+  const status = document.getElementById('hiva-pdf-status');
+  if (!file || !_apExpediente) return;
+  if (!status) return;
+  status.innerHTML = '🔍 Leyendo declaración PDF del SRI...';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      if (typeof pdfjsLib === 'undefined') { status.innerHTML = '⚠️ Librería PDF no disponible.'; return; }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
+
+      let texto = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        let lastY = null;
+        content.items.forEach(item => {
+          if (lastY !== null && Math.abs(item.transform[5] - lastY) > 3) texto += ' ';
+          texto += item.str + ' ';
+          lastY = item.transform[5];
+        });
+        texto += '\n';
+      }
+      if (!texto.trim()) { status.innerHTML = '⚠️ PDF sin texto extraíble.'; return; }
+
+      // Detectar mes/año del período fiscal
+      const mMatch = texto.toUpperCase().match(HIVA_MES_REGEX);
+      if (!mMatch) { status.innerHTML = '⚠️ No se detectó "Período Fiscal" en el PDF (mes/año).'; return; }
+      const mesNombre = mMatch[1].toUpperCase();
+      const anio = mMatch[2];
+      const mes = HIVA_MESES.indexOf(mesNombre) + 1;
+      if (mes < 1) { status.innerHTML = '⚠️ Mes no reconocido: ' + mesNombre; return; }
+
+      // Extraer pares "código valor" (mismo patrón que Tributación F104/F103)
+      const parseSRI = s => parseFloat((s || '').replace(/,/g, ''));
+      const todosLosPares = {};
+      const regex = /(?:^|\s)(\d{3})\s+(-?\d[\d,]*\.\d+|-?\d+)/gm;
+      let m;
+      while ((m = regex.exec(texto)) !== null) {
+        const cod = parseInt(m[1], 10);
+        const val = parseSRI(m[2]);
+        if (!isNaN(val) && !(cod in todosLosPares)) todosLosPares[cod] = val;
+      }
+
+      window._apHojaIVA = window._apHojaIVA || {};
+      window._apHojaIVADeclarados = window._apHojaIVADeclarados || {};
+      window._apHojaIVAAnio = window._apHojaIVAAnio || anio;
+      const anioEl = document.getElementById('hiva-anio');
+      if (anioEl && !anioEl.value) anioEl.value = anio;
+
+      // 1) Columnas manuales con casillero → autollenar directamente
+      let llenados = 0;
+      window._apHojaIVA[mes] = window._apHojaIVA[mes] || {};
+      HIVA_COLS_FLAT.forEach(col => {
+        if ((col.m || (col.rolling && mes === 1)) && col.k && (col.k in todosLosPares)) {
+          window._apHojaIVA[mes][col.c] = todosLosPares[col.k];
+          llenados++;
+        }
+      });
+
+      // 2) Columnas de fórmula con casillero → guardar como "declarado" para comparación
+      window._apHojaIVADeclarados[mes] = window._apHojaIVADeclarados[mes] || {};
+      let comparados = 0;
+      HIVA_COLS_FLAT.forEach(col => {
+        if (!col.m && !col.km && !(col.rolling && mes === 1) && col.k && (col.k in todosLosPares)) {
+          window._apHojaIVADeclarados[mes][col.k] = todosLosPares[col.k];
+          comparados++;
+        }
+      });
+
+      renderHojaIVATabla();
+      await guardarHojaIVA();
+      status.innerHTML = `✅ ${mesNombre} ${anio}: ${llenados} casillero(s) cargados en celdas manuales, ${comparados} guardados para comparación (${Object.keys(todosLosPares).length} pares detectados en el PDF).`;
+      toast(`Declaración F104 de ${mesNombre} ${anio} procesada ✓`, 'success');
+    } catch (err) {
+      status.innerHTML = '⚠️ Error al procesar el PDF: ' + err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
 
 
 // ── Fases del trabajo ────────────────────────────────────────────
@@ -14763,6 +15140,8 @@ async function abrirExpediente(key) {
     document.querySelectorAll('.ap-tipo-card').forEach(c => c.classList.remove('activo'));
     document.getElementById(`tipo-card-${exp.tipo}`)?.classList.add('activo');
   }
+  actualizarTabHojaIVA();
+  window._apHojaIVA = null; window._apHojaIVADeclarados = null; window._apHojaIVAAnio = null; // reset — se carga al abrir el tab
 
   // Guardar en localStorage para auto-restaurar en próxima sesión
   localStorage.setItem('financeOS-ultimo-expediente', key);
