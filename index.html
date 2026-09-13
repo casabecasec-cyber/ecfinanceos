@@ -2175,6 +2175,12 @@ details[id^="ced-card-"] summary { outline:none; }
                 <label style="font-size:.72rem;color:var(--text-muted)">Año fiscal:
                   <input type="text" id="hiva-anio" style="width:70px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);margin-left:4px" placeholder="2025" onchange="cambiarAnioHojaIVA(this.value)">
                 </label>
+                <label style="font-size:.72rem;color:var(--text-muted)">Tipo:
+                  <select id="hiva-tipo-decl" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text-primary);margin-left:4px;font-size:.75rem">
+                    <option value="original">Original</option>
+                    <option value="sustitutiva">Sustitutiva</option>
+                  </select>
+                </label>
                 <label class="btn-calc" style="background:linear-gradient(135deg,#6366f1,#4f46e5);cursor:pointer;display:inline-flex;align-items:center;gap:6px">
                   📄 Subir Declaración F104 (mes)
                   <input type="file" accept="application/pdf" style="display:none" onchange="subirDeclaracionHojaIVA(this)">
@@ -2184,7 +2190,7 @@ details[id^="ced-card-"] summary { outline:none; }
             </div>
             <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px">
               Ingrese los valores mensuales según libros/comprobantes (celdas en <span style="color:#93c5fd">azul</span> = digitación manual). Las columnas en gris se calculan automáticamente.
-              Cada columna con un código de <strong>casillero SRI</strong> puede compararse contra la declaración F104: suba el PDF del mes y el sistema detecta el período, llena los casilleros de entrada manual, y marca ✅/⚠️ en las columnas calculadas frente a lo declarado.
+              Cada columna con un código de <strong>casillero SRI</strong> puede compararse contra la declaración F104: elija "Original" o "Sustitutiva" antes de subir el PDF del mes — el sistema detecta el período y llena la fila correspondiente sin afectar la otra. La fila "↳ Sustitutiva" (naranja) muestra la diferencia automática contra la fila Original. Cada casillero tiene una marca 📄/📗 — haga clic para señalar que ya revisó ese valor contra los mayores contables.
             </p>
             <div id="hiva-pdf-status" style="font-size:.78rem;margin-bottom:10px"></div>
             <div id="hiva-tabla-wrap" style="overflow-x:auto"></div>
@@ -13697,13 +13703,24 @@ function cargarHojaIVA() {
   el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">⏳ Cargando hoja de trabajo...</p>';
   FirebaseDB.get(`audit_pro/${_apExpediente.codigo}/hoja_iva`).then(d => {
     window._apHojaIVA = (d && d.meses) || {};
-    window._apHojaIVADeclarados = (d && d.declarados) || {};
+    // Migración: versiones previas guardaban 'declarados' como plano {mes:{casillero:val}}.
+    // Formato nuevo: {mes:{original:{casillero:val}, sustitutiva:{casillero:val}}}
+    const decRaw = (d && d.declarados) || {};
+    const decMigrado = {};
+    Object.keys(decRaw).forEach(mes => {
+      const v = decRaw[mes];
+      if (v && (v.original || v.sustitutiva)) decMigrado[mes] = v;
+      else decMigrado[mes] = { original: v || {}, sustitutiva: {} };
+    });
+    window._apHojaIVADeclarados = decMigrado;
+    window._apHojaIVASust = (d && d.sustitutivaManual) || {};
+    window._apHojaIVARevisado = (d && d.revisado) || {};
     window._apHojaIVAAnio = (d && d.meta && d.meta.anio) || '';
     const anioEl = document.getElementById('hiva-anio');
     if (anioEl) anioEl.value = window._apHojaIVAAnio;
     renderHojaIVATabla();
   }).catch(() => {
-    window._apHojaIVA = {}; window._apHojaIVADeclarados = {};
+    window._apHojaIVA = {}; window._apHojaIVADeclarados = {}; window._apHojaIVASust = {}; window._apHojaIVARevisado = {};
     renderHojaIVATabla();
   });
 }
@@ -13718,6 +13735,8 @@ function renderHojaIVATabla() {
   if (!el) return;
   const filas = recalcularHojaIVACompleta();
   const declarados = window._apHojaIVADeclarados || {};
+  const sustManual = window._apHojaIVASust || {};
+  const revisado = window._apHojaIVARevisado || {};
 
   // Encabezado de grupos
   let colspanActual = 0, gruposHtml = [];
@@ -13741,35 +13760,68 @@ function renderHojaIVATabla() {
     const manual = window._apHojaIVA[mes] || {};
     const r = filas[mes];
     const dec = declarados[mes] || null;
+    const decOriginal = (dec && dec.original) || null;
+    const sustFila = sustManual[mes] || {};
+    const revFila = revisado[mes] || {};
+
+    // ── Fila principal (Original — libros/cálculo) ──
     const tds = HIVA_COLS_FLAT.map(col => {
       const val = r[col.c] || 0;
       const editable = (col.m || col.km || (col.rolling && mes === 1));
       let cmp = '';
-      if (col.k && dec && dec[hivaKeyId(col)] !== undefined && !editable) {
-        const declarado = dec[hivaKeyId(col)];
+      if (col.k && decOriginal && decOriginal[hivaKeyId(col)] !== undefined && !editable) {
+        const declarado = decOriginal[hivaKeyId(col)];
         const diff = Math.round((val - declarado) * 100) / 100;
         const codLabel = hivaKeys(col).map(k=>'#'+k).join('+');
-        cmp = Math.abs(diff) < 0.01
-          ? ` <span title="Coincide con declarado F104 ${codLabel}" style="color:var(--emerald)">✓</span>`
-          : ` <span title="Declarado F104 ${codLabel}: $${declarado.toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
+        if (Math.abs(diff) < 0.02) {
+          cmp = ` <span title="Declarado F104 ${codLabel}: $${declarado.toFixed(2)}${diff!==0?' — Diferencia: $'+diff.toFixed(2)+' (redondeo)':' — Coincide'}" style="color:var(--emerald);cursor:help">⚠</span>`;
+        } else {
+          cmp = ` <span title="Declarado F104 ${codLabel}: $${declarado.toFixed(2)} — Diferencia: $${diff.toFixed(2)}" style="color:#f59e0b;cursor:help">⚠</span>`;
+        }
       }
+      // Marca de auditoría — solo en columnas con casillero (son las auditables contra mayores contables)
+      const revChecked = !!revFila[col.c];
+      const marcaRevisado = col.k ? `<span onclick="toggleRevisadoHojaIVA(${mes},'${col.c}')" title="${revChecked?'Revisado contra mayores contables ✓ (clic para quitar)':'Marcar como revisado contra mayores contables'}" style="cursor:pointer;margin-left:3px;font-size:.68rem;opacity:${revChecked?1:.35}">${revChecked?'📗':'📄'}</span>` : '';
       if (editable) {
-        const raw = (col.rolling ? manual[col.c] : manual[col.c]);
+        const raw = manual[col.c];
         return `<td style="padding:2px;background:rgba(147,197,253,.05)">
           <input type="number" step="0.01" value="${raw !== undefined && raw !== null ? raw : ''}" placeholder="0.00"
             onchange="actualizarCeldaHojaIVA(${mes},'${col.c}',this.value)"
-            style="width:88px;background:var(--bg-card);border:1px solid #93c5fd55;border-radius:4px;padding:3px 5px;color:#93c5fd;font-size:.72rem;text-align:right">
+            style="width:80px;background:var(--bg-card);border:1px solid #93c5fd55;border-radius:4px;padding:3px 5px;color:#93c5fd;font-size:.72rem;text-align:right">${marcaRevisado}
         </td>`;
       }
-      return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;color:var(--text-secondary);white-space:nowrap">${val.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}${cmp}</td>`;
+      return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;color:var(--text-secondary);white-space:nowrap">${val.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}${cmp}${marcaRevisado}</td>`;
     }).join('');
     filasHtml.push(`<tr>
-      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:600;padding:4px 8px;white-space:nowrap">${HIVA_MESES[mes-1].slice(0,3)}</td>
+      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.72rem;font-weight:600;padding:4px 8px;white-space:nowrap">${HIVA_MESES[mes-1].slice(0,3)}<br><span style="font-weight:400;color:var(--text-muted);font-size:.62rem">Original</span></td>
       ${tds}
+    </tr>`);
+
+    // ── Fila secundaria (Sustitutiva) — solo columnas con casillero; el resto queda en blanco ──
+    const tdsSust = HIVA_COLS_FLAT.map(col => {
+      if (!col.k) return `<td style="padding:4px 6px;text-align:center;color:var(--text-muted);font-size:.7rem">—</td>`;
+      const sustVal = sustFila[col.c];
+      const original = r[col.c] || 0;
+      let diffHtml = '';
+      if (sustVal !== undefined && sustVal !== null) {
+        const diff = Math.round((sustVal - original) * 100) / 100;
+        diffHtml = diff === 0
+          ? ` <span style="color:var(--text-muted)">(sin cambio)</span>`
+          : ` <span style="color:${diff>0?'#f59e0b':'#60a5fa'}">(Δ ${diff>0?'+':''}$${diff.toFixed(2)})</span>`;
+      }
+      return `<td style="padding:2px;background:rgba(245,158,11,.05)">
+        <input type="number" step="0.01" value="${sustVal !== undefined && sustVal !== null ? sustVal : ''}" placeholder="—"
+          onchange="actualizarCeldaSustHojaIVA(${mes},'${col.c}',this.value)"
+          style="width:80px;background:var(--bg-card);border:1px solid #f59e0b55;border-radius:4px;padding:3px 5px;color:#f59e0b;font-size:.72rem;text-align:right">${diffHtml}
+      </td>`;
+    }).join('');
+    filasHtml.push(`<tr style="border-bottom:2px solid var(--border)">
+      <td style="position:sticky;left:0;background:var(--bg-card);font-size:.68rem;font-style:italic;padding:2px 8px;color:#f59e0b;white-space:nowrap">↳ Sustitutiva</td>
+      ${tdsSust}
     </tr>`);
   }
 
-  // Totales
+  // Totales (sobre la fila Original — la sustitutiva es un ajuste puntual por mes, no se totaliza aparte)
   const totales = HIVA_COLS_FLAT.map(col => {
     const suma = Object.values(filas).reduce((s, r) => s + (r[col.c] || 0), 0);
     return `<td style="padding:4px 6px;text-align:right;font-size:.72rem;font-weight:700;color:var(--gold);white-space:nowrap;border-top:2px solid var(--border)">${suma.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
@@ -13799,12 +13851,33 @@ function actualizarCeldaHojaIVA(mes, col, valor) {
   _hivaSaveTimer = setTimeout(() => guardarHojaIVA(), 900);
 }
 
+// Celda de la fila "Sustitutiva" — valor declarado en la declaración sustitutiva para esa columna/mes
+function actualizarCeldaSustHojaIVA(mes, col, valor) {
+  window._apHojaIVASust = window._apHojaIVASust || {};
+  window._apHojaIVASust[mes] = window._apHojaIVASust[mes] || {};
+  window._apHojaIVASust[mes][col] = valor === '' ? null : parseFloat(valor);
+  renderHojaIVATabla();
+  clearTimeout(_hivaSaveTimer);
+  _hivaSaveTimer = setTimeout(() => guardarHojaIVA(), 900);
+}
+
+// Marca de auditoría: "revisado contra los mayores contables"
+function toggleRevisadoHojaIVA(mes, col) {
+  window._apHojaIVARevisado = window._apHojaIVARevisado || {};
+  window._apHojaIVARevisado[mes] = window._apHojaIVARevisado[mes] || {};
+  window._apHojaIVARevisado[mes][col] = !window._apHojaIVARevisado[mes][col];
+  renderHojaIVATabla();
+  guardarHojaIVA();
+}
+
 async function guardarHojaIVA(manual) {
   if (!_apExpediente) return;
   const payload = {
     meta: { anio: window._apHojaIVAAnio || '', actualizado: new Date().toISOString() },
     meses: window._apHojaIVA || {},
     declarados: window._apHojaIVADeclarados || {},
+    sustitutivaManual: window._apHojaIVASust || {},
+    revisado: window._apHojaIVARevisado || {},
   };
   await FirebaseDB.set(`audit_pro/${_apExpediente.codigo}/hoja_iva`, payload);
   if (manual) toast('Hoja de trabajo IVA guardada ✓', 'success');
@@ -13816,6 +13889,7 @@ const HIVA_MES_REGEX = new RegExp('PER[IÍ]ODO FISCAL:?\\s*(' + HIVA_MESES.join(
 async function subirDeclaracionHojaIVA(input) {
   const file = input.files[0];
   const status = document.getElementById('hiva-pdf-status');
+  const tipoDecl = document.getElementById('hiva-tipo-decl')?.value || 'original';
   if (!file || !_apExpediente) return;
   if (!status) return;
   status.innerHTML = '🔍 Leyendo declaración PDF del SRI...';
@@ -13862,40 +13936,53 @@ async function subirDeclaracionHojaIVA(input) {
 
       window._apHojaIVA = window._apHojaIVA || {};
       window._apHojaIVADeclarados = window._apHojaIVADeclarados || {};
+      window._apHojaIVASust = window._apHojaIVASust || {};
       window._apHojaIVAAnio = window._apHojaIVAAnio || anio;
       const anioEl = document.getElementById('hiva-anio');
       if (anioEl && !anioEl.value) anioEl.value = anio;
 
-      // 1) Columnas manuales con casillero → autollenar directamente (suma si la columna combina 2 casilleros)
-      let llenados = 0;
-      window._apHojaIVA[mes] = window._apHojaIVA[mes] || {};
-      HIVA_COLS_FLAT.forEach(col => {
-        if ((col.m || (col.rolling && mes === 1)) && col.k) {
+      let llenados = 0, comparados = 0;
+
+      if (tipoDecl === 'sustitutiva') {
+        // Declaración SUSTITUTIVA: nunca toca los datos "Original" — se guarda aparte, en la fila ↳ Sustitutiva
+        window._apHojaIVASust[mes] = window._apHojaIVASust[mes] || {};
+        HIVA_COLS_FLAT.forEach(col => {
+          if (!col.k) return;
           const keys = hivaKeys(col).filter(k => k in todosLosPares);
           if (keys.length) {
-            window._apHojaIVA[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+            window._apHojaIVASust[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
             llenados++;
           }
-        }
-      });
-
-      // 2) Columnas de fórmula con casillero → guardar como "declarado" para comparación (suma si combina 2 casilleros)
-      window._apHojaIVADeclarados[mes] = window._apHojaIVADeclarados[mes] || {};
-      let comparados = 0;
-      HIVA_COLS_FLAT.forEach(col => {
-        if (!col.m && !col.km && !(col.rolling && mes === 1) && col.k) {
-          const keys = hivaKeys(col).filter(k => k in todosLosPares);
-          if (keys.length) {
-            window._apHojaIVADeclarados[mes][hivaKeyId(col)] = keys.reduce((s, k) => s + todosLosPares[k], 0);
-            comparados++;
+        });
+      } else {
+        // Declaración ORIGINAL (comportamiento existente)
+        window._apHojaIVA[mes] = window._apHojaIVA[mes] || {};
+        HIVA_COLS_FLAT.forEach(col => {
+          if ((col.m || (col.rolling && mes === 1)) && col.k) {
+            const keys = hivaKeys(col).filter(k => k in todosLosPares);
+            if (keys.length) {
+              window._apHojaIVA[mes][col.c] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+              llenados++;
+            }
           }
-        }
-      });
+        });
+        window._apHojaIVADeclarados[mes] = window._apHojaIVADeclarados[mes] || { original: {}, sustitutiva: {} };
+        HIVA_COLS_FLAT.forEach(col => {
+          if (!col.m && !col.km && !(col.rolling && mes === 1) && col.k) {
+            const keys = hivaKeys(col).filter(k => k in todosLosPares);
+            if (keys.length) {
+              window._apHojaIVADeclarados[mes].original[hivaKeyId(col)] = keys.reduce((s, k) => s + todosLosPares[k], 0);
+              comparados++;
+            }
+          }
+        });
+      }
 
       renderHojaIVATabla();
       await guardarHojaIVA();
-      status.innerHTML = `✅ ${mesNombre} ${anio}: ${llenados} casillero(s) cargados en celdas manuales, ${comparados} guardados para comparación (${Object.keys(todosLosPares).length} pares detectados en el PDF).`;
-      toast(`Declaración F104 de ${mesNombre} ${anio} procesada ✓`, 'success');
+      const tipoLabel = tipoDecl === 'sustitutiva' ? 'SUSTITUTIVA' : 'ORIGINAL';
+      status.innerHTML = `✅ ${mesNombre} ${anio} (${tipoLabel}): ${llenados} casillero(s) cargados${tipoDecl==='sustitutiva'?' en la fila Sustitutiva':' en celdas manuales'}${comparados?`, ${comparados} guardados para comparación`:''} (${Object.keys(todosLosPares).length} pares detectados en el PDF).`;
+      toast(`Declaración F104 ${tipoLabel} de ${mesNombre} ${anio} procesada ✓`, 'success');
     } catch (err) {
       status.innerHTML = '⚠️ Error al procesar el PDF: ' + err.message;
       console.error(err);
