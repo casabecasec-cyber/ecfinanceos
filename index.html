@@ -9427,7 +9427,6 @@ function renderIndicesEF() {
 
   const fila = (label, getter, fmt, tipo, desc) => {
     const vals = indices.map(getter);
-    if (vals.every(v=>!v||Math.abs(v)<0.001)) return '';
     let celdas = vals.map((v,i) => {
       const vPrev = i>0 ? vals[i-1] : null;
       return `<td style="text-align:right;font-family:var(--font-mono)">${fmt(v)}
@@ -9435,7 +9434,7 @@ function renderIndicesEF() {
       </td>`;
     }).join('');
     return `<tr>
-      <td class="account" title="${desc||''}">${label}${desc?`<span style="font-size:.65rem;color:var(--text-muted);display:block;line-height:1.3">${desc}</span>`:''}
+      <td class="account" title="${desc||''}">${label}${desc?`<span style="font-size:.7rem;color:var(--text-secondary);display:block;line-height:1.4;margin-top:2px">💡 ${desc}</span>`:''}
       </td>${celdas}
     </tr>`;
   };
@@ -9697,6 +9696,13 @@ function renderKPIsEF() {
       solvencia: tp ? ta/tp : 0,
       roic: (tp+pat) ? ebit*(1-0.22)/(tp+pat)*100 : 0,
       cicloConversion: diasCobro + diasInv - diasPago,
+      razonCorriente: pc ? ac/pc : 0,
+      pruebaAcida: pc ? (ac-inv)/pc : 0,
+      endeudPat: pat ? tp/pat*100 : 0,
+      diasCobro, diasInv, diasPago,
+      roa: ta ? utNeta/ta*100 : 0,
+      rotInv: costo&&inv ? costo/inv : 0,
+      margenNeto: vtas ? utNeta/vtas*100 : 0,
     };
   };
 
@@ -9709,7 +9715,7 @@ function renderKPIsEF() {
     <div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid ${colorEstado};border-radius:10px;padding:16px 18px">
       <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${icono} ${titulo}</div>
       <div style="font-size:1.5rem;font-weight:700;color:${colorEstado};font-family:var(--font-mono)">${valor}</div>
-      ${subtitulo ? `<div style="font-size:.72rem;color:var(--text-muted);margin-top:4px">${subtitulo}</div>` : ''}
+      ${subtitulo ? `<div style="font-size:.74rem;color:var(--text-secondary);margin-top:5px;line-height:1.4">💡 ${subtitulo}</div>` : ''}
       ${tendencia !== null && tendencia !== undefined ? `<div style="font-size:.72rem;margin-top:6px;color:${tendencia>=0?'var(--emerald)':'#ef4444'}">${tendencia>=0?'▲':'▼'} ${Math.abs(tendencia).toFixed(1)}% vs. ${anterior.nombre}</div>` : ''}
     </div>`;
 
@@ -9737,6 +9743,14 @@ function renderKPIsEF() {
       ${tarjeta('🧾','Tasa Efectiva de Impuesto a la Renta', fmtP(act.tasaEfectivaIR), 'var(--gold)', 'IR causado / Utilidad antes de impuestos')}
       ${tarjeta('🔁','Ciclo de Conversión de Efectivo', Math.round(act.cicloConversion)+' días', colorPorRango(act.cicloConversion,30,60,true), 'Días cobro + Días inventario − Días pago — menor es mejor')}
       ${tarjeta('💹','ROIC Aproximado', fmtP(act.roic), colorPorRango(act.roic,10,5), 'NOPAT / (Deuda + Patrimonio)')}
+      ${tarjeta('💧','Razón Corriente', fmtR(act.razonCorriente), colorPorRango(act.razonCorriente,1.5,1.0), 'Activo Corriente / Pasivo Corriente — capacidad de pago inmediata')}
+      ${tarjeta('🧪','Prueba Ácida', fmtR(act.pruebaAcida), colorPorRango(act.pruebaAcida,1.0,0.7), '(Activo Corriente − Inventarios) / Pasivo Corriente')}
+      ${tarjeta('⚠️','Endeudamiento sobre Patrimonio', fmtP(act.endeudPat), colorPorRango(act.endeudPat,100,150,true), 'Pasivo Total / Patrimonio — óptimo: <100%')}
+      ${tarjeta('📥','Días de Cobro', Math.round(act.diasCobro)+' días', colorPorRango(act.diasCobro,30,60,true), 'Tiempo promedio en cobrar a clientes')}
+      ${tarjeta('📤','Días de Pago', Math.round(act.diasPago)+' días', 'var(--gold)', 'Tiempo promedio en pagar a proveedores')}
+      ${tarjeta('📦','Días de Inventario', Math.round(act.diasInv)+' días', colorPorRango(act.diasInv,60,90,true), 'Tiempo promedio en vender el inventario')}
+      ${tarjeta('🏆','ROA — Retorno sobre Activos', fmtP(act.roa), colorPorRango(act.roa,5,2), 'Utilidad Neta / Total Activos')}
+      ${tarjeta('🔁','Rotación de Inventario', fmtR(act.rotInv), colorPorRango(act.rotInv,4,2), 'Costo de Ventas / Inventarios — veces al año')}
     </div>
 
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
