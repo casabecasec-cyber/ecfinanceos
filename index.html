@@ -18078,7 +18078,7 @@ async function editarCedulaAnalitica(cedulaId) {
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.78);z-index:9999;overflow-y:auto;padding:20px;box-sizing:border-box';
 
   modal.innerHTML = `
-    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(900px,100%);margin:0 auto;border:1px solid var(--border)">
+    <div style="background:var(--bg-card);border-radius:12px;padding:24px;width:min(1300px,98%);margin:0 auto;border:1px solid var(--border)">
 
       <!-- Encabezado -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
@@ -18143,18 +18143,18 @@ async function editarCedulaAnalitica(cedulaId) {
         <table class="ef-table" id="ced-filas-tabla">
           <thead>
             <tr>
-              <th class="left" style="min-width:200px">Subcuenta / Concepto</th>
-              <th style="text-align:right;width:120px">Saldo Libros</th>
-              <th style="text-align:right;width:100px">Ajuste</th>
-              <th style="text-align:right;width:120px">Saldo Auditado</th>
+              <th class="left" style="min-width:280px">Subcuenta / Concepto</th>
+              <th style="text-align:right;width:160px">Saldo Libros</th>
+              <th style="text-align:right;width:150px">Ajuste</th>
+              <th style="text-align:right;width:160px">Saldo Auditado</th>
               <th style="text-align:center;width:90px">Marcas</th>
               <th style="text-align:center;width:70px">Subtotal</th>
-              <th style="min-width:150px">Notas</th>
+              <th style="min-width:180px">Notas</th>
               <th style="width:36px"></th>
             </tr>
           </thead>
           <tbody id="ced-filas-edit">
-            ${(ced.filas||[]).map((f,fi)=>_renderFilaCedula(f,fi)).join('')}
+            ${renderTablaCedulaCompleta(ced.filas||[])}
           </tbody>
         </table>
       </div>
@@ -18204,25 +18204,40 @@ async function editarCedulaAnalitica(cedulaId) {
 }
 
 // Render de una fila individual de la cédula
+// Arma la tabla completa de una sola pasada (de arriba hacia abajo), llevando la cuenta de
+// dónde empezó el grupo actual — más confiable que buscar hacia atrás fila por fila.
+function renderTablaCedulaCompleta(filas) {
+  let html = '';
+  let desdeGrupo = 0;
+  filas.forEach((f, fi) => {
+    html += _renderFilaCedula(f, fi);
+    if (f.subtotalAqui) {
+      html += _renderFilaSubtotalCedula(fi, desdeGrupo, filas);
+      desdeGrupo = fi + 1;
+    }
+  });
+  return html;
+}
+
 function _renderFilaCedula(f, fi) {
   const fmtV = v => (parseFloat(v)||0).toFixed(2);
   return `<tr id="ced-fila-row-${fi}">
     <td><input value="${(f.cuenta||'').replace(/"/g,'&quot;')}"
       oninput="actualizarFilaCed(${fi},'cuenta',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+      style="width:100%;min-width:260px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 9px;color:var(--text-primary);font-size:.88rem;box-sizing:border-box"></td>
     <td><input type="number" value="${fmtV(f.saldoLibros)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'saldoLibros',this.value);actualizarCuadreCedula()"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;min-width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 9px;color:var(--text-primary);font-size:.88rem;text-align:right;box-sizing:border-box"></td>
     <td><input type="number" value="${fmtV(f.ajuste)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'ajuste',this.value);actualizarCuadreCedula()"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;min-width:130px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 9px;color:var(--text-primary);font-size:.88rem;text-align:right;box-sizing:border-box"></td>
     <td><input type="number" value="${fmtV(f.saldoAuditado)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;min-width:140px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 9px;color:var(--text-primary);font-size:.88rem;text-align:right;box-sizing:border-box"></td>
     <td>
       <div style="display:flex;align-items:center;gap:3px;justify-content:center">
         <input id="marca-inp-${fi}" value="${f.marcas||'✓'}"
@@ -18236,28 +18251,23 @@ function _renderFilaCedula(f, fi) {
     </td>
     <td style="text-align:center">
       <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer" title="Marcar esta fila como cierre de un subtotal: sumará desde el subtotal anterior (o desde arriba) hasta aquí">
-        <input type="checkbox" ${f.subtotalAqui?'checked':''} onchange="toggleSubtotalFila(${fi},this.checked)" style="cursor:pointer">
-        <span style="font-size:.62rem;color:var(--text-muted)">📐 Subtotal</span>
+        <input type="checkbox" ${f.subtotalAqui?'checked':''} onchange="toggleSubtotalFila(${fi},this.checked)" style="cursor:pointer;width:18px;height:18px">
+        <span style="font-size:.65rem;color:var(--text-muted)">📐 Subtotal</span>
       </label>
     </td>
     <td><input value="${(f.notas||'').replace(/"/g,'&quot;')}"
       oninput="actualizarFilaCed(${fi},'notas',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+      style="width:100%;min-width:170px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 9px;color:var(--text-primary);font-size:.88rem;box-sizing:border-box"></td>
     <td><button onclick="eliminarFilaCedula(${fi})"
-      style="padding:3px 6px;background:rgba(239,68,68,.1);color:#ef4444;
-        border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.75rem">✕</button></td>
-  </tr>${f.subtotalAqui ? _renderFilaSubtotalCedula(fi) : ''}`;
+      style="padding:5px 8px;background:rgba(239,68,68,.1);color:#ef4444;
+        border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.8rem">✕</button></td>
+  </tr>`;
 }
 
-// Fila calculada de subtotal — aparece justo debajo de una fila marcada con "📐 Subtotal"
-function _renderFilaSubtotalCedula(fi) {
-  const filas = window._cedulaEditando?.filas || [];
-  // Encontrar el índice del subtotal marcado anterior a este (si existe) para sumar solo desde ahí
-  let desde = 0;
-  for (let i = fi - 1; i >= 0; i--) {
-    if (filas[i]?.subtotalAqui) { desde = i + 1; break; }
-  }
+// Fila calculada de subtotal — aparece justo debajo de una fila marcada con "📐 Subtotal".
+// "desde" viene ya calculado desde renderTablaCedulaCompleta (una sola pasada, sin buscar hacia atrás).
+function _renderFilaSubtotalCedula(fi, desde, filas) {
   const grupo = filas.slice(desde, fi + 1);
   const sLib = grupo.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
   const sAj  = grupo.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
@@ -18268,15 +18278,15 @@ function _renderFilaSubtotalCedula(fi) {
     <td>
       <input value="${nombre.replace(/"/g,'&quot;')}" placeholder="Nombre de este subtotal..."
         oninput="actualizarFilaCed(${fi},'subtotalNombre',this.value)"
-        style="width:100%;background:transparent;border:none;border-bottom:1px dashed var(--gold);
-          padding:4px 2px;color:var(--gold);font-weight:700;font-size:.8rem">
+        style="width:100%;min-width:260px;background:transparent;border:none;border-bottom:1px dashed var(--gold);
+          padding:6px 4px;color:var(--gold);font-weight:700;font-size:.9rem;box-sizing:border-box">
     </td>
-    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtV(sLib)}</td>
-    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtV(sAj)}</td>
-    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtV(sAud)}</td>
-    <td style="text-align:center;font-size:.7rem;color:var(--text-muted)">Σ filas ${desde+1}–${fi+1}</td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold);font-size:.88rem">${fmtV(sLib)}</td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold);font-size:.88rem">${fmtV(sAj)}</td>
+    <td style="text-align:right;font-family:var(--font-mono);font-weight:700;color:var(--gold);font-size:.88rem">${fmtV(sAud)}</td>
+    <td style="text-align:center;font-size:.72rem;color:var(--text-muted)">Σ filas ${desde+1}–${fi+1}</td>
     <td></td>
-    <td style="font-size:.7rem;color:var(--text-muted);font-style:italic">Subtotal automático</td>
+    <td style="font-size:.72rem;color:var(--text-muted);font-style:italic">Subtotal automático</td>
     <td></td>
   </tr>`;
 }
@@ -18289,7 +18299,7 @@ function toggleSubtotalFila(fi, checked) {
   if (checked && !f.subtotalNombre) f.subtotalNombre = `Subtotal ${fi+1}`;
   // Re-renderizar toda la tabla para intercalar/quitar la fila de subtotal correctamente
   const tbody = document.getElementById('ced-filas-edit');
-  if (tbody) tbody.innerHTML = window._cedulaEditando.filas.map((ff,i)=>_renderFilaCedula(ff,i)).join('');
+  if (tbody) tbody.innerHTML = renderTablaCedulaCompleta(window._cedulaEditando.filas);
   actualizarCuadreCedula();
 }
 
@@ -18350,6 +18360,7 @@ function procesarPegarExcel() {
 
   const lineas = texto.split('\n').filter(l => l.trim());
   if (!lineas.length) return;
+  if (!window._cedulaEditando) return;
 
   let agregadas = 0;
   lineas.forEach(linea => {
@@ -18367,21 +18378,14 @@ function procesarPegarExcel() {
     const notas        = cols[3] || '';
 
     if (!cuenta) return;
-
-    if (!window._cedulaEditando) return;
-    const fi = window._cedulaEditando.filas.length;
     window._cedulaEditando.filas.push({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas });
-
-    const tbody = document.getElementById('ced-filas-edit');
-    if (tbody) {
-      const tr = document.createElement('tr');
-      tr.id = `ced-fila-row-${fi}`;
-      tr.innerHTML = _renderFilaCedula({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas }, fi).replace(/^<tr[^>]*>|<\/tr>$/g,'');
-      tbody.appendChild(tr);
-    }
     agregadas++;
   });
 
+  // Re-renderizar la tabla completa (en una sola pasada) en vez de solo agregar filas sueltas —
+  // así los subtotales ya marcados nunca se desincronizan de sus índices.
+  const tbody = document.getElementById('ced-filas-edit');
+  if (tbody) tbody.innerHTML = renderTablaCedulaCompleta(window._cedulaEditando.filas);
   actualizarCuadreCedula();
   toast(`${agregadas} fila${agregadas!==1?'s':''} agregada${agregadas!==1?'s':''} desde Excel ✓`, 'success');
 }
@@ -18400,18 +18404,17 @@ function actualizarFilaCed(fi, campo, valor) {
 
 function agregarFilaCedula() {
   if (!window._cedulaEditando) return;
-  const fi = window._cedulaEditando.filas.length;
   const nuevaFila = { cuenta:'', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' };
   window._cedulaEditando.filas.push(nuevaFila);
   const tbody = document.getElementById('ced-filas-edit');
   if (!tbody) return;
-  const tr = document.createElement('tr');
-  tr.id = `ced-fila-row-${fi}`;
-  tr.innerHTML = _renderFilaCedula(nuevaFila, fi).replace(/^<tr[^>]*>|<\/tr>$/g,'');
-  tbody.appendChild(tr);
+  tbody.innerHTML = renderTablaCedulaCompleta(window._cedulaEditando.filas);
   actualizarCuadreCedula();
-  // Focus en el campo cuenta de la nueva fila
-  setTimeout(()=>tr.querySelector('input')?.focus(), 50);
+  // Focus en el campo cuenta de la última fila agregada
+  setTimeout(()=>{
+    const filas = tbody.querySelectorAll('tr[id^="ced-fila-row-"]');
+    filas[filas.length-1]?.querySelector('input')?.focus();
+  }, 50);
 }
 
 function eliminarFilaCedula(fi) {
@@ -18419,7 +18422,7 @@ function eliminarFilaCedula(fi) {
   window._cedulaEditando.filas.splice(fi, 1);
   // Re-renderizar toda la tabla para reindexar
   const tbody = document.getElementById('ced-filas-edit');
-  if (tbody) tbody.innerHTML = window._cedulaEditando.filas.map((f,i)=>_renderFilaCedula(f,i)).join('');
+  if (tbody) tbody.innerHTML = renderTablaCedulaCompleta(window._cedulaEditando.filas);
   actualizarCuadreCedula();
 }
 
