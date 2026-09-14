@@ -15725,75 +15725,179 @@ async function editarCedulaAnalitica(cedulaId) {
 // Render de una fila individual de la cédula
 function _renderFilaCedula(f, fi) {
   const fmtV = v => (parseFloat(v)||0).toFixed(2);
+
+  // ── Fila de SUBTOTAL ────────────────────────────────────────────────────
+  if (f.esSubtotal) {
+    return `<tr id="ced-fila-row-${fi}" style="background:rgba(212,175,55,.07);border-top:2px solid rgba(212,175,55,.35)">
+      <td style="padding:5px 8px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:.68rem;padding:1px 6px;background:rgba(212,175,55,.2);color:var(--gold);border-radius:8px;font-weight:700;white-space:nowrap;flex-shrink:0">Σ SUBTOTAL</span>
+          <input value="${(f.nombreSubtotal||'Subtotal').replace(/"/g,'&quot;')}"
+            oninput="actualizarFilaCed(${fi},'nombreSubtotal',this.value)"
+            placeholder="Nombre del subtotal..."
+            style="flex:1;background:transparent;border:none;border-bottom:1px dashed rgba(212,175,55,.4);padding:2px 4px;color:var(--gold);font-size:.8rem;font-weight:600;font-style:italic;outline:none">
+        </div>
+      </td>
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--gold);font-family:var(--font-mono);font-size:.84rem" id="ced-sub-lib-${fi}">$${fmtV(f.saldoLibros)}</td>
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--gold);font-family:var(--font-mono);font-size:.84rem" id="ced-sub-aj-${fi}">${parseFloat(f.ajuste)?'$'+fmtV(f.ajuste):'—'}</td>
+      <td style="text-align:right;padding:5px 8px;font-weight:700;color:var(--gold);font-family:var(--font-mono);font-size:.84rem" id="ced-sub-aud-${fi}">$${fmtV(f.saldoAuditado)}</td>
+      <td style="text-align:center;color:var(--gold);font-weight:700;font-size:.9rem">Σ</td>
+      <td></td>
+      <td><button onclick="eliminarFilaCedula(${fi})"
+        style="padding:3px 6px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.75rem">✕</button></td>
+    </tr>`;
+  }
+
+  // ── Fila normal ─────────────────────────────────────────────────────────
   return `<tr id="ced-fila-row-${fi}">
     <td><input value="${(f.cuenta||'').replace(/"/g,'&quot;')}"
       oninput="actualizarFilaCed(${fi},'cuenta',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
     <td><input type="number" value="${fmtV(f.saldoLibros)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'saldoLibros',this.value);actualizarCuadreCedula()"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
     <td><input type="number" value="${fmtV(f.ajuste)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'ajuste',this.value);actualizarCuadreCedula()"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
     <td><input type="number" value="${fmtV(f.saldoAuditado)}" step="0.01"
       oninput="actualizarFilaCed(${fi},'saldoAuditado',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text-primary);font-size:.78rem;text-align:right"></td>
     <td>
-      <div style="display:flex;align-items:center;gap:3px;justify-content:center">
+      <div style="display:flex;align-items:center;gap:2px;justify-content:center">
         <input id="marca-inp-${fi}" value="${f.marcas||'✓'}"
           oninput="actualizarFilaCed(${fi},'marcas',this.value)"
-          style="width:38px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-            padding:3px 4px;font-size:.85rem;text-align:center;color:var(--gold)">
+          style="width:34px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:3px 4px;font-size:.85rem;text-align:center;color:var(--gold)">
         <button onclick="abrirPickerMarcas('marca-inp-${fi}')"
-          style="padding:3px 5px;background:rgba(212,175,55,.1);color:var(--gold);
-            border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.7rem">🔖</button>
+          style="padding:3px 4px;background:rgba(212,175,55,.1);color:var(--gold);border:1px solid var(--gold);border-radius:4px;cursor:pointer;font-size:.68rem">🔖</button>
+        <button onclick="agregarSubtotalEnFila(${fi})"
+          title="Insertar fila Σ SUBTOTAL debajo — suma las filas desde el último subtotal hasta aquí"
+          style="padding:3px 5px;background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.5);border-radius:4px;cursor:pointer;font-size:.75rem;font-weight:700">Σ</button>
       </div>
     </td>
     <td><input value="${(f.notas||'').replace(/"/g,'&quot;')}"
       oninput="actualizarFilaCed(${fi},'notas',this.value)"
-      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
-        padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
+      style="width:100%;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;padding:4px 7px;color:var(--text-primary);font-size:.78rem"></td>
     <td><button onclick="eliminarFilaCedula(${fi})"
-      style="padding:3px 6px;background:rgba(239,68,68,.1);color:#ef4444;
-        border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.75rem">✕</button></td>
+      style="padding:3px 6px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:4px;cursor:pointer;font-size:.75rem">✕</button></td>
   </tr>`;
 }
 
-// Actualizar cuadre en tiempo real
+// Insertar fila subtotal después de la fila fi, sumando desde el último subtotal
+function agregarSubtotalEnFila(fi) {
+  if (!window._cedulaEditando) return;
+  const filas = window._cedulaEditando.filas;
+
+  // Encontrar desde dónde sumar: desde el último subtotal anterior (o desde el inicio)
+  let desde = 0;
+  for (let i = fi; i >= 0; i--) {
+    if (i < fi && filas[i].esSubtotal) { desde = i + 1; break; }
+  }
+
+  // Calcular sumas del rango [desde..fi]
+  let sumLib = 0, sumAj = 0, sumAud = 0;
+  for (let i = desde; i <= fi; i++) {
+    if (!filas[i].esSubtotal) {
+      sumLib += parseFloat(filas[i].saldoLibros) || 0;
+      sumAj  += parseFloat(filas[i].ajuste)      || 0;
+      sumAud += parseFloat(filas[i].saldoAuditado)|| 0;
+    }
+  }
+
+  // Insertar fila subtotal justo DESPUÉS de fi
+  const subtotal = {
+    esSubtotal:     true,
+    nombreSubtotal: 'Subtotal',
+    saldoLibros:    sumLib,
+    ajuste:         sumAj,
+    saldoAuditado:  sumAud,
+    marcas:         'Σ',
+    notas:          '',
+    cuenta:         '',
+  };
+
+  filas.splice(fi + 1, 0, subtotal);
+
+  // Re-renderizar tabla completa
+  const tbody = document.getElementById('ced-filas-edit');
+  if (tbody) {
+    tbody.innerHTML = filas.map((f, i) => _renderFilaCedula(f, i)).join('');
+  }
+  actualizarCuadreCedula();
+  toast('Σ Subtotal insertado — edite el nombre si lo desea', 'success');
+}
+
+// Actualizar cuadre en tiempo real — recalcula subtotales automáticamente
 function actualizarCuadreCedula() {
   if (!window._cedulaEditando) return;
   const filas = window._cedulaEditando.filas;
-  const totalRef  = parseFloat(document.getElementById('ced-saldo-total')?.value)||0;
-  const sumaLib   = filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
-  const sumaAj    = filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
-  const sumaAud   = filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0);
-  const dif       = Math.abs(totalRef - sumaLib);
-  const fmtN = v => (Math.abs(parseFloat(v)||0)).toLocaleString('es-EC',{minimumFractionDigits:2});
+
+  // Recalcular cada subtotal: suma desde el subtotal anterior hasta antes de este
+  let ultimoSubtotalIdx = -1;
+  filas.forEach((f, i) => {
+    if (f.esSubtotal) {
+      let sumLib = 0, sumAj = 0, sumAud = 0;
+      for (let j = ultimoSubtotalIdx + 1; j < i; j++) {
+        if (!filas[j].esSubtotal) {
+          sumLib += parseFloat(filas[j].saldoLibros)    || 0;
+          sumAj  += parseFloat(filas[j].ajuste)         || 0;
+          sumAud += parseFloat(filas[j].saldoAuditado)  || 0;
+        }
+      }
+      f.saldoLibros    = sumLib;
+      f.ajuste         = sumAj;
+      f.saldoAuditado  = sumAud;
+      // Actualizar celdas en DOM
+      const fmtV = v => v.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2});
+      const libEl = document.getElementById(`ced-sub-lib-${i}`);
+      const ajEl  = document.getElementById(`ced-sub-aj-${i}`);
+      const audEl = document.getElementById(`ced-sub-aud-${i}`);
+      if (libEl) libEl.textContent = '$' + fmtV(sumLib);
+      if (ajEl)  ajEl.textContent  = sumAj ? '$' + fmtV(sumAj) : '—';
+      if (audEl) audEl.textContent = '$' + fmtV(sumAud);
+      ultimoSubtotalIdx = i;
+    }
+  });
+
+  // Total general: suma de filas normales (no subtotales) o bien sólo los subtotales si existen
+  const haySubtotales = filas.some(f => f.esSubtotal);
+  const fmtN = v => Math.abs(parseFloat(v)||0).toLocaleString('es-EC',{minimumFractionDigits:2});
+  let sumaLib, sumaAj, sumaAud;
+
+  if (haySubtotales) {
+    // Sumar solo filas normales que quedan DESPUÉS del último subtotal
+    // más los subtotales — en realidad: sumar TODOS los normales (subtotales son derivados)
+    sumaLib = filas.filter(f=>!f.esSubtotal).reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
+    sumaAj  = filas.filter(f=>!f.esSubtotal).reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
+    sumaAud = filas.filter(f=>!f.esSubtotal).reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0);
+  } else {
+    sumaLib = filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0);
+    sumaAj  = filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0);
+    sumaAud = filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0);
+  }
+
+  const totalRef = parseFloat(document.getElementById('ced-saldo-total')?.value) || 0;
+  const dif      = Math.abs(totalRef - sumaLib);
 
   const statusEl = document.getElementById('ced-cuadre-status');
   if (statusEl) {
-    if (filas.length === 0) {
+    if (filas.filter(f=>!f.esSubtotal).length === 0) {
       statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:var(--bg-card2);color:var(--text-muted)';
       statusEl.textContent = 'Ingrese subcuentas para verificar';
     } else if (dif < 0.02) {
       statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:rgba(16,185,129,.12);color:var(--emerald);font-weight:600;border:1px solid var(--emerald)';
-      statusEl.innerHTML = `✅ CUADRADO — Suma subcuentas = $${fmtN(sumaLib)} = Saldo en libros`;
+      statusEl.innerHTML = `✅ CUADRADO — Suma: $${fmtN(sumaLib)} = Saldo en libros`;
     } else {
       statusEl.style.cssText = 'font-size:.84rem;padding:6px 12px;border-radius:6px;background:rgba(239,68,68,.1);color:#ef4444;font-weight:600;border:1px solid rgba(239,68,68,.3)';
-      statusEl.innerHTML = `⚠️ DIFERENCIA: $${fmtN(dif)} — Suma subcuentas: $${fmtN(sumaLib)} vs Saldo: $${fmtN(totalRef)}`;
+      statusEl.innerHTML = `⚠️ DIFERENCIA: $${fmtN(dif)} — Suma: $${fmtN(sumaLib)} vs Saldo: $${fmtN(totalRef)}`;
     }
   }
 
   const libEl = document.getElementById('ced-suma-libros');
   const ajEl  = document.getElementById('ced-suma-ajustes');
   const audEl = document.getElementById('ced-suma-auditado');
-  if (libEl) libEl.textContent = '$'+fmtN(sumaLib);
-  if (ajEl)  ajEl.textContent  = (sumaAj!==0?'$'+fmtN(sumaAj):'—');
-  if (audEl) audEl.textContent = '$'+fmtN(sumaAud);
+  if (libEl) libEl.textContent = '$' + fmtN(sumaLib);
+  if (ajEl)  ajEl.textContent  = sumaAj ? '$' + fmtN(sumaAj) : '—';
+  if (audEl) audEl.textContent = '$' + fmtN(sumaAud);
 }
 
 // Pegar desde Excel — detectar filas automáticamente
@@ -15846,10 +15950,21 @@ function procesarPegarExcel() {
 function actualizarFilaCed(fi, campo, valor) {
   if (!window._cedulaEditando) return;
   if (!window._cedulaEditando.filas[fi]) window._cedulaEditando.filas[fi] = {};
-  window._cedulaEditando.filas[fi][campo] = ['saldoLibros','ajuste','saldoAuditado'].includes(campo) ? parseFloat(valor)||0 : valor;
-  if (campo==='saldoLibros'||campo==='ajuste') {
+  window._cedulaEditando.filas[fi][campo] = ['saldoLibros','ajuste','saldoAuditado'].includes(campo)
+    ? parseFloat(valor)||0 : valor;
+  if (campo === 'saldoLibros' || campo === 'ajuste') {
     const f = window._cedulaEditando.filas[fi];
-    f.saldoAuditado = (f.saldoLibros||0)+(f.ajuste||0);
+    f.saldoAuditado = (f.saldoLibros||0) + (f.ajuste||0);
+    // Update saldoAuditado input
+    const row = document.getElementById(`ced-fila-row-${fi}`);
+    if (row) {
+      const audInput = row.querySelectorAll('input[type=number]')[2];
+      if (audInput) audInput.value = f.saldoAuditado.toFixed(2);
+    }
+  }
+  // Recalculate subtotals whenever any numeric field changes
+  if (['saldoLibros','ajuste','saldoAuditado'].includes(campo)) {
+    actualizarCuadreCedula();
   }
 }
 
@@ -15892,7 +16007,7 @@ async function guardarCedulaEditada(cedulaId) {
     procedimiento: document.getElementById('ced-procedimiento')?.value || ced.procedimiento,
     conclusion:    document.getElementById('ced-conclusion')?.value || '',
     filas,
-    totalLibros:   saldoTotalRef || filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
+    totalLibros:   saldoTotalRef || filas.filter(f=>!f.esSubtotal).reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
     totalAjustes:  filas.reduce((s,f)=>s+(parseFloat(f.ajuste)||0),0),
     totalAuditado: filas.reduce((s,f)=>s+(parseFloat(f.saldoAuditado)||0),0),
     sumaSubcuentas:filas.reduce((s,f)=>s+(parseFloat(f.saldoLibros)||0),0),
@@ -16752,50 +16867,114 @@ function construirInformeHTML(tipo) {
     <h2>C. ASPECTOS CLAVE DE LA AUDITORÍA (NIA 701)</h2>
     <p>Los aspectos clave de la auditoría son aquellos que, según nuestro juicio profesional, han sido los más significativos en la auditoría de los estados financieros del período actual.</p>
 
-    <!-- KPIs -->
-    <h3>C.1 Indicadores Financieros — Período ${periodo}</h3>
-    <div class="kpi-grid">
-      <div class="kpi">
-        <div class="kpi-val">$${fmtN(ta)}</div>
-        <div class="kpi-lbl">TOTAL ACTIVO</div>
-        <div class="kpi-sub">NIC 1 — Estado de Situación</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val" style="color:${tp/ta<=0.6?'#059669':'#DC2626'}">$${fmtN(pat)}</div>
-        <div class="kpi-lbl">PATRIMONIO NETO</div>
-        <div class="kpi-sub">Endeudamiento: ${fmtP(tp/ta*100)}</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val">$${fmtN(vtas)}</div>
-        <div class="kpi-lbl">INGRESOS NETOS</div>
-        <div class="kpi-sub">NIIF 15 — Reconocimiento</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val" style="color:${util>=0?'#059669':'#DC2626'}">$${fmtN(util)}</div>
-        <div class="kpi-lbl">UTILIDAD NETA</div>
-        <div class="kpi-sub">Margen: ${vtas?fmtP(util/vtas*100):'N/A'}</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val" style="color:${ac/pc>=1.2?'#059669':'#DC2626'}">${(ac/pc).toFixed(2)}x</div>
-        <div class="kpi-lbl">RAZÓN CORRIENTE</div>
-        <div class="kpi-sub">Óptimo ≥ 1.20x (NIC 1)</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val">${fmtP(tp/ta*100)}</div>
-        <div class="kpi-lbl">ENDEUDAMIENTO</div>
-        <div class="kpi-sub">Óptimo ≤ 60% (NIIF)</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val">${vtas?fmtP(ub/vtas*100):'N/A'}</div>
-        <div class="kpi-lbl">MARGEN BRUTO</div>
-        <div class="kpi-sub">NIC 2 — Costo de ventas</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-val">${fmtP(util/pat*100)}</div>
-        <div class="kpi-lbl">ROE</div>
-        <div class="kpi-sub">Rentabilidad del patrimonio</div>
-      </div>
-    </div>
+    <!-- ÍNDICES FINANCIEROS HORIZONTALES -->
+    <h2>C. ANÁLISIS DE INDICADORES FINANCIEROS</h2>
+    <h3>C.1 Resumen de Indicadores Clave — Período ${periodo}</h3>
+    ${(()=>{
+      // Variables adicionales necesarias para los índices
+      const inv  = g('INVENTARIOS');
+      const cxc  = g('CUENTAS POR COBRAR');
+      const cxp  = g('CUENTAS POR PAGAR');
+      const gfin = g('GASTO FINANCIERO');
+      const gdep = g('GASTO DEPRECIACION');
+      const ir   = g('IMPUESTO RENTA GASTO');
+      const ef   = g('EFECTIVO');
+      const ebit = util + ir + gfin;
+      const fmtR = v => (parseFloat(v)||0).toFixed(2);
+      const fmtD = v => Math.round(parseFloat(v)||0) + ' d';
+      const clr  = (v, ok, inv2) => {
+        if (v === null || isNaN(v)) return '#94A3B8';
+        return ok(v) ? '#059669' : (inv2 ? '#DC2626' : '#D97706');
+      };
+
+      const grupos = [
+        {
+          titulo: 'LIQUIDEZ',
+          color: '#0284C7',
+          items: [
+            { lbl:'Razón Corriente',  val: pc?(ac/pc):0,           fmt:v=>fmtR(v)+'x',  ref:'≥ 1.20x', ok:v=>v>=1.2,  inv:false },
+            { lbl:'Prueba Ácida',     val: pc?((ac-inv)/pc):0,     fmt:v=>fmtR(v)+'x',  ref:'≥ 1.00x', ok:v=>v>=1.0,  inv:false },
+            { lbl:'Tesorería',        val: pc?(ef/pc):0,           fmt:v=>fmtR(v)+'x',  ref:'≥ 0.20x', ok:v=>v>=0.2,  inv:false },
+            { lbl:'Cap. de Trabajo',  val: ac-pc,                  fmt:v=>'$'+fmtN(v),  ref:'> 0',      ok:v=>v>0,     inv:false },
+          ]
+        },
+        {
+          titulo: 'SOLVENCIA',
+          color: '#7C3AED',
+          items: [
+            { lbl:'Endeudamiento',    val: tp/ta*100,              fmt:v=>v.toFixed(1)+'%', ref:'≤ 60%', ok:v=>v<=60,  inv:true  },
+            { lbl:'Autonomía',        val: pat/ta*100,             fmt:v=>v.toFixed(1)+'%', ref:'≥ 40%', ok:v=>v>=40,  inv:false },
+            { lbl:'Leverage',         val: pat?(tp/pat):0,         fmt:v=>fmtR(v)+'x',  ref:'≤ 2.0x', ok:v=>v<=2.0,   inv:true  },
+            { lbl:'Cob. Intereses',   val: gfin?(ebit/gfin):0,    fmt:v=>fmtR(v)+'x',  ref:'≥ 2.5x', ok:v=>v>=2.5,   inv:false },
+          ]
+        },
+        {
+          titulo: 'RENTABILIDAD',
+          color: '#059669',
+          items: [
+            { lbl:'Margen Bruto',     val: vtas?(ub/vtas*100):0,   fmt:v=>v.toFixed(1)+'%', ref:'> 0%',  ok:v=>v>0,    inv:false },
+            { lbl:'Margen EBITDA',    val: vtas?(ebitda/vtas*100):0, fmt:v=>v.toFixed(1)+'%', ref:'> 5%', ok:v=>v>5,   inv:false },
+            { lbl:'Margen Neto',      val: vtas?(util/vtas*100):0, fmt:v=>v.toFixed(1)+'%', ref:'> 0%',  ok:v=>v>0,    inv:false },
+            { lbl:'ROE',              val: pat?(util/pat*100):0,   fmt:v=>v.toFixed(1)+'%', ref:'> 8%',  ok:v=>v>8,    inv:false },
+            { lbl:'ROA',              val: ta?(util/ta*100):0,     fmt:v=>v.toFixed(1)+'%', ref:'> 3%',  ok:v=>v>3,    inv:false },
+          ]
+        },
+        {
+          titulo: 'ACTIVIDAD',
+          color: '#D97706',
+          items: [
+            { lbl:'Días de Cobro',    val: vtas?(cxc/vtas*365):0,  fmt:fmtD, ref:'< 60 d',  ok:v=>v<60,   inv:true  },
+            { lbl:'Días de Inv.',     val: cv?(inv/cv*365):0,       fmt:fmtD, ref:'< 90 d',  ok:v=>v<90,   inv:true  },
+            { lbl:'Días de Pago',     val: cv?(cxp/cv*365):0,       fmt:fmtD, ref:'20–45 d', ok:v=>v>=20&&v<=45, inv:false },
+            { lbl:'Rot. Activos',     val: ta?(vtas/ta):0,          fmt:v=>fmtR(v)+'x', ref:'> 0.5x', ok:v=>v>0.5, inv:false },
+          ]
+        },
+      ];
+
+      let html = '';
+      grupos.forEach(grp => {
+        html += `
+        <div style="margin-bottom:12pt">
+          <div style="background:${grp.color};color:#fff;padding:4pt 10pt;border-radius:3pt 3pt 0 0;font-size:8pt;font-weight:700;letter-spacing:.05em">
+            ${grp.titulo}
+          </div>
+          <table style="margin:0;border-top:none">
+            <thead>
+              <tr style="background:#F8FAFC">
+                ${grp.items.map(it => `<th style="text-align:center;font-size:7pt;color:#64748B;padding:4pt 6pt;width:${Math.floor(100/grp.items.length)}%">${it.lbl}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                ${grp.items.map(it => {
+                  const v = parseFloat(it.val)||0;
+                  const color = clr(v, it.ok, it.inv);
+                  return `<td style="text-align:center;padding:6pt;border-bottom:none">
+                    <div style="font-size:11pt;font-weight:700;color:${color};font-family:'Courier New'">${it.fmt(v)}</div>
+                    <div style="font-size:6.5pt;color:#94A3B8;margin-top:2pt">Ref: ${it.ref}</div>
+                  </td>`;
+                }).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+      });
+
+      return html;
+    })()}
+
+    <h3 style="margin-top:14pt">C.2 Estado de Resultados Resumido</h3>
+    <table>
+      <tbody>
+        <tr><td style="width:60%"><strong>Ingresos Netos (NIIF 15)</strong></td><td style="text-align:right;font-family:'Courier New';font-weight:700">$${fmtN(vtas)}</td></tr>
+        <tr><td style="padding-left:14pt">Costo de Ventas (NIC 2)</td><td style="text-align:right;font-family:'Courier New'">($${fmtN(cv)})</td></tr>
+        <tr class="total-row"><td><strong>Utilidad Bruta</strong></td><td style="text-align:right;font-family:'Courier New';font-weight:700">$${fmtN(ub)}</td></tr>
+        <tr><td style="padding-left:14pt">EBITDA</td><td style="text-align:right;font-family:'Courier New'">$${fmtN(ebitda)}</td></tr>
+        <tr class="total-row"><td><strong>Utilidad Neta del Ejercicio</strong></td>
+          <td style="text-align:right;font-family:'Courier New';font-weight:700;color:${util>=0?'#059669':'#DC2626'}">$${fmtN(util)}</td></tr>
+      </tbody>
+    </table>
+
 
     <!-- D. MATERIALIDAD -->
     <h2>D. MATERIALIDAD Y ALCANCE</h2>
@@ -20630,15 +20809,15 @@ async function _auditGuardarTabActivo(explicit = false) {
 
 let _auditKeystrokeCount = 0;
 
-// Disparar auto-guardado con debounce (2 segundos)
+// Disparar auto-guardado con debounce (20 segundos)
 function _auditTriggerAutoSave() {
   if (!_apExpediente?.codigo) return;
   _auditSavePending = true;
   _auditKeystrokeCount++;
   _auditShowSaveStatus('pending', 'Cambio detectado...');
   clearTimeout(_auditSaveTimer);
-  // Guardar inmediatamente cada 10 cambios (no esperar el debounce)
-  if (_auditKeystrokeCount >= 10) {
+  // Guardar inmediatamente cada 50 cambios (no esperar el debounce)
+  if (_auditKeystrokeCount >= 50) {
     _auditKeystrokeCount = 0;
     _auditShowSaveStatus('saving', 'Guardando...');
     _auditGuardarTabActivo(false).then(() => {
@@ -20651,7 +20830,7 @@ function _auditTriggerAutoSave() {
     _auditShowSaveStatus('saving', 'Guardando...');
     await _auditGuardarTabActivo(false);
     _auditShowSaveStatus('saved', `Auto-guardado ${new Date().toLocaleTimeString('es-EC',{hour:'2-digit',minute:'2-digit'})}`);
-  }, 2000);
+  }, 20000);
 }
 
 // Escuchar cambios en TODOS los inputs/textareas/selects del módulo audit-pro
