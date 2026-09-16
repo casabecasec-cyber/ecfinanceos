@@ -17937,15 +17937,23 @@ async function crearCedulasDesdeSeleccion() {
 // de orden real (A=1, Z=26, AA=27, AB=28...). Evita que "AA" ordene antes que "K" por comparación
 // de texto. Devuelve null si la referencia no es puramente alfabética (ref personalizada).
 function _refOrdenNumero(ref) {
-  const s = String(ref || '').trim().toUpperCase();
-  if (!s || !/^[A-Z]+$/.test(s)) return null;
+  // Se limpia cualquier caracter que no sea letra (espacios, números, símbolos) antes de comparar,
+  // para que una referencia "escrita raro" no rompa el orden de las demás.
+  const s = String(ref || '').trim().toUpperCase().replace(/[^A-Z]/g, '');
+  if (!s) return null;
   let n = 0;
   for (let i = 0; i < s.length; i++) n = n * 26 + (s.charCodeAt(i) - 64);
   return n;
 }
 function _compararPorRef(a, b) {
   const na = _refOrdenNumero(a.ref), nb = _refOrdenNumero(b.ref);
-  if (na !== null && nb !== null) return na - nb;
+  if (na !== null && nb !== null && na !== nb) return na - nb;
+  // Si no se pueden comparar numéricamente (o dan igual), se usa la fecha de creación como
+  // desempate estable — así el orden NUNCA depende de en qué secuencia llegaron los datos
+  // desde Firebase, que puede variar entre una carga de página y otra.
+  const fa = new Date(a.fecha || a.fechaModificacion || 0).getTime() || 0;
+  const fb = new Date(b.fecha || b.fechaModificacion || 0).getTime() || 0;
+  if (fa !== fb) return fa - fb;
   return String(a.ref || '').localeCompare(String(b.ref || ''));
 }
 
@@ -18132,10 +18140,10 @@ async function editarCedulaAnalitica(cedulaId) {
       <!-- Zona de pegado desde Excel -->
       <div style="margin-bottom:12px">
         <label style="font-size:.72rem;color:var(--text-muted);display:block;margin-bottom:6px">
-          📋 PEGAR DESDE EXCEL — Copie las celdas de Excel (Cuenta · Saldo · Ajuste · Notas) y pegue aquí.
-          Se generarán las filas automáticamente. <strong style="color:var(--gold)">Ctrl+V o clic derecho → Pegar</strong>
+          📋 PEGAR DESDE EXCEL — Copie las celdas de Excel (Cuenta · Saldo · Ajuste · Notas · Código Contable [opcional]) y pegue aquí.
+          Se generarán las filas automáticamente, omitiendo cuentas padre en mayúsculas. <strong style="color:var(--gold)">Ctrl+V o clic derecho → Pegar</strong>
         </label>
-        <textarea id="ced-paste-area" rows="3" placeholder="Pegue aquí el contenido copiado de Excel...&#10;Ejemplo:&#10;Banco Pichincha cta 1234	850000,00	0	Conciliado&#10;Caja chica	5000,00	0	Arqueo OK"
+        <textarea id="ced-paste-area" rows="3" placeholder="Pegue aquí el contenido copiado de Excel...&#10;Ejemplo:&#10;Banco Pichincha cta 1234	850000,00	0	Conciliado	1.1.01.001&#10;Caja chica	5000,00	0	Arqueo OK	1.1.01.002"
           onpaste="setTimeout(()=>procesarPegarExcel(),50)"
           style="width:100%;background:var(--bg-card2);border:2px dashed var(--border);border-radius:8px;
             padding:10px 12px;color:var(--text-primary);font-size:.78rem;resize:vertical;
@@ -18149,6 +18157,7 @@ async function editarCedulaAnalitica(cedulaId) {
         <table class="ef-table" id="ced-filas-tabla">
           <thead>
             <tr>
+              <th style="width:100px">Código</th>
               <th class="left" style="min-width:280px">Subcuenta / Concepto</th>
               <th style="text-align:right;width:160px">Saldo Libros</th>
               <th style="text-align:right;width:150px">Ajuste</th>
@@ -18228,6 +18237,10 @@ function renderTablaCedulaCompleta(filas) {
 function _renderFilaCedula(f, fi) {
   const fmtV = v => (parseFloat(v)||0).toFixed(2);
   return `<tr id="ced-fila-row-${fi}">
+    <td><input value="${(f.codigoContable||'').replace(/"/g,'&quot;')}" placeholder="opcional"
+      oninput="actualizarFilaCed(${fi},'codigoContable',this.value)"
+      style="width:100%;min-width:85px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
+        padding:6px 7px;color:var(--gold);font-size:.82rem;font-family:var(--font-mono);box-sizing:border-box"></td>
     <td><input value="${(f.cuenta||'').replace(/"/g,'&quot;')}"
       oninput="actualizarFilaCed(${fi},'cuenta',this.value)"
       style="width:100%;min-width:260px;background:var(--bg-card2);border:1px solid var(--border);border-radius:4px;
@@ -18281,6 +18294,7 @@ function _renderFilaSubtotalCedula(fi, desde, filas) {
   const fmtV = v => (parseFloat(v)||0).toFixed(2);
   const nombre = filas[fi]?.subtotalNombre || '';
   return `<tr id="ced-subtotal-row-${fi}" style="background:rgba(212,175,55,.08);border-top:1.5px solid var(--gold);border-bottom:1.5px solid var(--gold)">
+    <td></td>
     <td>
       <input value="${nombre.replace(/"/g,'&quot;')}" placeholder="Nombre de este subtotal..."
         oninput="actualizarFilaCed(${fi},'subtotalNombre',this.value)"
@@ -18369,6 +18383,7 @@ function procesarPegarExcel() {
   if (!window._cedulaEditando) return;
 
   let agregadas = 0;
+  let omitidasPadre = 0;
   lineas.forEach(linea => {
     // Separar por tabulador (Excel usa tab como separador)
     const cols = linea.split('\t').map(c => c.trim().replace(/^"|"$/g,''));
@@ -18376,6 +18391,15 @@ function procesarPegarExcel() {
 
     // Col 0 = Cuenta, Col 1 = Saldo libros, Col 2 = Ajuste, Col 3 = Notas
     const cuenta = cols[0] || '';
+
+    // Cuentas padre (de control/resumen) suelen escribirse todo en mayúsculas en el plan de
+    // cuentas; las cuentas hijas (el detalle individual) van en mayúscula y minúscula mezcladas.
+    // Se omiten las cuentas padre al pegar — solo se generan filas para las cuentas hijas.
+    const tieneMinuscula = /[a-záéíóúñü]/.test(cuenta);
+    const tieneLetra = /[A-ZÁÉÍÓÚÑa-záéíóúñü]/.test(cuenta);
+    const esCuentaPadre = tieneLetra && !tieneMinuscula;
+    if (esCuentaPadre) { omitidasPadre++; return; }
+
     // Limpiar número: quitar puntos de miles, reemplazar coma decimal por punto
     const limpiarNum = s => {
       s = (s||'0').trim();
@@ -18388,9 +18412,10 @@ function procesarPegarExcel() {
     const ajuste       = limpiarNum(cols[2] || '0');
     const saldoAuditado= saldoLibros + ajuste;
     const notas        = cols[3] || '';
+    const codigoContable = cols[4] || '';
 
     if (!cuenta) return;
-    window._cedulaEditando.filas.push({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas });
+    window._cedulaEditando.filas.push({ cuenta, saldoLibros, ajuste, saldoAuditado, marcas:'✓', notas, codigoContable });
     agregadas++;
   });
 
@@ -18399,7 +18424,8 @@ function procesarPegarExcel() {
   const tbody = document.getElementById('ced-filas-edit');
   if (tbody) tbody.innerHTML = renderTablaCedulaCompleta(window._cedulaEditando.filas);
   actualizarCuadreCedula();
-  toast(`${agregadas} fila${agregadas!==1?'s':''} agregada${agregadas!==1?'s':''} desde Excel ✓`, 'success');
+  const msgOmitidas = omitidasPadre ? ` · ${omitidasPadre} cuenta${omitidasPadre!==1?'s':''} padre omitida${omitidasPadre!==1?'s':''} (en mayúsculas)` : '';
+  toast(`${agregadas} fila${agregadas!==1?'s':''} agregada${agregadas!==1?'s':''} desde Excel${msgOmitidas} ✓`, 'success');
 }
 
 
@@ -18416,7 +18442,7 @@ function actualizarFilaCed(fi, campo, valor) {
 
 function agregarFilaCedula() {
   if (!window._cedulaEditando) return;
-  const nuevaFila = { cuenta:'', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' };
+  const nuevaFila = { codigoContable:'', cuenta:'', saldoLibros:0, ajuste:0, saldoAuditado:0, marcas:'✓', notas:'' };
   window._cedulaEditando.filas.push(nuevaFila);
   const tbody = document.getElementById('ced-filas-edit');
   if (!tbody) return;
@@ -18989,13 +19015,14 @@ function _imprimirCedulasLista(lista) {
         </table>
         <table>
           <thead><tr>
-            <th>Subcuenta / Concepto</th><th style="text-align:right">Saldo s/Libros</th>
+            <th>Código</th><th>Subcuenta / Concepto</th><th style="text-align:right">Saldo s/Libros</th>
             <th style="text-align:right">Ajuste</th><th style="text-align:right">Saldo Auditado</th>
             <th style="text-align:center">Marcas</th><th>Notas</th>
           </tr></thead>
           <tbody>
             ${(ced.filas||[]).map((f,fi,arr)=>{
               const filaNormal = `<tr>
+              <td style="font-family:monospace;font-size:8pt">${f.codigoContable||''}</td>
               <td>${f.cuenta||''}</td>
               <td style="text-align:right">${fmtN(f.saldoLibros)}</td>
               <td style="text-align:right;color:${(parseFloat(f.ajuste)||0)!==0?'#DC2626':'#94A3B8'}">${(parseFloat(f.ajuste)||0)!==0?fmtN(Math.abs(f.ajuste)):'—'}</td>
@@ -19011,6 +19038,7 @@ function _imprimirCedulasLista(lista) {
               const sLib = grupo.reduce((s,x)=>s+(parseFloat(x.saldoLibros)||0),0);
               const sAud = grupo.reduce((s,x)=>s+(parseFloat(x.saldoAuditado)||0),0);
               return filaNormal + `<tr style="background:#FDF6E3">
+                <td></td>
                 <td><strong>${f.subtotalNombre||'Subtotal'}</strong></td>
                 <td style="text-align:right;font-weight:700">${fmtN(sLib)}</td>
                 <td></td>
@@ -19019,6 +19047,7 @@ function _imprimirCedulasLista(lista) {
               </tr>`;
             }).join('')}
             <tr class="total-row">
+              <td></td>
               <td><strong>TOTAL${(ced.filas||[]).some(f=>f.subtotalAqui)?' GENERAL':''}</strong></td>
               <td style="text-align:right">${fmtN(ced.totalLibros)}</td>
               <td style="text-align:right;color:${hayDif?'#DC2626':'#94A3B8'}">${hayDif?fmtN(Math.abs(dif)):'—'}</td>
@@ -21670,9 +21699,12 @@ function renderCedulasSumarias() {
             <div class="ap-cedula-field"><div class="ap-cedula-label">PERÍODO</div><div class="ap-cedula-value">${_apExpediente.periodo}</div></div>
           </div>
           <table class="ap-cedula-table">
-            <thead><tr><th>Cuenta</th><th>Saldo Libros</th><th style="color:var(--gold)">Ref. Cédula</th><th>Ajuste</th><th>Saldo Auditoría</th><th>Marca</th></tr></thead>
+            <thead><tr><th>Código</th><th>Cuenta</th><th>Saldo Libros</th><th style="color:var(--gold)">Ref. Cédula</th><th>Ajuste</th><th>Saldo Auditoría</th><th>Marca</th></tr></thead>
             <tbody>
               ${s.partidas.map((p,pi)=>`<tr>
+                <td><input type="text" value="${(p.codigoContable||'').replace(/"/g,'&quot;')}" placeholder="opcional"
+                  style="width:75px;background:none;border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--gold);font-family:var(--font-mono);font-size:.7rem"
+                  onchange="actualizarSumaria(${si},${pi},'codigoContable',this.value)"></td>
                 <td>${p.cuenta}</td>
                 <td class="num"><input type="number" value="${p.saldoLibros||0}" step="0.01" style="width:90px;background:none;border:none;color:var(--text-primary);font-family:var(--font-mono);text-align:right" onchange="actualizarSumaria(${si},${pi},'saldoLibros',this.value)"></td>
                 <td style="text-align:center">
@@ -21690,7 +21722,7 @@ function renderCedulasSumarias() {
                 </td>
                 <td style="text-align:center"><span class="ap-marca">✓</span></td>
               </tr>`).join('')}
-              <tr class="total"><td><strong>TOTALES</strong></td><td class="num"><strong id="sum-total-lib-${si}">${fmt(tL)}</strong></td><td></td><td class="num" style="color:${Math.abs(tDiff)>0?'#ef4444':'var(--emerald)'}"><strong>${tDiff!==0?fmt(tDiff):'—'}</strong></td><td class="num"><strong style="color:var(--emerald)">${fmt(tA)}</strong></td><td><span class="ap-marca">Σ</span></td></tr>
+              <tr class="total"><td></td><td><strong>TOTALES</strong></td><td class="num"><strong id="sum-total-lib-${si}">${fmt(tL)}</strong></td><td></td><td class="num" style="color:${Math.abs(tDiff)>0?'#ef4444':'var(--emerald)'}"><strong>${tDiff!==0?fmt(tDiff):'—'}</strong></td><td class="num"><strong style="color:var(--emerald)">${fmt(tA)}</strong></td><td><span class="ap-marca">Σ</span></td></tr>
             </tbody>
           </table>
           ${Math.abs(tDiff)>0?`<div class="ap-hallazgo moderado" style="margin-top:8px">⚠️ Diferencia: ${fmt(tDiff)} — requiere ajuste.</div>`:`<div class="ap-hallazgo ok" style="margin-top:8px">✅ Sin diferencias en este grupo.</div>`}
@@ -21726,7 +21758,7 @@ function actualizarSumaria(si, pi, campo, valor) {
 function actualizarSumariaConclusion(si,valor) { if (_apExpediente?.sumarias?.[si]) _apExpediente.sumarias[si].conclusion=valor; }
 function agregarPartidaSumaria(si) {
   const cuenta=prompt('Nombre de la cuenta:'); if(!cuenta||!_apExpediente?.sumarias?.[si]) return;
-  _apExpediente.sumarias[si].partidas.push({cuenta,saldoLibros:0,saldoAuditoria:0,cedulaRef:''});
+  _apExpediente.sumarias[si].partidas.push({cuenta,saldoLibros:0,saldoAuditoria:0,cedulaRef:'',codigoContable:''});
   renderCedulasSumarias();
 }
 function guardarSumaria(si) {
@@ -21743,9 +21775,9 @@ function imprimirSumaria(si) {
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-bottom:2px solid #D4AF37;padding-bottom:8px;margin-bottom:12px">
       <div><strong>Empresa:</strong> ${_apExpediente.empresa}</div><div><strong>${s.nombre}</strong></div><div><strong>Período/Ref:</strong> ${_apExpediente.periodo} · ${s.ref}</div>
     </div>
-    <table><tr><th>Cuenta</th><th>Saldo Libros</th><th>Ref. Cédula</th><th>Ajuste</th><th>Saldo Auditoría</th><th>Marca</th></tr>
-    ${s.partidas.map(p=>`<tr><td>${p.cuenta}</td><td style="text-align:right">${fmt(p.saldoLibros)}</td><td class="ref">${p.cedulaRef||''}</td><td style="text-align:right">${fmt(p.saldoAuditoria-p.saldoLibros)}</td><td style="text-align:right;font-weight:bold">${fmt(p.saldoAuditoria)}</td><td style="text-align:center">✓</td></tr>`).join('')}
-    <tr class="total"><td>TOTALES</td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoLibros)||0),0))}</td><td></td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoAuditoria)-parseFloat(p.saldoLibros)||0),0))}</td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoAuditoria)||0),0))}</td><td style="text-align:center">Σ</td></tr>
+    <table><tr><th>Código</th><th>Cuenta</th><th>Saldo Libros</th><th>Ref. Cédula</th><th>Ajuste</th><th>Saldo Auditoría</th><th>Marca</th></tr>
+    ${s.partidas.map(p=>`<tr><td style="font-family:monospace;font-size:8pt">${p.codigoContable||''}</td><td>${p.cuenta}</td><td style="text-align:right">${fmt(p.saldoLibros)}</td><td class="ref">${p.cedulaRef||''}</td><td style="text-align:right">${fmt(p.saldoAuditoria-p.saldoLibros)}</td><td style="text-align:right;font-weight:bold">${fmt(p.saldoAuditoria)}</td><td style="text-align:center">✓</td></tr>`).join('')}
+    <tr class="total"><td></td><td>TOTALES</td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoLibros)||0),0))}</td><td></td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoAuditoria)-parseFloat(p.saldoLibros)||0),0))}</td><td style="text-align:right">${fmt(s.partidas.reduce((t,p)=>t+(parseFloat(p.saldoAuditoria)||0),0))}</td><td style="text-align:center">Σ</td></tr>
     </table><p><strong>Conclusión:</strong> ${s.conclusion}</p>
     <p style="font-size:8pt;color:#666">Marcas: ✓=Cotejado · Σ=Sumado · ◉=Confirmado · ★=Archivado · ▲=Pendiente · ✕=Diferencia</p>
     <div class="firmas"><div class="firma-box">${s.elaboradoPor}<br>Elaboró · ${new Date().toLocaleDateString('es-EC')}</div><div class="firma-box">___________________________<br>Revisó</div></div>
@@ -21756,7 +21788,7 @@ function imprimirSumaria(si) {
 function exportarSumariaWord(si) {
   const s=_apExpediente?.sumarias?.[si]; if(!s) return;
   const fmt=n=>'$'+(parseFloat(n)||0).toFixed(2);
-  const html=`<html><head><meta charset="utf-8"></head><body style="font-family:Calibri;padding:30px"><h2>Cédula Sumaria Ref. ${s.ref} — ${s.nombre}</h2><p><strong>Empresa:</strong> ${_apExpediente.empresa} | <strong>Período:</strong> ${_apExpediente.periodo}</p><table border="1" cellpadding="5" width="100%"><tr style="background:#f0f0f0"><th>Cuenta</th><th>Saldo Libros</th><th>Ref.</th><th>Ajuste</th><th>Saldo Auditoría</th></tr>${s.partidas.map(p=>`<tr><td>${p.cuenta}</td><td>${fmt(p.saldoLibros)}</td><td style="text-align:center;color:orange">${p.cedulaRef}</td><td>${fmt(p.saldoAuditoria-p.saldoLibros)}</td><td><b>${fmt(p.saldoAuditoria)}</b></td></tr>`).join('')}</table><p><strong>Conclusión:</strong> ${s.conclusion}</p></body></html>`;
+  const html=`<html><head><meta charset="utf-8"></head><body style="font-family:Calibri;padding:30px"><h2>Cédula Sumaria Ref. ${s.ref} — ${s.nombre}</h2><p><strong>Empresa:</strong> ${_apExpediente.empresa} | <strong>Período:</strong> ${_apExpediente.periodo}</p><table border="1" cellpadding="5" width="100%"><tr style="background:#f0f0f0"><th>Código</th><th>Cuenta</th><th>Saldo Libros</th><th>Ref.</th><th>Ajuste</th><th>Saldo Auditoría</th></tr>${s.partidas.map(p=>`<tr><td>${p.codigoContable||''}</td><td>${p.cuenta}</td><td>${fmt(p.saldoLibros)}</td><td style="text-align:center;color:orange">${p.cedulaRef}</td><td>${fmt(p.saldoAuditoria-p.saldoLibros)}</td><td><b>${fmt(p.saldoAuditoria)}</b></td></tr>`).join('')}</table><p><strong>Conclusión:</strong> ${s.conclusion}</p></body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`Sumaria_${s.ref}_${_apExpediente.codigo}.doc`; a.click();
 }
