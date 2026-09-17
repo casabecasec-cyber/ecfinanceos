@@ -287,16 +287,19 @@ body { font-family: var(--font-main); background: var(--bg-deep); color: var(--t
 
 /* Hoja de Trabajo IVA / F103 — contenedor con scroll visible en ambas direcciones y encabezados fijos */
 .tabla-ap-scroll {
-  overflow: auto;
+  overflow-x: scroll;   /* "scroll" en vez de "auto": la barra queda siempre reservada y visible */
+  overflow-y: scroll;
   max-height: 68vh;
   border: 1px solid var(--border);
   border-radius: 8px;
   scrollbar-width: auto;         /* Firefox: barra normal, no delgada */
   scrollbar-color: var(--gold) var(--bg-card2);
 }
-.tabla-ap-scroll::-webkit-scrollbar { width: 14px; height: 14px; }
+.tabla-ap-scroll table { width: max-content; min-width: 100%; }
+.tabla-ap-scroll::-webkit-scrollbar { width: 16px; height: 16px; }
 .tabla-ap-scroll::-webkit-scrollbar-track { background: var(--bg-card2); }
-.tabla-ap-scroll::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 7px; border: 3px solid var(--bg-card2); }
+.tabla-ap-scroll::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 8px; border: 3px solid var(--bg-card2); }
+.tabla-ap-scroll::-webkit-scrollbar-thumb:hover { background: #e8c765; }
 .tabla-ap-scroll::-webkit-scrollbar-corner { background: var(--bg-card2); }
 .tabla-ap-scroll thead th { position: sticky; z-index: 3; }
 
@@ -2408,11 +2411,6 @@ html[data-theme="claro"] #gea-native-root{
         </div>
       </div>
 
-      <!-- PANEL DINÁMICO POR TIPO — se reemplaza al cambiar tipo -->
-      <div id="ap-tipo-panel">
-        <!-- Se renderiza por cambiarTipoAudit() -->
-      </div>
-
       <!-- PANEL PRINCIPAL DE AUDITORÍA (aparece tras iniciar expediente) -->
       <div id="ap-panel-principal" style="display:none">
 
@@ -2904,6 +2902,10 @@ html[data-theme="claro"] #gea-native-root{
           </div>
         </div>
 
+
+      <!-- PANEL DINÁMICO POR TIPO — se reemplaza al cambiar tipo -->
+      <div id="ap-tipo-panel">
+        <!-- Se renderiza por cambiarTipoAudit() -->
       </div>
       
     </section>
