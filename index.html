@@ -18890,7 +18890,11 @@ async function editarCedulaAnalitica(cedulaId) {
       <div style="margin-bottom:12px">
         <label style="font-size:.72rem;color:var(--text-muted);display:block;margin-bottom:6px">
           📋 PEGAR DESDE EXCEL — Copie las celdas de Excel (Cuenta · Saldo · Ajuste · Notas · Código Contable [opcional]) y pegue aquí.
-          Se generarán las filas automáticamente, omitiendo cuentas padre en mayúsculas. <strong style="color:var(--gold)">Ctrl+V o clic derecho → Pegar</strong>
+          Se generará una fila por cada línea. <strong style="color:var(--gold)">Ctrl+V o clic derecho → Pegar</strong>
+        </label>
+        <label style="font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <input type="checkbox" id="ced-omitir-padres">
+          Omitir cuentas en mayúsculas (útil solo si tus cuentas padre/control van TODO en mayúsculas y las hijas en mayúscula y minúscula — actívalo con cuidado, revisa el aviso después de pegar)
         </label>
         <textarea id="ced-paste-area" rows="3" placeholder="Pegue aquí el contenido copiado de Excel...&#10;Ejemplo:&#10;Banco Pichincha cta 1234	850000,00	0	Conciliado	1.1.01.001&#10;Caja chica	5000,00	0	Arqueo OK	1.1.01.002"
           onpaste="setTimeout(()=>procesarPegarExcel(),50)"
@@ -19143,11 +19147,15 @@ function procesarPegarExcel() {
 
     // Cuentas padre (de control/resumen) suelen escribirse todo en mayúsculas en el plan de
     // cuentas; las cuentas hijas (el detalle individual) van en mayúscula y minúscula mezcladas.
-    // Se omiten las cuentas padre al pegar — solo se generan filas para las cuentas hijas.
-    const tieneMinuscula = /[a-záéíóúñü]/.test(cuenta);
-    const tieneLetra = /[A-ZÁÉÍÓÚÑa-záéíóúñü]/.test(cuenta);
-    const esCuentaPadre = tieneLetra && !tieneMinuscula;
-    if (esCuentaPadre) { omitidasPadre++; return; }
+    // Esto es OPCIONAL (checkbox) porque muchas cuentas hijas reales (nombres de proveedores,
+    // empleados) también vienen todo en mayúsculas — activarlo por defecto rompía el pegado normal.
+    const omitirPadres = document.getElementById('ced-omitir-padres')?.checked;
+    if (omitirPadres) {
+      const tieneMinuscula = /[a-záéíóúñü]/.test(cuenta);
+      const tieneLetra = /[A-ZÁÉÍÓÚÑa-záéíóúñü]/.test(cuenta);
+      const esCuentaPadre = tieneLetra && !tieneMinuscula;
+      if (esCuentaPadre) { omitidasPadre++; return; }
+    }
 
     // Limpiar número: quitar puntos de miles, reemplazar coma decimal por punto
     const limpiarNum = s => {
